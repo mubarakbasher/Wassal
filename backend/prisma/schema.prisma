@@ -1,0 +1,236 @@
+// MikroTik Hotspot Management System - Database Schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User roles: ADMIN, OPERATOR, RESELLER
+enum UserRole {
+  ADMIN
+  OPERATOR
+  RESELLER
+}
+
+// Voucher status lifecycle
+enum VoucherStatus {
+  UNUSED
+  ACTIVE
+  EXPIRED
+  SOLD
+}
+
+// Plan types
+enum PlanType {
+  TIME_BASED
+  DATA_BASED
+  UNLIMITED
+}
+
+// Router connection status
+enum RouterStatus {
+  ONLINE
+  OFFLINE
+  ERROR
+}
+
+// ============================================
+// User Management
+// ============================================
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String   // bcrypt hashed
+  name      String?
+  role      UserRole @default(OPERATOR)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  routers      Router[]
+  sales        Sale[]
+  activityLogs ActivityLog[]
+
+  @@index([email])
+  @@map("users")
+}
+
+// ============================================
+// Router Management
+// ============================================
+
+model Router {
+  id          String       @id @default(uuid())
+  name        String
+  ipAddress   String
+  apiPort     Int          @default(8728)
+  username    String       // MikroTik API username
+  password    String       // Encrypted MikroTik API password
+  description String?
+  location    String?
+  status      RouterStatus @default(OFFLINE)
+  lastSeen    DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  // Owner
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Relations
+  hotspotProfiles HotspotProfile[]
+  vouchers        Voucher[]
+  sessions        Session[]
+
+  @@index([userId])
+  @@index([status])
+  @@map("routers")
+}
+
+// ============================================
+// Hotspot Configuration
+// ============================================
+
+model HotspotProfile {
+  id             String   @id @default(uuid())
+  name           String   // Profile name in MikroTik
+  sharedUsers    Int      @default(1)
+  rateLimit      String?  // e.g., "2M/5M"
+  sessionTimeout String?  // e.g., "1h", "24h"
+  idleTimeout    String?
+  keepaliveTimeout String?
+  macCookieTimeout String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Router reference
+  routerId String
+  router   Router @relation(fields: [routerId], references: [id], onDelete: Cascade)
+
+  // Relations
+  vouchers Voucher[]
+
+  @@index([routerId])
+  @@map("hotspot_profiles")
+}
+
+// ============================================
+// Voucher System
+// ============================================
+
+model Voucher {
+  id          String        @id @default(uuid())
+  username    String        // Hotspot username
+  password    String        // Hotspot password
+  planType    PlanType
+  planName    String        // e.g., "1 Hour", "5GB Data"
+  duration    Int?          // Duration in minutes (for time-based)
+  dataLimit   BigInt?       // Data limit in bytes (for data-based)
+  price       Decimal       @default(0) @db.Decimal(10, 2)
+  status      VoucherStatus @default(UNUSED)
+  createdAt   DateTime      @default(now())
+  activatedAt DateTime?     // When first used
+  expiresAt   DateTime?     // Expiration timestamp
+  soldAt      DateTime?     // When marked as sold
+
+  // Profile reference
+  profileId String
+  profile   HotspotProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  // Router reference
+  routerId String
+  router   Router @relation(fields: [routerId], references: [id], onDelete: Cascade)
+
+  // Relations
+  sales    Sale[]
+  sessions Session[]
+
+  @@index([status])
+  @@index([routerId])
+  @@index([profileId])
+  @@index([createdAt])
+  @@map("vouchers")
+}
+
+// ============================================
+// Session Monitoring
+// ============================================
+
+model Session {
+  id         String    @id @default(uuid())
+  username   String
+  ipAddress  String?
+  macAddress String?
+  bytesIn    BigInt    @default(0)
+  bytesOut   BigInt    @default(0)
+  uptime     Int       @default(0) // Seconds
+  startTime  DateTime  @default(now())
+  endTime    DateTime?
+  isActive   Boolean   @default(true)
+
+  // Router reference
+  routerId String
+  router   Router @relation(fields: [routerId], references: [id], onDelete: Cascade)
+
+  // Voucher reference (optional)
+  voucherId String?
+  voucher   Voucher? @relation(fields: [voucherId], references: [id], onDelete: SetNull)
+
+  @@index([routerId])
+  @@index([username])
+  @@index([isActive])
+  @@index([startTime])
+  @@map("sessions")
+}
+
+// ============================================
+// Sales Management
+// ============================================
+
+model Sale {
+  id            String   @id @default(uuid())
+  amount        Decimal  @db.Decimal(10, 2)
+  customerName  String?
+  customerPhone String?
+  notes         String?
+  soldAt        DateTime @default(now())
+
+  // Voucher reference
+  voucherId String
+  voucher   Voucher @relation(fields: [voucherId], references: [id], onDelete: Cascade)
+
+  // Seller reference
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([soldAt])
+  @@map("sales")
+}
+
+// ============================================
+// Activity Logging
+// ============================================
+
+model ActivityLog {
+  id        String   @id @default(uuid())
+  action    String   // e.g., "ROUTER_ADDED", "VOUCHER_GENERATED"
+  details   String?  // JSON string with additional info
+  ipAddress String?
+  userAgent String?
+  timestamp DateTime @default(now())
+
+  // User reference
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([timestamp])
+  @@map("activity_logs")
+}
