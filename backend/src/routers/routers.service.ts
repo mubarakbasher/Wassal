@@ -357,4 +357,120 @@ export class RoutersService {
             throw new BadRequestException('Failed to get system information from router');
         }
     }
+
+    async getRouterStats(id: string, userId: string) {
+        // Find router with password
+        const router = await this.prisma.router.findFirst({
+            where: { id, userId },
+        });
+
+        if (!router) {
+            throw new NotFoundException('Router not found');
+        }
+
+        const password = await this.decryptPassword(router.password);
+
+        const connection = {
+            host: router.ipAddress,
+            port: router.apiPort,
+            username: router.username,
+            password: password,
+        };
+
+        const [isOnline, activeSessions, hotspotUsers, uptime, totalVouchersCount] = await Promise.all([
+            this.mikrotikApi.testConnection(connection),
+            this.mikrotikApi.getActiveSessions(connection).catch(() => []),
+            this.mikrotikApi.getHotspotUsers(connection).catch(() => []),
+            this.mikrotikApi.getUptime(connection).catch(() => '0s'),
+            this.prisma.voucher.count(),
+        ]);
+
+        // Calculate Revenue (Total Sales for current month)
+        const now = new Date();
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+        const revenueAgg = await this.prisma.sale.aggregate({
+            _sum: {
+                amount: true,
+            },
+            where: {
+                soldAt: {
+                    gte: startOfMonth,
+                    lte: endOfMonth,
+                }
+            }
+        });
+
+        return {
+            routerId: router.id,
+            isOnline,
+            uptime,
+            activeUsers: activeSessions.length,
+            totalUsers: hotspotUsers.length,
+            totalVouchers: totalVouchersCount,
+            totalRevenue: revenueAgg._sum.amount || 0,
+        };
+    }
+
+    /**
+     * Handle router script callback (Auto-Discovery)
+     */
+    async handleScriptCallback(ip: string) {
+        this.logger.log(`Received script callback from IP: ${ip}`);
+
+        const credentials = {
+            host: ip,
+            port: 8728,
+            username: 'wassal_auto',
+            password: 'Wassal@123',
+        };
+
+        // 1. Validate connection
+        const isConnected = await this.mikrotikApi.testConnection(credentials);
+
+        if (!isConnected) {
+            this.logger.warn(`Failed to connect to router at ${ip} with script credentials.`);
+            throw new BadRequestException(`Unable to connect to router at ${ip}`);
+        }
+
+        // 2. Check if already exists
+        const existing = await this.prisma.router.findFirst({
+            where: { ipAddress: ip }
+        });
+
+        if (existing) {
+            this.logger.log(`Router at ${ip} already exists.`);
+            return { message: 'Router already registered', routerId: existing.id };
+        }
+
+        // 3. Create Router (Assign to first admin or make it "Unassigned" to be claimed?)
+        // For simplicity, we will assign it to the first user found or a specific admin.
+        // Or better: Leave userId optional? No, schema likely requires it.
+        // Let's Find the first user for now (or a specific 'admin' if we had that logic).
+        const adminUser = await this.prisma.user.findFirst();
+        if (!adminUser) {
+            throw new BadRequestException("No user found to assign router to.");
+        }
+
+        const encryptedPassword = this.encryptPassword(credentials.password);
+
+        const router = await this.prisma.router.create({
+            data: {
+                name: `Auto-Discovered [${ip}]`,
+                ipAddress: ip,
+                apiPort: 8728,
+                username: credentials.username,
+                password: encryptedPassword,
+                description: 'Added via Script Auto-Discovery',
+                location: 'Unknown',
+                status: RouterStatus.ONLINE,
+                lastSeen: new Date(),
+                userId: adminUser.id,
+            }
+        });
+
+        this.logger.log(`Auto-registered router: ${router.name} (${router.id})`);
+        return { message: 'Router registered successfully', routerId: router.id };
+    }
 }

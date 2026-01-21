@@ -103,6 +103,8 @@ export class AuthService {
                 email: user.email,
                 name: user.name,
                 role: user.role,
+                isActive: user.isActive,
+                createdAt: user.createdAt,
             },
             ...tokens,
         };
@@ -128,9 +130,7 @@ export class AuthService {
     private async generateTokens(userId: string, email: string, role: UserRole) {
         const payload = { sub: userId, email, role };
 
-        const accessToken = await this.jwtService.signAsync(payload, {
-            expiresIn: process.env.JWT_EXPIRATION || '1d',
-        });
+        const accessToken = await this.jwtService.signAsync(payload);
 
         return {
             accessToken,

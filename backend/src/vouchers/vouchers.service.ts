@@ -100,7 +100,7 @@ export class VouchersService {
             throw new BadRequestException('Data limit is required for data-based plans');
         }
 
-        const vouchers = [];
+        const vouchers: any[] = [];
         const voucherCount = quantity || 1;
 
         // Generate vouchers

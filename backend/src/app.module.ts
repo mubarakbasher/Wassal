@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { RoutersModule } from './routers/routers.module';
 import { VouchersModule } from './vouchers/vouchers.module';
 import { ProfilesModule } from './profiles/profiles.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { ProfilesModule } from './profiles/profiles.module';
     RoutersModule,
     VouchersModule,
     ProfilesModule,
+    UsersModule,
   ],
   controllers: [AppController],
   providers: [AppService],

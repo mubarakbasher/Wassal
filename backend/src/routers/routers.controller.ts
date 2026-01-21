@@ -9,6 +9,8 @@ import {
     UseGuards,
     HttpCode,
     HttpStatus,
+    Query,
+    Req,
 } from '@nestjs/common';
 import { RoutersService } from './routers.service';
 import { CreateRouterDto, UpdateRouterDto } from './dto/router.dto';
@@ -58,5 +60,28 @@ export class RoutersController {
     @Get(':id/system-info')
     getSystemInfo(@Param('id') id: string, @CurrentUser() user: any) {
         return this.routersService.getSystemInfo(id, user.id);
+    }
+
+    @Get(':id/stats')
+    getStats(@Param('id') id: string, @CurrentUser() user: any) {
+        return this.routersService.getRouterStats(id, user.id);
+    }
+}
+
+@Controller('public/routers')
+export class PublicRoutersController {
+    constructor(private readonly routersService: RoutersService) { }
+
+    @Get('script-callback')
+    handleCallback(@Query('ip') ip: string, @Req() req: any) {
+        // Fallback if IP not in query (though script uses fetch, it might not send IP in query easily always, 
+        // but fetch can be configured. 
+        // Ideally, we get IP from request socket if not provided.
+        const requestIp = ip || req.ip || req.connection.remoteAddress;
+
+        // Clean up IP (remove ::ffff: prefix if present)
+        const cleanIp = requestIp.replace('::ffff:', '');
+
+        return this.routersService.handleScriptCallback(cleanIp);
     }
 }
