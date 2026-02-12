@@ -6,8 +6,10 @@ import '../models/user_model.dart';
 
 abstract class AuthLocalDataSource {
   Future<void> cacheToken(String token);
+  Future<void> cacheRefreshToken(String token);
   Future<void> cacheUser(UserModel user);
   Future<String?> getToken();
+  Future<String?> getRefreshToken();
   Future<UserModel?> getUser();
   Future<void> clearCache();
 }
@@ -26,6 +28,18 @@ class AuthLocalDataSourceImpl implements AuthLocalDataSource {
       );
     } catch (e) {
       throw CacheException('Failed to cache token');
+    }
+  }
+
+  @override
+  Future<void> cacheRefreshToken(String token) async {
+    try {
+      await secureStorage.write(
+        key: AppConstants.refreshTokenKey,
+        value: token,
+      );
+    } catch (e) {
+      throw CacheException('Failed to cache refresh token');
     }
   }
 
@@ -51,6 +65,15 @@ class AuthLocalDataSourceImpl implements AuthLocalDataSource {
   }
 
   @override
+  Future<String?> getRefreshToken() async {
+    try {
+      return await secureStorage.read(key: AppConstants.refreshTokenKey);
+    } catch (e) {
+      throw CacheException('Failed to get refresh token');
+    }
+  }
+
+  @override
   Future<UserModel?> getUser() async {
     try {
       final userJson = await secureStorage.read(key: AppConstants.userDataKey);
@@ -67,6 +90,7 @@ class AuthLocalDataSourceImpl implements AuthLocalDataSource {
   Future<void> clearCache() async {
     try {
       await secureStorage.delete(key: AppConstants.accessTokenKey);
+      await secureStorage.delete(key: AppConstants.refreshTokenKey);
       await secureStorage.delete(key: AppConstants.userDataKey);
     } catch (e) {
       throw CacheException('Failed to clear cache');

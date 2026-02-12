@@ -24,9 +24,15 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       final result = await remoteDataSource.login(email, password);
       
-      // Cache token
+      // Cache access token
       final token = result['accessToken'] as String;
       await localDataSource.cacheToken(token);
+      
+      // Cache refresh token
+      final refreshToken = result['refreshToken'] as String?;
+      if (refreshToken != null) {
+        await localDataSource.cacheRefreshToken(refreshToken);
+      }
       
       // Cache user
       final user = UserModel.fromJson(result['user'] as Map<String, dynamic>);
@@ -52,9 +58,15 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       final result = await remoteDataSource.register(email, password, name, role);
       
-      // Cache token
+      // Cache access token
       final token = result['accessToken'] as String;
       await localDataSource.cacheToken(token);
+      
+      // Cache refresh token
+      final refreshToken = result['refreshToken'] as String?;
+      if (refreshToken != null) {
+        await localDataSource.cacheRefreshToken(refreshToken);
+      }
       
       // Cache user
       final user = UserModel.fromJson(result['user'] as Map<String, dynamic>);
@@ -71,20 +83,28 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<Failure, User>> getProfile() async {
     try {
-      // Try to get cached user first
-      final cachedUser = await localDataSource.getUser();
-      if (cachedUser != null) {
-       return Right(_mapUserModelToEntity(cachedUser));
-      }
-      
-      // If not cached, fetch from remote
+      // Always fetch fresh data from server to ensure up-to-date profile
       final user = await remoteDataSource.getProfile();
       await localDataSource.cacheUser(user);
       
       return Right(_mapUserModelToEntity(user));
     } on AuthenticationException catch (e) {
+      // If server fails, try cached user as fallback
+      try {
+        final cachedUser = await localDataSource.getUser();
+        if (cachedUser != null) {
+          return Right(_mapUserModelToEntity(cachedUser));
+        }
+      } catch (_) {}
       return Left(AuthenticationFailure(e.message));
     } on ServerException catch (e) {
+      // If server fails, try cached user as fallback
+      try {
+        final cachedUser = await localDataSource.getUser();
+        if (cachedUser != null) {
+          return Right(_mapUserModelToEntity(cachedUser));
+        }
+      } catch (_) {}
       return Left(ServerFailure(e.message));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
@@ -109,14 +129,48 @@ class AuthRepositoryImpl implements AuthRepository {
     return token != null && token.isNotEmpty;
   }
 
+  @override
+  Future<Either<Failure, User>> updateProfile({
+    String? name,
+    String? email,
+    String? password,
+    String? networkName,
+  }) async {
+    try {
+      final cachedUser = await localDataSource.getUser();
+      if (cachedUser == null) {
+        return Left(AuthenticationFailure('User not found'));
+      }
+
+      final data = <String, dynamic>{};
+      if (name != null) data['name'] = name;
+      if (email != null) data['email'] = email;
+      if (password != null) data['password'] = password;
+      if (networkName != null) data['networkName'] = networkName;
+
+      final updatedUser = await remoteDataSource.updateProfile(cachedUser.id, data);
+      await localDataSource.cacheUser(updatedUser);
+
+      return Right(_mapUserModelToEntity(updatedUser));
+    } on AuthenticationException catch (e) {
+      return Left(AuthenticationFailure(e.message));
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
   User _mapUserModelToEntity(UserModel model) {
     return User(
       id: model.id,
       email: model.email,
       name: model.name,
+      networkName: model.networkName,
       role: model.role,
       isActive: model.isActive,
       createdAt: model.createdAt,
+      subscription: model.subscription,
     );
   }
 }

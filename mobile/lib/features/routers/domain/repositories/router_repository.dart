@@ -29,4 +29,6 @@ abstract class RouterRepository {
   Future<Either<Failure, Map<String, dynamic>>> checkRouterHealth(String id);
   
   Future<Either<Failure, Map<String, dynamic>>> getRouterSystemInfo(String id);
+  
+  Future<Either<Failure, Map<String, dynamic>>> getRouterStats(String id);
 }

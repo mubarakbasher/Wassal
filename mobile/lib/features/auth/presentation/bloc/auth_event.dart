@@ -48,3 +48,20 @@ class CheckAuthStatusEvent extends AuthEvent {
 class GetProfileEvent extends AuthEvent {
   const GetProfileEvent();
 }
+
+class UpdateProfileEvent extends AuthEvent {
+  final String? name;
+  final String? email;
+  final String? password;
+  final String? networkName;
+
+  const UpdateProfileEvent({
+    this.name,
+    this.email,
+    this.password,
+    this.networkName,
+  });
+
+  @override
+  List<Object?> get props => [name, email, password, networkName];
+}

@@ -2,10 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
+import '../../../../core/widgets/shimmer_loading.dart';
+import '../../../../core/widgets/empty_state.dart';
+import '../../../../core/widgets/snackbar_utils.dart';
+import '../../../../core/widgets/loading_widgets.dart';
 import '../bloc/router_bloc.dart';
 import '../bloc/router_event.dart';
 import '../bloc/router_state.dart';
 import 'add_router_page.dart';
+import 'router_details_page.dart';
 
 class RoutersListPage extends StatefulWidget {
   const RoutersListPage({super.key});
@@ -37,96 +42,65 @@ class _RoutersListPageState extends State<RoutersListPage> {
       ),
       body: BlocConsumer<RouterBloc, RouterState>(
         listener: (context, state) {
-          if (state is RouterError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: AppColors.error,
-              ),
+          if (state is RouterError && !SubscriptionRequiredWidget.isSubscriptionError(state.message)) {
+            SnackBarUtils.showError(
+              context,
+              state.message,
+              onRetry: () {
+                context.read<RouterBloc>().add(const LoadRoutersEvent());
+              },
             );
           } else if (state is RouterOperationSuccess) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: AppColors.success,
-              ),
+            SnackBarUtils.showSuccess(
+              context,
+              state.message,
             );
+            // Reload routers after successful operation
+            context.read<RouterBloc>().add(const LoadRoutersEvent());
           }
         },
         builder: (context, state) {
           if (state is RouterLoading) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
+            return const RouterListShimmer(itemCount: 5);
           }
 
           if (state is RouterError) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.error_outline,
-                    size: 64,
-                    color: AppColors.error,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    state.message,
-                    style: AppTextStyles.bodyLarge,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      context.read<RouterBloc>().add(const LoadRoutersEvent());
-                    },
-                    icon: const Icon(Icons.refresh),
-                    label: const Text('Retry'),
-                  ),
-                ],
-              ),
+            if (SubscriptionRequiredWidget.isSubscriptionError(state.message)) {
+              return const SubscriptionRequiredWidget();
+            }
+            return ErrorStateWidget(
+              message: state.message,
+              onRetry: () {
+                context.read<RouterBloc>().add(const LoadRoutersEvent());
+              },
             );
           }
 
           if (state is RouterLoaded) {
             if (state.routers.isEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.router_outlined,
-                      size: 80,
-                      color: AppColors.textSecondary,
-                    ),
-                    const SizedBox(height: 24),
-                    Text(
-                      'No Routers Yet',
-                      style: AppTextStyles.headlineMedium,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Add your first MikroTik router',
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
+              return EmptyRoutersState(
+                onAddRouter: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const AddRouterPage()),
+                  );
+                },
               );
             }
 
-            return RefreshIndicator(
+            return CustomRefreshIndicator(
               onRefresh: () async {
                 context.read<RouterBloc>().add(const LoadRoutersEvent());
+                await Future.delayed(const Duration(milliseconds: 500));
               },
               child: ListView.builder(
                 padding: const EdgeInsets.all(16),
                 itemCount: state.routers.length,
                 itemBuilder: (context, index) {
                   final router = state.routers[index];
-                  return _RouterCard(router: router);
+                  return FadeInWidget(
+                    delay: Duration(milliseconds: index * 50),
+                    child: _RouterCard(router: router),
+                  );
                 },
               ),
             );
@@ -178,7 +152,11 @@ class _RouterCard extends StatelessWidget {
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: () {
-          // TODO: Navigate to router details
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => RouterDetailsPage(router: router),
+            ),
+          );
         },
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -191,7 +169,7 @@ class _RouterCard extends StatelessWidget {
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
+                      color: AppColors.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(
@@ -222,7 +200,7 @@ class _RouterCard extends StatelessWidget {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: _getStatusColor(router.status).withOpacity(0.1),
+                      color: _getStatusColor(router.status).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(

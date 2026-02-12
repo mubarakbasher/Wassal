@@ -17,3 +17,11 @@ class LoadDashboardStats extends DashboardEvent {
 }
 
 class RefreshDashboardStats extends DashboardEvent {}
+
+class PauseDashboardPolling extends DashboardEvent {
+  const PauseDashboardPolling();
+}
+
+class ResumeDashboardPolling extends DashboardEvent {
+  const ResumeDashboardPolling();
+}

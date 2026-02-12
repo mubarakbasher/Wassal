@@ -15,10 +15,11 @@ import {
 import { RoutersService } from './routers.service';
 import { CreateRouterDto, UpdateRouterDto } from './dto/router.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { SubscriptionGuard } from '../auth/guards/subscription.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 @Controller('routers')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, SubscriptionGuard)
 export class RoutersController {
     constructor(private readonly routersService: RoutersService) { }
 
@@ -66,6 +67,63 @@ export class RoutersController {
     getStats(@Param('id') id: string, @CurrentUser() user: any) {
         return this.routersService.getRouterStats(id, user.id);
     }
+
+    @Get(':id/profiles/mikrotik')
+    getMikrotikProfiles(@Param('id') id: string, @CurrentUser() user: any) {
+        return this.routersService.getMikrotikProfiles(id, user.id);
+    }
+
+    @Post(':id/profiles/mikrotik')
+    createMikrotikProfile(
+        @Param('id') id: string,
+        @Body() profileData: {
+            name: string;
+            rateLimit?: string;
+            sessionTimeout?: string;
+            limitUptime?: string;
+            sharedUsers?: number;
+            idleTimeout?: string;
+            keepaliveTimeout?: string;
+            useSchedulerTime?: boolean;
+            schedulerInterval?: string;
+        },
+        @CurrentUser() user: any
+    ) {
+        return this.routersService.createMikrotikProfile(id, user.id, profileData);
+    }
+
+    @Get(':id/active-users')
+    getActiveUsers(@Param('id') id: string, @CurrentUser() user: any) {
+        return this.routersService.getActiveUsers(id, user.id);
+    }
+
+    @Get(':id/interfaces')
+    getInterfaces(@Param('id') id: string, @CurrentUser() user: any) {
+        return this.routersService.getInterfaces(id, user.id);
+    }
+
+    @Get(':id/logs')
+    getLogs(
+        @Param('id') id: string,
+        @Query('limit') limit: string,
+        @CurrentUser() user: any
+    ) {
+        return this.routersService.getRouterLogs(id, user.id, parseInt(limit) || 50);
+    }
+
+    @Post(':id/disconnect-user')
+    disconnectUser(
+        @Param('id') id: string,
+        @Body('sessionId') sessionId: string,
+        @CurrentUser() user: any
+    ) {
+        return this.routersService.disconnectUser(id, sessionId, user.id);
+    }
+
+    @Post(':id/restart')
+    restartRouter(@Param('id') id: string, @CurrentUser() user: any) {
+        return this.routersService.restartRouter(id, user.id);
+    }
 }
 
 @Controller('public/routers')
@@ -73,15 +131,46 @@ export class PublicRoutersController {
     constructor(private readonly routersService: RoutersService) { }
 
     @Get('script-callback')
-    handleCallback(@Query('ip') ip: string, @Req() req: any) {
-        // Fallback if IP not in query (though script uses fetch, it might not send IP in query easily always, 
-        // but fetch can be configured. 
-        // Ideally, we get IP from request socket if not provided.
-        const requestIp = ip || req.ip || req.connection.remoteAddress;
+    handleCallback(
+        @Query('ip') ip: string,
+        @Query('userId') userId: string,
+        @Req() req: any
+    ) {
+        // Try to get IP from multiple sources in priority order:
+        // 1. Query parameter (explicitly passed by script)
+        // 2. X-Forwarded-For header (if behind proxy/NAT)
+        // 3. X-Real-IP header
+        // 4. Request socket remote address
+        const forwardedFor = req.headers['x-forwarded-for'];
+        const realIp = req.headers['x-real-ip'];
+        const socketIp = req.ip || req.connection?.remoteAddress;
 
-        // Clean up IP (remove ::ffff: prefix if present)
-        const cleanIp = requestIp.replace('::ffff:', '');
+        let requestIp = ip;
 
-        return this.routersService.handleScriptCallback(cleanIp);
+        if (!requestIp && forwardedFor) {
+            // X-Forwarded-For can contain multiple IPs, first one is the client
+            requestIp = forwardedFor.split(',')[0].trim();
+        }
+
+        if (!requestIp && realIp) {
+            requestIp = realIp;
+        }
+
+        if (!requestIp) {
+            requestIp = socketIp;
+        }
+
+        // Clean up IP (remove ::ffff: prefix if present for IPv4-mapped IPv6)
+        const cleanIp = requestIp?.replace('::ffff:', '') || '';
+
+        if (!cleanIp || cleanIp === '127.0.0.1' || cleanIp === '::1') {
+            return {
+                message: 'Invalid IP address. Cannot register router from localhost.',
+                error: 'IP detection failed. Make sure to run the script from MikroTik terminal.'
+            };
+        }
+
+        // Pass userId to service for proper router-user linking
+        return this.routersService.handleScriptCallback(cleanIp, userId);
     }
 }

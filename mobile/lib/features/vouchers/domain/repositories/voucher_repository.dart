@@ -7,15 +7,20 @@ abstract class VoucherRepository {
   Future<Either<String, List<HotspotProfile>>> getProfiles(String routerId);
   Future<Either<String, List<Voucher>>> generateVoucher({
     required String routerId,
-    required String profileId,
+    String? profileId,
+    String? mikrotikProfile,
     required String planName,
     required double price,
     int? duration,
     int? dataLimit,
     int? quantity,
+    String? charset,
+    String? authType,
   });
   Future<Either<String, List<Voucher>>> getVouchers({
     String? routerId,
     String? status,
   });
+  Future<Either<String, Map<String, dynamic>>> getStatistics({String? routerId});
+  Future<Either<String, void>> deleteVouchers(List<String> ids);
 }

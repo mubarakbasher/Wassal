@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../widgets/dashboard_app_bar_widget.dart';
 import '../widgets/time_range_selector_widget.dart';
 import '../widgets/activity_chart_widget.dart';
 import '../widgets/summary_card_widget.dart';

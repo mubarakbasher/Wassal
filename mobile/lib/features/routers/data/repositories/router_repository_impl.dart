@@ -124,6 +124,18 @@ class RouterRepositoryImpl implements RouterRepository {
     }
   }
 
+  @override
+  Future<Either<Failure, Map<String, dynamic>>> getRouterStats(String id) async {
+    try {
+      final stats = await remoteDataSource.getRouterStats(id);
+      return Right(stats);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
   Router _mapToEntity(RouterModel model) {
     return Router(
       id: model.id,

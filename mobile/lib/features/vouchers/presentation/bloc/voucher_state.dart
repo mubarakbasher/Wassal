@@ -44,6 +44,15 @@ class VoucherFormDataLoaded extends VoucherState {
   }
 }
 
+class VoucherGenerating extends VoucherFormDataLoaded {
+  const VoucherGenerating({
+    required super.routers,
+    super.selectedRouterId,
+    super.profiles,
+    super.isLoadingProfiles,
+  });
+}
+
 class VoucherGenerated extends VoucherState {
   final List<Voucher> vouchers;
 
@@ -56,14 +65,48 @@ class VoucherGenerated extends VoucherState {
 class VouchersListLoaded extends VoucherState {
   final List<Voucher> vouchers;
   final Map<String, int> stats;
+  final bool hasReachedMax;
+  final bool isLoadingMore;
+  final int currentPage;
+  final int totalCount;
 
   const VouchersListLoaded({
     required this.vouchers,
     this.stats = const {},
+    this.hasReachedMax = false,
+    this.isLoadingMore = false,
+    this.currentPage = 1,
+    this.totalCount = 0,
   });
 
   @override
-  List<Object?> get props => [vouchers, stats];
+  List<Object?> get props => [vouchers, stats, hasReachedMax, isLoadingMore, currentPage, totalCount];
+
+  VouchersListLoaded copyWith({
+    List<Voucher>? vouchers,
+    Map<String, int>? stats,
+    bool? hasReachedMax,
+    bool? isLoadingMore,
+    int? currentPage,
+    int? totalCount,
+  }) {
+    return VouchersListLoaded(
+      vouchers: vouchers ?? this.vouchers,
+      stats: stats ?? this.stats,
+      hasReachedMax: hasReachedMax ?? this.hasReachedMax,
+      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      currentPage: currentPage ?? this.currentPage,
+      totalCount: totalCount ?? this.totalCount,
+    );
+  }
+}
+
+class VoucherStatsLoaded extends VoucherState {
+  final Map<String, dynamic> stats;
+  const VoucherStatsLoaded(this.stats);
+
+  @override
+  List<Object?> get props => [stats];
 }
 
 class VoucherError extends VoucherState {

@@ -1,0 +1,62 @@
+=== Inserting test user ===
+DELETE 0
+INSERT 0 1
+=== Verifying ===
+ id | username |     attribute      | op |  value   
+----+----------+--------------------+----+----------
+  1 | testuser | Cleartext-Password | := | testpass
+(1 row)
+
+
+=== Running radtest ===
+Sent Access-Request Id 199 from 0.0.0.0:52490 to 127.0.0.1:1812 length 78
+	User-Name = "testuser"
+	User-Password = "testpass"
+	NAS-IP-Address = 127.0.1.1
+	NAS-Port = 0
+	Message-Authenticator = 0x00
+	Cleartext-Password = "testpass"
+Received Access-Accept Id 199 from 127.0.0.1:1812 to 127.0.0.1:52490 length 38
+	Message-Authenticator = 0x10e2a5ffb03da53d5e3ba9f9891cf9b9
+
+=== FreeRADIUS request log ===
+(2) pap: User authenticated successfully
+(2)     [pap] = ok
+(2)   } # Auth-Type PAP = ok
+(2) # Executing section post-auth from file /etc/freeradius/3.0/sites-enabled/default
+(2)   post-auth {
+(2)     if (session-state:User-Name && reply:User-Name && request:User-Name && (reply:User-Name == request:User-Name)) {
+(2)     if (session-state:User-Name && reply:User-Name && request:User-Name && (reply:User-Name == request:User-Name))  -> FALSE
+(2)     update {
+(2)       No attributes updated for RHS &session-state:
+(2)     } # update = noop
+(2) sql: EXPAND .query
+(2) sql:    --> .query
+(2) sql: Using query template 'query'
+rlm_sql (sql): Reserved connection (1)
+(2) sql: EXPAND %{User-Name}
+(2) sql:    --> testuser
+(2) sql: SQL-User-Name set to 'testuser'
+(2) sql: EXPAND INSERT INTO radpostauth (username, pass, reply, authdate ) VALUES('%{User-Name}', '%{%{User-Password}:-%{Chap-Password}}', '%{reply:Packet-Type}', '%S.%M' )
+(2) sql:    --> INSERT INTO radpostauth (username, pass, reply, authdate ) VALUES('testuser', 'testpass', 'Access-Accept', '2026-02-11 01:40:29.196061' )
+(2) sql: Executing query: INSERT INTO radpostauth (username, pass, reply, authdate ) VALUES('testuser', 'testpass', 'Access-Accept', '2026-02-11 01:40:29.196061' )
+rlm_sql_postgresql: Status: PGRES_COMMAND_OK
+rlm_sql_postgresql: query affected rows = 1
+(2) sql: SQL query returned: success
+(2) sql: 1 record(s) updated
+rlm_sql (sql): Released connection (1)
+(2)     [sql] = ok
+(2)     [exec] = noop
+(2)     policy remove_reply_message_if_eap {
+(2)       if (&reply:EAP-Message && &reply:Reply-Message) {
+(2)       if (&reply:EAP-Message && &reply:Reply-Message)  -> FALSE
+(2)       else {
+(2)         [noop] = noop
+(2)       } # else = noop
+(2)     } # policy remove_reply_message_if_eap = noop
+(2)     if (EAP-Key-Name && &reply:EAP-Session-Id) {
+(2)     if (EAP-Key-Name && &reply:EAP-Session-Id)  -> FALSE
+(2)   } # post-auth = ok
+(2) Sent Access-Accept Id 199 from 127.0.0.1:1812 to 127.0.0.1:52490 length 38
+(2) Finished request
+Waking up in 4.9 seconds.

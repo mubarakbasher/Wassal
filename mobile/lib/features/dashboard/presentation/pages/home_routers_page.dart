@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/widgets/empty_state.dart';
 import '../../../routers/presentation/bloc/router_bloc.dart';
 import '../../../routers/presentation/bloc/router_event.dart';
 import '../../../routers/presentation/bloc/router_state.dart';
 import '../../../routers/presentation/widgets/router_list_item.dart';
 import '../../../routers/presentation/pages/add_router_page.dart';
+import '../../../routers/presentation/pages/router_details_page.dart';
 
 class HomeRoutersPage extends StatefulWidget {
   const HomeRoutersPage({super.key});
@@ -32,7 +34,7 @@ class _HomeRoutersPageState extends State<HomeRoutersPage> {
              ScaffoldMessenger.of(context).showSnackBar(
                SnackBar(content: Text(state.message), backgroundColor: Colors.green),
              );
-           } else if (state is RouterError) {
+           } else if (state is RouterError && !SubscriptionRequiredWidget.isSubscriptionError(state.message)) {
              ScaffoldMessenger.of(context).showSnackBar(
                SnackBar(content: Text(state.message), backgroundColor: Colors.red),
              );
@@ -70,9 +72,13 @@ class _HomeRoutersPageState extends State<HomeRoutersPage> {
                   ...state.routers.map((router) => RouterListItem(
                     router: router, 
                     onTap: () {
-                       // Select router context? or navigate to stats?
-                       context.read<RouterBloc>().add(SelectRouterEvent(router));
-                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Selected: ${router.name}")));
+                       // Navigate to router details page
+                       Navigator.push(
+                         context,
+                         MaterialPageRoute(
+                           builder: (_) => RouterDetailsPage(router: router),
+                         ),
+                       );
                     }, 
                     onCheckStatus: () {
                       context.read<RouterBloc>().add(CheckRouterHealthEvent(router.id));
@@ -89,6 +95,9 @@ class _HomeRoutersPageState extends State<HomeRoutersPage> {
           }
 
           if (state is RouterError) {
+             if (SubscriptionRequiredWidget.isSubscriptionError(state.message)) {
+               return const SubscriptionRequiredWidget();
+             }
              return Center(
                child: Column(
                  mainAxisAlignment: MainAxisAlignment.center,
@@ -113,7 +122,11 @@ class _HomeRoutersPageState extends State<HomeRoutersPage> {
            Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const AddRouterPage()),
-          );
+          ).then((result) {
+            if (result == true && mounted) {
+              context.read<RouterBloc>().add(const LoadRoutersEvent());
+            }
+          });
         },
         backgroundColor: AppColors.primary,
         icon: const Icon(Icons.add),
@@ -130,7 +143,7 @@ class _HomeRoutersPageState extends State<HomeRoutersPage> {
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
+              color: AppColors.primary.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: const Icon(Icons.router, size: 64, color: AppColors.primary),
@@ -151,7 +164,11 @@ class _HomeRoutersPageState extends State<HomeRoutersPage> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const AddRouterPage()),
-                );
+                ).then((result) {
+                  if (result == true && mounted) {
+                    context.read<RouterBloc>().add(const LoadRoutersEvent());
+                  }
+                });
              },
              style: ElevatedButton.styleFrom(
                backgroundColor: AppColors.primary,

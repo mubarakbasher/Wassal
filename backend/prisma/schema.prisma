@@ -47,8 +47,10 @@ model User {
   email     String   @unique
   password  String   // bcrypt hashed
   name      String?
+  networkName String? // Network name for voucher printing
   role      UserRole @default(OPERATOR)
   isActive  Boolean  @default(true)
+  notifyRouterStatus Boolean @default(true) // Notify when router goes online/offline
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -56,9 +58,31 @@ model User {
   routers      Router[]
   sales        Sale[]
   activityLogs ActivityLog[]
+  deviceTokens DeviceToken[]
+  
+  // Subscription Relation
+  subscription   UserSubscription?
+  payments       Payment[]
 
   @@index([email])
   @@map("users")
+}
+
+// ============================================
+// Device Tokens for Push Notifications
+// ============================================
+
+model DeviceToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  platform  String   // 'android' | 'ios'
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@map("device_tokens")
 }
 
 // ============================================
@@ -74,6 +98,7 @@ model Router {
   password    String       // Encrypted MikroTik API password
   description String?
   location    String?
+  radiusSecret String?     // RADIUS shared secret for this NAS client
   status      RouterStatus @default(OFFLINE)
   lastSeen    DateTime?
   createdAt   DateTime     @default(now())
@@ -234,3 +259,264 @@ model ActivityLog {
   @@index([timestamp])
   @@map("activity_logs")
 }
+
+// ============================================
+// ADMIN CONTROL PANEL & SAAS MANAGEMENT
+// ============================================
+
+enum AdminRole {
+  SUPER_ADMIN
+  SUPPORT_ADMIN
+}
+
+model Admin {
+  id        String    @id @default(uuid())
+  email     String    @unique
+  password  String    // bcrypt hashed
+  name      String
+  role      AdminRole @default(SUPPORT_ADMIN)
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  auditLogs AdminAuditLog[]
+
+  @@map("admins")
+}
+
+model SubscriptionPlan {
+  id            String   @id @default(uuid())
+  name          String   @unique // e.g., "Basic", "Pro"
+  price         Decimal  @db.Decimal(10, 2)
+  durationDays  Int      // 30, 365, etc.
+  description   String?  // Plan details
+  
+  // Feature Flags / Limits
+  maxRouters    Int      @default(1)
+  maxHotspotUsers Int    @default(50) // 0 = Unlimited
+  allowReports  Boolean  @default(false)
+  allowVouchers Boolean  @default(true)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  subscriptions UserSubscription[]
+  payments      Payment[]
+
+  @@map("subscription_plans")
+}
+
+model UserSubscription {
+  id        String    @id @default(uuid())
+  status    String    // ACTIVE, EXPIRED, CANCELLED
+  startDate DateTime  @default(now())
+  expiresAt DateTime
+  
+  // Relations
+  userId    String    @unique
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  planId    String
+  plan      SubscriptionPlan @relation(fields: [planId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("user_subscriptions")
+}
+
+enum PaymentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Payment {
+  id          String        @id @default(uuid())
+  amount      Decimal       @db.Decimal(10, 2)
+  currency    String        @default("USD")
+  method      String        // "BANK_TRANSFER", "STRIPE", etc.
+  status      PaymentStatus @default(PENDING)
+  proofUrl    String?       // For manual bank transfers
+  notes       String?
+  
+  reviewedBy  String?       // Admin ID who approved/rejected
+  reviewedAt  DateTime?
+
+  // Plan Relation (for subscription requests)
+  planId      String?
+  plan        SubscriptionPlan? @relation(fields: [planId], references: [id])
+
+  // User Relation
+  userId      String
+  user        User          @relation(fields: [userId], references: [id])
+
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@map("payments")
+}
+
+model AdminAuditLog {
+  id        String   @id @default(uuid())
+  action    String   // e.g., "BANNED_USER", "APPROVED_PAYMENT"
+  details   String?  // JSON context
+  ipAddress String?
+  
+  adminId   String
+  admin     Admin    @relation(fields: [adminId], references: [id])
+
+  targetUserId String? // Optional: which user was affected
+
+  createdAt DateTime @default(now())
+
+  @@index([adminId])
+  @@map("admin_audit_logs")
+}
+
+model SystemConfig {
+  key         String   @id
+  value       String   // JSON value or simple string
+  description String?
+  updatedAt   DateTime @updatedAt
+
+  @@map("system_config")
+}
+
+// ============================================
+// FREERADIUS TABLES
+// These tables follow the standard FreeRADIUS SQL schema
+// so FreeRADIUS can query them directly.
+// ============================================
+
+/// RADIUS check attributes (credentials + access checks)
+model RadCheck {
+  id        Int      @id @default(autoincrement())
+  username  String   @default("")
+  attribute String   @default("")
+  op        String   @default(":=")  // := (assign), == (check), etc.
+  value     String   @default("")
+
+  @@index([username])
+  @@map("radcheck")
+}
+
+/// RADIUS reply attributes (sent back to NAS on Access-Accept)
+model RadReply {
+  id        Int      @id @default(autoincrement())
+  username  String   @default("")
+  attribute String   @default("")
+  op        String   @default("=")
+  value     String   @default("")
+
+  @@index([username])
+  @@map("radreply")
+}
+
+/// Group-level check attributes
+model RadGroupCheck {
+  id        Int      @id @default(autoincrement())
+  groupname String   @default("")
+  attribute String   @default("")
+  op        String   @default(":=")
+  value     String   @default("")
+
+  @@index([groupname])
+  @@map("radgroupcheck")
+}
+
+/// Group-level reply attributes (speed profiles, shared settings)
+model RadGroupReply {
+  id        Int      @id @default(autoincrement())
+  groupname String   @default("")
+  attribute String   @default("")
+  op        String   @default("=")
+  value     String   @default("")
+
+  @@index([groupname])
+  @@map("radgroupreply")
+}
+
+/// Maps users to groups (priority determines order)
+model RadUserGroup {
+  id        Int      @id @default(autoincrement())
+  username  String   @default("")
+  groupname String   @default("")
+  priority  Int      @default(1)
+
+  @@index([username])
+  @@map("radusergroup")
+}
+
+/// Accounting data — session tracking (auto-populated by FreeRADIUS)
+model RadAcct {
+  radacctid           BigInt    @id @default(autoincrement())
+  acctsessionid       String    @default("") @db.VarChar(64)
+  acctuniqueid        String    @default("") @unique @db.VarChar(32)
+  username            String    @default("") @db.VarChar(64)
+  realm               String    @default("") @db.VarChar(64)
+  nasipaddress        String    @default("") @db.VarChar(15)
+  nasportid           String?   @db.VarChar(32)
+  nasporttype         String?   @db.VarChar(32)
+  acctstarttime       DateTime?
+  acctupdatetime      DateTime?
+  acctstoptime        DateTime?
+  acctinterval        Int?
+  acctsessiontime     Int?      // Total session time in seconds
+  acctauthentic       String?   @db.VarChar(32)
+  connectinfo_start   String?   @db.VarChar(128)
+  connectinfo_stop    String?   @db.VarChar(128)
+  acctinputoctets     BigInt?   // Bytes received
+  acctoutputoctets    BigInt?   // Bytes sent
+  calledstationid     String    @default("") @db.VarChar(50)
+  callingstationid    String    @default("") @db.VarChar(50) // MAC address
+  acctterminatecause  String    @default("") @db.VarChar(32)
+  servicetype         String?   @db.VarChar(32)
+  framedprotocol      String?   @db.VarChar(32)
+  framedipaddress     String    @default("") @db.VarChar(15)
+  framedipv6address   String    @default("") @db.VarChar(45)
+  framedipv6prefix    String    @default("") @db.VarChar(45)
+  framedinterfaceid   String    @default("") @db.VarChar(44)
+  delegatedipv6prefix String    @default("") @db.VarChar(45)
+  class               String?   @db.VarChar(64)
+
+  @@index([username])
+  @@index([acctsessionid])
+  @@index([nasipaddress])
+  @@index([acctstarttime])
+  @@index([acctstoptime])
+  @@map("radacct")
+}
+
+/// Post-authentication logging
+model RadPostAuth {
+  id          Int      @id @default(autoincrement())
+  username    String   @default("")
+  pass        String   @default("")
+  reply       String   @default("")
+  authdate    DateTime @default(now())
+  calledstationid  String @default("") @db.VarChar(50)
+  callingstationid String @default("") @db.VarChar(50)
+
+  @@index([username])
+  @@map("radpostauth")
+}
+
+/// NAS (Network Access Server) clients — MikroTik routers
+model Nas {
+  id          Int      @id @default(autoincrement())
+  nasname     String   @default("")  // IP address of the NAS
+  shortname   String?                // Friendly name
+  type        String   @default("other") @db.VarChar(30)
+  ports       Int?
+  secret      String   @default("secret") @db.VarChar(60)
+  server      String?  @db.VarChar(64)
+  community   String?  @db.VarChar(50)
+  description String?  @db.VarChar(200)
+
+  @@index([nasname])
+  @@map("nas")
+}
+

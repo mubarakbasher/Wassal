@@ -15,6 +15,13 @@ abstract class AuthRepository {
     String role = 'OPERATOR',
   });
 
+  Future<Either<Failure, User>> updateProfile({
+    String? name,
+    String? email,
+    String? password,
+    String? networkName,
+  });
+
   Future<Either<Failure, User>> getProfile();
   
   Future<Either<Failure, void>> logout();

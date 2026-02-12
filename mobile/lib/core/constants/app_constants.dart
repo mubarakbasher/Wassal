@@ -3,13 +3,18 @@ class AppConstants {
   // For Android Emulator use: 10.0.2.2
   // For iOS Simulator use: localhost
   // For Physical Device use: Your PC's IP address (e.g., 192.168.1.x)
-  static const String apiBaseUrl = 'http://192.168.1.227:3000';
+  // For Android Emulator: http://10.0.2.2:3000
+  // For Physical Device: Use your PC's local IP address
+  static const String apiBaseUrl = 'http://192.168.1.227:3001';
   static const String apiVersion = 'v1';
   
   // Storage Keys
   static const String accessTokenKey = 'access_token';
   static const String refreshTokenKey = 'refresh_token';
   static const String userDataKey = 'user_data';
+  
+  // Token refresh
+  static const String refreshEndpoint = '/auth/refresh';
   
   // Timeouts
   static const Duration connectTimeout = Duration(seconds: 30);

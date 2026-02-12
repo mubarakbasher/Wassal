@@ -4,10 +4,15 @@ import '../constants/app_constants.dart';
 import 'api_interceptor.dart';
 
 class ApiClient {
+  static final ApiClient _instance = ApiClient._internal();
   late final Dio _dio;
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
 
-  ApiClient() {
+  factory ApiClient() {
+    return _instance;
+  }
+
+  ApiClient._internal() {
     _dio = Dio(
       BaseOptions(
         baseUrl: AppConstants.apiBaseUrl,

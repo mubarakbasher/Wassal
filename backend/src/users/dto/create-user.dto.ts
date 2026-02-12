@@ -13,6 +13,10 @@ export class CreateUserDto {
     @IsOptional()
     name?: string;
 
+    @IsString()
+    @IsOptional()
+    networkName?: string;
+
     @IsEnum(UserRole)
     @IsOptional()
     role?: UserRole; // Default is OPERATOR if not specified

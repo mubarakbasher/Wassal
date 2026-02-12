@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/utils/error_handler.dart';
 import '../../domain/repositories/router_repository.dart';
 import 'router_event.dart';
 import 'router_state.dart';
@@ -12,7 +13,27 @@ class RouterBloc extends Bloc<RouterEvent, RouterState> {
     on<UpdateRouterEvent>(_onUpdateRouter);
     on<DeleteRouterEvent>(_onDeleteRouter);
     on<CheckRouterHealthEvent>(_onCheckHealth);
+    on<GetRouterStatsEvent>(_onGetRouterStats);
     on<SelectRouterEvent>(_onSelectRouter);
+  }
+
+  Future<void> _onGetRouterStats(
+    GetRouterStatsEvent event,
+    Emitter<RouterState> emit,
+  ) async {
+    // Keep loading state separate so we don't clear list?
+    // Or assume UI handles it. Let's emit Loading then Result.
+    // Ideally we might want separate state or status, but RouterState is single-stream.
+    // If we emit RouterLoading, we might lose list of routers if UI listens to generic RouterLoaded.
+    // But RouterStatsLoaded is a distinct state.
+    emit(const RouterLoading());
+
+    final result = await repository.getRouterStats(event.id);
+
+    result.fold(
+      (failure) => emit(RouterError(failure.message)),
+      (stats) => emit(RouterStatsLoaded(stats)),
+    );
   }
 
   Future<void> _onLoadRouters(

@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import '../../../../core/api/api_client.dart';
 import '../../../../core/api/api_endpoints.dart';
 import '../../../../core/errors/exceptions.dart';
+import '../../../../core/utils/error_handler.dart';
 import '../models/router_model.dart';
 
 abstract class RouterRemoteDataSource {
@@ -12,6 +13,8 @@ abstract class RouterRemoteDataSource {
   Future<void> deleteRouter(String id);
   Future<Map<String, dynamic>> checkRouterHealth(String id);
   Future<Map<String, dynamic>> getRouterSystemInfo(String id);
+  Future<Map<String, dynamic>> getRouterStats(String id);
+  Future<List<dynamic>> getHotspotProfiles(String id);
 }
 
 class RouterRemoteDataSourceImpl implements RouterRemoteDataSource {
@@ -31,7 +34,7 @@ class RouterRemoteDataSourceImpl implements RouterRemoteDataSource {
         throw ServerException('Failed to load routers');
       }
     } on DioException catch (e) {
-      throw ServerException(e.message ?? 'Server error');
+      throw ServerException(ErrorHandler.mapDioErrorToMessage(e));
     } catch (e) {
       throw ServerException(e.toString());
     }
@@ -48,7 +51,7 @@ class RouterRemoteDataSourceImpl implements RouterRemoteDataSource {
         throw ServerException('Failed to load router');
       }
     } on DioException catch (e) {
-      throw ServerException(e.message ?? 'Server error');
+      throw ServerException(ErrorHandler.mapDioErrorToMessage(e));
     } catch (e) {
       throw ServerException(e.toString());
     }
@@ -68,10 +71,7 @@ class RouterRemoteDataSourceImpl implements RouterRemoteDataSource {
         throw ServerException('Failed to create router');
       }
     } on DioException catch (e) {
-      if (e.response?.data != null) {
-        throw ServerException(e.response!.data['message'] ?? 'Failed to create router');
-      }
-      throw ServerException(e.message ?? 'Server error');
+      throw ServerException(ErrorHandler.mapDioErrorToMessage(e));
     } catch (e) {
       throw ServerException(e.toString());
     }
@@ -91,7 +91,7 @@ class RouterRemoteDataSourceImpl implements RouterRemoteDataSource {
         throw ServerException('Failed to update router');
       }
     } on DioException catch (e) {
-      throw ServerException(e.message ?? 'Server error');
+      throw ServerException(ErrorHandler.mapDioErrorToMessage(e));
     } catch (e) {
       throw ServerException(e.toString());
     }
@@ -106,7 +106,7 @@ class RouterRemoteDataSourceImpl implements RouterRemoteDataSource {
         throw ServerException('Failed to delete router');
       }
     } on DioException catch (e) {
-      throw ServerException(e.message ?? 'Server error');
+      throw ServerException(ErrorHandler.mapDioErrorToMessage(e));
     } catch (e) {
       throw ServerException(e.toString());
     }
@@ -123,7 +123,7 @@ class RouterRemoteDataSourceImpl implements RouterRemoteDataSource {
         throw ServerException('Failed to check router health');
       }
     } on DioException catch (e) {
-      throw ServerException(e.message ?? 'Server error');
+      throw ServerException(ErrorHandler.mapDioErrorToMessage(e));
     } catch (e) {
       throw ServerException(e.toString());
     }
@@ -140,7 +140,41 @@ class RouterRemoteDataSourceImpl implements RouterRemoteDataSource {
         throw ServerException('Failed to get system info');
       }
     } on DioException catch (e) {
-      throw ServerException(e.message ?? 'Server error');
+      throw ServerException(ErrorHandler.mapDioErrorToMessage(e));
+    } catch (e) {
+      throw ServerException(e.toString());
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> getRouterStats(String id) async {
+    try {
+      final response = await apiClient.get(ApiEndpoints.routerStats(id));
+
+      if (response.statusCode == 200) {
+        return response.data as Map<String, dynamic>;
+      } else {
+        throw ServerException('Failed to get router stats');
+      }
+    } on DioException catch (e) {
+      throw ServerException(ErrorHandler.mapDioErrorToMessage(e));
+    } catch (e) {
+      throw ServerException(e.toString());
+    }
+  }
+
+  @override
+  Future<List<dynamic>> getHotspotProfiles(String id) async {
+    try {
+      final response = await apiClient.get(ApiEndpoints.routerHotspotProfiles(id));
+
+      if (response.statusCode == 200) {
+        return response.data as List<dynamic>;
+      } else {
+        throw ServerException('Failed to get hotspot profiles');
+      }
+    } on DioException catch (e) {
+      throw ServerException(ErrorHandler.mapDioErrorToMessage(e));
     } catch (e) {
       throw ServerException(e.toString());
     }

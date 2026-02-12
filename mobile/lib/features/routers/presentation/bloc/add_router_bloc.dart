@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'add_router_event.dart';
 import 'add_router_state.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/utils/error_handler.dart';
 
 class AddRouterBloc extends Bloc<AddRouterEvent, AddRouterState> {
   final Dio dio;
@@ -33,11 +34,7 @@ class AddRouterBloc extends Bloc<AddRouterEvent, AddRouterState> {
 
       emit(AddRouterSuccess());
     } catch (e) {
-      String errorMessage = 'Failed to add router';
-      if (e is DioException) {
-        errorMessage = e.response?.data['message'] ?? e.message;
-      }
-      emit(AddRouterFailure(errorMessage));
+      emit(AddRouterFailure(ErrorHandler.mapDioErrorToMessage(e)));
     }
   }
 }

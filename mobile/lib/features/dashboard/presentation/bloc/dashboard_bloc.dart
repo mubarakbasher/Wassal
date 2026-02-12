@@ -4,17 +4,20 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:dio/dio.dart';
 import 'dashboard_event.dart';
 import 'dashboard_state.dart';
-import '../../../../core/constants/app_constants.dart';
+import '../../../../core/api/api_client.dart';
+import '../../../../core/utils/error_handler.dart';
 
 class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
-  final Dio dio;
+  final ApiClient apiClient;
   Timer? _timer;
-  List<FlSpot> _activityHistory = [];
+  final List<FlSpot> _activityHistory = [];
   String? _currentRouterId;
 
-  DashboardBloc({required this.dio}) : super(DashboardInitial()) {
+  DashboardBloc({required this.apiClient}) : super(DashboardInitial()) {
     on<LoadDashboardStats>(_onLoadDashboardStats);
     on<RefreshDashboardStats>(_onRefreshDashboardStats);
+    on<PauseDashboardPolling>(_onPauseDashboardPolling);
+    on<ResumeDashboardPolling>(_onResumeDashboardPolling);
   }
 
   @override
@@ -31,7 +34,7 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
     _timer?.cancel();
 
     try {
-        final routersResponse = await dio.get('${AppConstants.apiBaseUrl}/routers');
+        final routersResponse = await apiClient.get('/routers');
         final List routers = routersResponse.data as List;
         final totalRouters = routers.length;
 
@@ -43,13 +46,13 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
         // Fetch initial data
         await _fetchAndEmitStats(emit, totalRouters);
 
-        // Start polling
-        _timer = Timer.periodic(const Duration(seconds: 5), (_) {
+        // Start polling every 30 seconds (was 5 seconds - too aggressive)
+        _timer = Timer.periodic(const Duration(seconds: 30), (_) {
              add(RefreshDashboardStats());
         });
 
     } catch (e) {
-      emit(DashboardError(e.toString()));
+      emit(DashboardError(ErrorHandler.mapDioErrorToMessage(e)));
     }
   }
 
@@ -68,6 +71,28 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
        await _fetchAndEmitStats(emit, totalRouters);
   }
 
+  void _onPauseDashboardPolling(
+    PauseDashboardPolling event,
+    Emitter<DashboardState> emit,
+  ) {
+    _timer?.cancel();
+    _timer = null;
+  }
+
+  void _onResumeDashboardPolling(
+    ResumeDashboardPolling event,
+    Emitter<DashboardState> emit,
+  ) {
+    // Only restart the timer if we have previously loaded data
+    if (_timer == null && state is DashboardLoaded) {
+      // Refresh immediately when resuming
+      add(RefreshDashboardStats());
+      _timer = Timer.periodic(const Duration(seconds: 30), (_) {
+        add(RefreshDashboardStats());
+      });
+    }
+  }
+
   Future<void> _fetchAndEmitStats(Emitter<DashboardState> emit, int totalRouters) async {
         int activeUsers = 0;
         int totalUsers = 0;
@@ -76,7 +101,7 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
 
         if (_currentRouterId != null) {
              try {
-                final statsResponse = await dio.get('${AppConstants.apiBaseUrl}/routers/$_currentRouterId/stats');
+                final statsResponse = await apiClient.get('/routers/$_currentRouterId/stats');
                 final statsData = statsResponse.data;
                 
                 activeUsers = statsData['activeUsers'] ?? 0;

@@ -9,6 +9,10 @@ class Voucher extends Equatable {
   final String? profileName;
   final String? serialNumber;
   final String status;
+  final int? duration; // Duration in minutes
+  final int? dataLimit; // Data limit in bytes
+  final DateTime? createdAt;
+  final DateTime? expiresAt;
 
   const Voucher({
     required this.id,
@@ -19,8 +23,16 @@ class Voucher extends Equatable {
     this.profileName,
     this.serialNumber,
     required this.status,
+    this.duration,
+    this.dataLimit,
+    this.createdAt,
+    this.expiresAt,
   });
 
   @override
-  List<Object?> get props => [id, username, password, planName, price, profileName, serialNumber, status];
+  List<Object?> get props => [
+    id, username, password, planName, price, 
+    profileName, serialNumber, status, 
+    duration, dataLimit, createdAt, expiresAt
+  ];
 }

@@ -35,7 +35,7 @@ class SummaryCardWidget extends StatelessWidget {
               Text(
                 title,
                 style: TextStyle(
-                  color: isActive ? Colors.white.withOpacity(0.9) : Colors.black54,
+                  color: isActive ? Colors.white.withValues(alpha: 0.9) : Colors.black54,
                   fontSize: 14,
                 ),
               ),
@@ -53,11 +53,11 @@ class SummaryCardWidget extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: isActive ? Colors.white.withOpacity(0.2) : Colors.white,
+                      color: isActive ? Colors.white.withValues(alpha: 0.2) : Colors.white,
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
-                      Icons.keyboard_arrow_up,
+                      icon,
                       size: 20,
                       color: isActive ? Colors.white : Colors.black,
                     ),
@@ -77,7 +77,7 @@ class SummaryCardWidget extends StatelessWidget {
                         TextSpan(
                           text: ' $subtitle',
                           style: TextStyle(
-                            color: isActive ? Colors.white.withOpacity(0.8) : Colors.grey,
+                            color: isActive ? Colors.white.withValues(alpha: 0.8) : Colors.grey,
                             fontSize: 14,
                           ),
                         ),

@@ -62,10 +62,29 @@ class _RegisterPageState extends State<RegisterPage> {
         child: BlocConsumer<AuthBloc, AuthState>(
           listener: (context, state) {
             if (state is AuthError) {
+              // Parse and display user-friendly error messages
+              String errorMessage = _parseErrorMessage(state.message);
+              
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text(state.message),
+                  content: Row(
+                    children: [
+                      const Icon(Icons.error_outline, color: Colors.white),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          errorMessage,
+                          style: const TextStyle(fontSize: 14),
+                        ),
+                      ),
+                    ],
+                  ),
                   backgroundColor: AppColors.error,
+                  duration: const Duration(seconds: 4),
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
               );
             } else if (state is AuthAuthenticated) {
@@ -245,5 +264,38 @@ class _RegisterPageState extends State<RegisterPage> {
         ),
       ),
     );
+  }
+
+  String _parseErrorMessage(String message) {
+    // Handle connection errors
+    if (message.toLowerCase().contains('connection') || 
+        message.toLowerCase().contains('network') ||
+        message.toLowerCase().contains('failed host lookup')) {
+      return 'Cannot connect to server. Please check your internet connection.';
+    }
+    
+    // Handle timeout errors
+    if (message.toLowerCase().contains('timeout')) {
+      return 'Connection timeout. Please try again.';
+    }
+    
+    // Handle user already exists
+    if (message.toLowerCase().contains('already exists')) {
+      return 'This email is already registered. Please login instead.';
+    }
+    
+    // Handle validation errors
+    if (message.toLowerCase().contains('validation')) {
+      return 'Please check your input and try again.';
+    }
+    
+    // Handle server errors
+    if (message.toLowerCase().contains('500') || 
+        message.toLowerCase().contains('server error')) {
+      return 'Server error. Please try again later.';
+    }
+    
+    // Return original message if no specific case matches
+    return message;
   }
 }

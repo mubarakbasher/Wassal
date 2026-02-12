@@ -2,7 +2,8 @@ import { Injectable, NotFoundException, BadRequestException, Logger } from '@nes
 import { PrismaService } from '../prisma/prisma.service';
 import { MikroTikApiService } from '../mikrotik/mikrotik-api.service';
 import { RoutersService } from '../routers/routers.service';
-import { CreateVoucherDto, VoucherFilterDto } from './dto/voucher.dto';
+import { RadiusService } from '../radius/radius.service';
+import { CreateVoucherDto, VoucherFilterDto, VoucherCharset, VoucherAuthType } from './dto/voucher.dto';
 import { PlanType, VoucherStatus } from '@prisma/client';
 import * as crypto from 'crypto';
 
@@ -14,30 +15,34 @@ export class VouchersService {
         private prisma: PrismaService,
         private mikrotikApi: MikroTikApiService,
         private routersService: RoutersService,
+        private radiusService: RadiusService,
     ) { }
 
     /**
-     * Generate random username
+     * Get characters based on charset
      */
-    private generateUsername(length: number = 8): string {
-        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Removed confusing characters
-        let username = '';
-        for (let i = 0; i < length; i++) {
-            username += chars.charAt(Math.floor(Math.random() * chars.length));
+    private getCharsetString(charset: VoucherCharset): string {
+        switch (charset) {
+            case VoucherCharset.NUMERIC:
+                return '0123456789';
+            case VoucherCharset.ALPHA:
+                return 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz';
+            case VoucherCharset.ALPHANUMERIC:
+            default:
+                return 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
         }
-        return username;
     }
 
     /**
-     * Generate random password
+     * Generate random string
      */
-    private generatePassword(length: number = 8): string {
-        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
-        let password = '';
+    private generateRandomString(length: number, charset: VoucherCharset): string {
+        const chars = this.getCharsetString(charset);
+        let result = '';
         for (let i = 0; i < length; i++) {
-            password += chars.charAt(Math.floor(Math.random() * chars.length));
+            result += chars.charAt(Math.floor(Math.random() * chars.length));
         }
-        return password;
+        return result;
     }
 
     /**
@@ -52,26 +57,35 @@ export class VouchersService {
     }
 
     /**
-     * Format duration for MikroTik
+     * Format duration for MikroTik (HH:MM:SS)
      */
     private formatDuration(minutes: number): string {
         const hours = Math.floor(minutes / 60);
         const mins = minutes % 60;
+        const secs = 0;
 
-        if (hours > 0 && mins > 0) {
-            return `${hours}h${mins}m`;
-        } else if (hours > 0) {
-            return `${hours}h`;
-        } else {
-            return `${mins}m`;
-        }
+        const pad = (num: number) => num.toString().padStart(2, '0');
+
+        return `${pad(hours)}:${pad(mins)}:${pad(secs)}`;
     }
 
     /**
      * Create a single voucher or bulk vouchers
      */
     async create(userId: string, createVoucherDto: CreateVoucherDto) {
-        const { routerId, profileId, planType, planName, duration, dataLimit, price, quantity } = createVoucherDto;
+        const {
+            routerId,
+            profileId,
+            mikrotikProfile,
+            planType,
+            planName,
+            duration,
+            dataLimit,
+            price,
+            quantity,
+            charset = VoucherCharset.NUMERIC,
+            authType = VoucherAuthType.USER_SAME_PASS
+        } = createVoucherDto;
 
         // Verify router exists and belongs to user
         const router = await this.prisma.router.findFirst({
@@ -82,9 +96,41 @@ export class VouchersService {
             throw new NotFoundException('Router not found');
         }
 
-        // Verify profile exists
+        let targetProfileId = profileId;
+
+        // If mikrotikProfile is provided, try to find it or create a local copy
+        if (mikrotikProfile) {
+            const existingProfile = await this.prisma.hotspotProfile.findFirst({
+                where: {
+                    routerId,
+                    name: mikrotikProfile,
+                },
+            });
+
+            if (existingProfile) {
+                targetProfileId = existingProfile.id;
+            } else {
+                // Auto-create local profile wrapper
+                // We default to some values since we might not have full details yet, 
+                // but the critical part is the name matching the router's profile.
+                const newProfile = await this.prisma.hotspotProfile.create({
+                    data: {
+                        name: mikrotikProfile,
+                        routerId,
+                        sharedUsers: 1, // Default
+                    },
+                });
+                targetProfileId = newProfile.id;
+            }
+        }
+
+        if (!targetProfileId) {
+            throw new BadRequestException('Either profileId or mikrotikProfile must be provided');
+        }
+
+        // Verify profile exists (double check if passed by ID)
         const profile = await this.prisma.hotspotProfile.findFirst({
-            where: { id: profileId, routerId },
+            where: { id: targetProfileId, routerId },
         });
 
         if (!profile) {
@@ -103,10 +149,49 @@ export class VouchersService {
         const vouchers: any[] = [];
         const voucherCount = quantity || 1;
 
+        // Ensure the RADIUS group exists for this profile with correct attributes
+        const groupName = `${profile.name}_${routerId.substring(0, 8)}`;
+        await this.radiusService.upsertGroup(groupName, {
+            rateLimit: profile.rateLimit || undefined,
+            sharedUsers: profile.sharedUsers,
+        });
+
         // Generate vouchers
         for (let i = 0; i < voucherCount; i++) {
-            const username = this.generateUsername();
-            const password = this.generatePassword();
+            const username = this.generateRandomString(8, charset);
+            let password = '';
+
+            if (authType === VoucherAuthType.USER_SAME_PASS) {
+                password = username;
+            } else if (authType === VoucherAuthType.USERNAME_ONLY) {
+                password = "";
+            } else {
+                password = this.generateRandomString(8, charset);
+            }
+
+            try {
+                // Create RADIUS user in database (replaces MikroTik hotspot user)
+                await this.radiusService.createRadiusUser(username, password, groupName);
+
+                // Set time-based expiration (real-time countdown)
+                if (planType === PlanType.TIME_BASED && duration) {
+                    const expiresAt = new Date(Date.now() + duration * 60 * 1000);
+                    await this.radiusService.setExpiration(username, expiresAt);
+                    // Set Session-Timeout as remaining seconds for MikroTik
+                    await this.radiusService.setSessionTimeout(username, duration * 60);
+                }
+
+                // Set data limit if applicable
+                if (dataLimit) {
+                    await this.radiusService.setUserReplyAttribute(
+                        username, 'Mikrotik-Total-Limit', dataLimit.toString(),
+                    );
+                }
+
+            } catch (e) {
+                this.logger.error(`Error creating RADIUS user ${username}: ${e.message}`);
+                throw new BadRequestException('Failed to create RADIUS user for voucher.');
+            }
 
             // Create voucher in database
             const voucher = await this.prisma.voucher.create({
@@ -118,9 +203,11 @@ export class VouchersService {
                     duration,
                     dataLimit: dataLimit ? BigInt(dataLimit) : null,
                     price,
-                    status: VoucherStatus.UNUSED,
-                    profileId,
+                    status: VoucherStatus.ACTIVE,
+                    profileId: targetProfileId!,
                     routerId,
+                    activatedAt: new Date(),
+                    expiresAt: this.calculateExpiration(planType, duration),
                 },
                 select: {
                     id: true,
@@ -276,7 +363,7 @@ export class VouchersService {
     }
 
     /**
-     * Activate a voucher (create hotspot user on MikroTik)
+     * Activate a voucher (create RADIUS user)
      */
     async activate(id: string, userId: string) {
         const voucher = await this.prisma.voucher.findFirst({
@@ -300,30 +387,15 @@ export class VouchersService {
             throw new BadRequestException('Voucher is already activated or expired');
         }
 
-        // Get router connection details
-        const routerConnection = {
-            host: voucher.router.ipAddress,
-            port: voucher.router.apiPort,
-            username: voucher.router.username,
-            password: this.decryptPassword(voucher.router.password),
-        };
+        // Create RADIUS user with profile group
+        const groupName = `${voucher.profile.name}_${voucher.routerId.substring(0, 8)}`;
+        await this.radiusService.createRadiusUser(voucher.username, voucher.password, groupName);
 
-        // Create hotspot user on MikroTik
-        let limit: string | undefined;
+        // Set expiration for time-based plans
         if (voucher.planType === PlanType.TIME_BASED && voucher.duration) {
-            limit = this.formatDuration(voucher.duration);
-        }
-
-        const result = await this.mikrotikApi.createHotspotUser(
-            routerConnection,
-            voucher.username,
-            voucher.password,
-            voucher.profile.name,
-            limit,
-        );
-
-        if (!result.success) {
-            throw new BadRequestException(`Failed to create hotspot user: ${result.error}`);
+            const expiresAt = new Date(Date.now() + voucher.duration * 60 * 1000);
+            await this.radiusService.setExpiration(voucher.username, expiresAt);
+            await this.radiusService.setSessionTimeout(voucher.username, voucher.duration * 60);
         }
 
         // Update voucher status
@@ -351,7 +423,7 @@ export class VouchersService {
             },
         });
 
-        this.logger.log(`Voucher ${id} activated for router ${voucher.routerId}`);
+        this.logger.log(`Voucher ${id} activated via RADIUS for router ${voucher.routerId}`);
 
         return {
             ...updatedVoucher,
@@ -435,16 +507,9 @@ export class VouchersService {
             throw new NotFoundException('Voucher not found');
         }
 
-        // If voucher is active, try to remove from MikroTik
+        // If voucher is active, remove RADIUS user
         if (voucher.status === VoucherStatus.ACTIVE) {
-            const routerConnection = {
-                host: voucher.router.ipAddress,
-                port: voucher.router.apiPort,
-                username: voucher.router.username,
-                password: this.decryptPassword(voucher.router.password),
-            };
-
-            await this.mikrotikApi.removeHotspotUser(routerConnection, voucher.username);
+            await this.radiusService.removeRadiusUser(voucher.username);
         }
 
         // Delete voucher

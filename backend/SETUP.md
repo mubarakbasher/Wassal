@@ -81,14 +81,16 @@ This opens a web interface at `http://localhost:5555` to view your database.
 npm run start:dev
 ```
 
-The API will be available at `http://localhost:3000`
+The API will be available at `http://localhost:3001` (default port, configurable in `.env`)
+
+> **Swagger API Docs** are available at `http://localhost:3001/api/docs`
 
 ## Testing the API
 
 ### 1. Register a User
 
 ```bash
-curl -X POST http://localhost:3000/auth/register \
+curl -X POST http://localhost:3001/auth/register \
   -H "Content-Type: application/json" \
   -d "{\"email\":\"admin@example.com\",\"password\":\"SecurePass123\",\"name\":\"Admin User\",\"role\":\"ADMIN\"}"
 ```
@@ -96,7 +98,7 @@ curl -X POST http://localhost:3000/auth/register \
 ### 2. Login
 
 ```bash
-curl -X POST http://localhost:3000/auth/login \
+curl -X POST http://localhost:3001/auth/login \
   -H "Content-Type: application/json" \
   -d "{\"email\":\"admin@example.com\",\"password\":\"SecurePass123\"}"
 ```
@@ -106,7 +108,7 @@ Save the `accessToken` from the response.
 ### 3. Add a Router
 
 ```bash
-curl -X POST http://localhost:3000/routers \
+curl -X POST http://localhost:3001/routers \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
   -d "{\"name\":\"Main Router\",\"ipAddress\":\"192.168.88.1\",\"username\":\"admin\",\"password\":\"routerpass\",\"description\":\"Main office router\"}"
@@ -115,14 +117,14 @@ curl -X POST http://localhost:3000/routers \
 ### 4. List Routers
 
 ```bash
-curl -X GET http://localhost:3000/routers \
+curl -X GET http://localhost:3001/routers \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
 ### 5. Check Router Health
 
 ```bash
-curl -X GET http://localhost:3000/routers/ROUTER_ID/health \
+curl -X GET http://localhost:3001/routers/ROUTER_ID/health \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
@@ -143,14 +145,23 @@ curl -X GET http://localhost:3000/routers/ROUTER_ID/health \
 
 **Solution**: Run `npx prisma migrate dev --name init`
 
+### 8. Seed Admin User (Required for Admin Dashboard)
+
+```bash
+npx ts-node prisma/seed-admin.ts
+```
+
+This creates a default admin account: `admin@wassal.com` / `password123`
+
 ## Next Steps
 
 After successful setup:
 
 1. ✅ Test authentication endpoints
 2. ✅ Add a test router (requires actual MikroTik router or simulator)
-3. 🔄 Continue with voucher system implementation
-4. 🔄 Build mobile application
+3. ✅ Voucher system (generation, printing, activation)
+4. ✅ Mobile application
+5. ✅ Admin dashboard
 
 ## MikroTik Router Setup
 

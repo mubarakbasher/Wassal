@@ -53,6 +53,14 @@ class RouterOperationSuccess extends RouterState {
 
   const RouterOperationSuccess(this.message);
 
-  @override
   List<Object?> get props => [message];
+}
+
+class RouterStatsLoaded extends RouterState {
+  final Map<String, dynamic> stats;
+
+  const RouterStatsLoaded(this.stats);
+
+  @override
+  List<Object?> get props => [stats];
 }

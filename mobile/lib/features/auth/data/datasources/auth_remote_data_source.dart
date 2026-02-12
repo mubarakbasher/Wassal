@@ -8,6 +8,7 @@ abstract class AuthRemoteDataSource {
   Future<Map<String, dynamic>> login(String email, String password);
   Future<Map<String, dynamic>> register(String email, String password, String name, String role);
   Future<UserModel> getProfile();
+  Future<UserModel> updateProfile(String id, Map<String, dynamic> data);
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
@@ -87,6 +88,29 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     } on DioException catch (e) {
       if (e.response?.statusCode == 401) {
         throw AuthenticationException('Not authenticated');
+      }
+      throw ServerException(e.message ?? 'Server error');
+    } catch (e) {
+      throw ServerException(e.toString());
+    }
+  }
+
+  @override
+  Future<UserModel> updateProfile(String id, Map<String, dynamic> data) async {
+    try {
+      final response = await apiClient.patch(
+        '${ApiEndpoints.users}/$id',
+        data: data,
+      );
+
+      if (response.statusCode == 200) {
+        return UserModel.fromJson(response.data as Map<String, dynamic>);
+      } else {
+        throw ServerException('Failed to update profile');
+      }
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 403) {
+        throw AuthenticationException('Not authorized to update this profile');
       }
       throw ServerException(e.message ?? 'Server error');
     } catch (e) {

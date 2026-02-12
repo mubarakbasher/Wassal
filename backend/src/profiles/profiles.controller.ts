@@ -14,10 +14,11 @@ import {
 import { ProfilesService } from './profiles.service';
 import { CreateProfileDto, UpdateProfileDto } from './dto/profile.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { SubscriptionGuard } from '../auth/guards/subscription.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 @Controller('profiles')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, SubscriptionGuard)
 export class ProfilesController {
     constructor(private readonly profilesService: ProfilesService) { }
 

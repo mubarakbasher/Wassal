@@ -78,3 +78,11 @@ class SelectRouterEvent extends RouterEvent {
   @override
   List<Object?> get props => [router];
 }
+class GetRouterStatsEvent extends RouterEvent {
+  final String id;
+
+  const GetRouterStatsEvent(this.id);
+
+  @override
+  List<Object?> get props => [id];
+}

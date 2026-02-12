@@ -19,33 +19,56 @@ class SelectRouter extends VoucherEvent {
 
 class GenerateVoucherEvent extends VoucherEvent {
   final String routerId;
-  final String profileId;
+  final String? profileId;
+  final String? mikrotikProfile;
   final String planName;
   final double price;
   final int? duration;
   final int? dataLimit;
   final int? quantity;
+  final String? charset;
+  final String? authType;
 
   const GenerateVoucherEvent({
     required this.routerId,
-    required this.profileId,
+    this.profileId,
+    this.mikrotikProfile,
     required this.planName,
     required this.price,
     this.duration,
     this.dataLimit,
     this.quantity,
+    this.charset,
+    this.authType,
   });
 
    @override
-  List<Object?> get props => [routerId, profileId, planName, price, duration, dataLimit, quantity];
+  List<Object?> get props => [routerId, profileId, mikrotikProfile, planName, price, duration, dataLimit, quantity, charset, authType];
 }
 
 class LoadVouchersEvent extends VoucherEvent {
   final String? routerId;
   final String? status;
   final String? search;
+  final bool refresh; // Force refresh from server
 
   const LoadVouchersEvent({
+    this.routerId,
+    this.status,
+    this.search,
+    this.refresh = true,
+  });
+
+  @override
+  List<Object?> get props => [routerId, status, search, refresh];
+}
+
+class LoadMoreVouchersEvent extends VoucherEvent {
+  final String? routerId;
+  final String? status;
+  final String? search;
+
+  const LoadMoreVouchersEvent({
     this.routerId,
     this.status,
     this.search,
@@ -53,4 +76,20 @@ class LoadVouchersEvent extends VoucherEvent {
 
   @override
   List<Object?> get props => [routerId, status, search];
+}
+
+class LoadVoucherStats extends VoucherEvent {
+  final String? routerId;
+  const LoadVoucherStats({this.routerId});
+
+  @override
+  List<Object?> get props => [routerId];
+}
+
+class DeleteVouchersEvent extends VoucherEvent {
+  final List<String> voucherIds;
+  const DeleteVouchersEvent(this.voucherIds);
+
+  @override
+  List<Object?> get props => [voucherIds];
 }
