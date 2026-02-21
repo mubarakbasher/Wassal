@@ -590,6 +590,53 @@ export class MikroTikApiService {
     }
 
     /**
+     * Configure hotspot login to use HTTP PAP authentication.
+     * Fixes "did not send challenge response" errors with RADIUS.
+     */
+    async configureHotspotLogin(connection: MikroTikConnection): Promise<MikroTikCommandResult> {
+        this.logger.log(`Configuring hotspot login to HTTP PAP on ${connection.host}`);
+
+        const profiles = await this.executeCommand(connection, '/ip/hotspot/profile/print');
+        if (!profiles.success || !profiles.data || profiles.data.length === 0) {
+            return { success: false, error: 'No hotspot server profiles found' };
+        }
+
+        let lastResult: MikroTikCommandResult = { success: true };
+        for (const profile of profiles.data) {
+            const id = profile['.id'];
+            lastResult = await this.executeCommand(connection, '/ip/hotspot/profile/set', [
+                `=.id=${id}`,
+                `=login-by=http-pap`,
+            ]);
+        }
+        return lastResult;
+    }
+
+    /**
+     * Upload a username-only login page to the router.
+     * Hides the password field so users just enter their voucher code.
+     */
+    async uploadUsernameOnlyLoginPage(connection: MikroTikConnection): Promise<MikroTikCommandResult> {
+        this.logger.log(`Setting username-only login page on ${connection.host}`);
+
+        const profiles = await this.executeCommand(connection, '/ip/hotspot/profile/print');
+        if (!profiles.success || !profiles.data || profiles.data.length === 0) {
+            return { success: false, error: 'No hotspot server profiles found' };
+        }
+
+        let lastResult: MikroTikCommandResult = { success: true };
+        for (const profile of profiles.data) {
+            const id = profile['.id'];
+            lastResult = await this.executeCommand(connection, '/ip/hotspot/profile/set', [
+                `=.id=${id}`,
+                `=login-by=http-pap`,
+                `=html-directory=hotspot`,
+            ]);
+        }
+        return lastResult;
+    }
+
+    /**
      * Remove RADIUS server entry from MikroTik router
      * Used when a router is being removed from the system
      */

@@ -348,7 +348,7 @@ export class AdminRoutersService {
                 username: updatedRouter.username,
                 password: passwordToUse,
             };
-            const enableResult = await this.mikrotikApi.enableHotspotRadius(conn, id);
+            const enableResult = await this.mikrotikApi.enableHotspotRadius(conn);
             if (enableResult.success) {
                 this.logger.log(`RADIUS config updated on hotspot for ${updatedRouter.name}`);
             } else {

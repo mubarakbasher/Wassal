@@ -31,6 +31,12 @@ enum PlanType {
   UNLIMITED
 }
 
+// Count type for time-based vouchers
+enum CountType {
+  WALL_CLOCK
+  ONLINE_ONLY
+}
+
 // Router connection status
 enum RouterStatus {
   ONLINE
@@ -154,6 +160,7 @@ model Voucher {
   username    String        // Hotspot username
   password    String        // Hotspot password
   planType    PlanType
+  countType   CountType     @default(WALL_CLOCK)
   planName    String        // e.g., "1 Hour", "5GB Data"
   duration    Int?          // Duration in minutes (for time-based)
   dataLimit   BigInt?       // Data limit in bytes (for data-based)

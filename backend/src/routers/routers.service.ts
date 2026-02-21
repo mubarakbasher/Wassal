@@ -114,7 +114,7 @@ export class RoutersService {
             }
 
             // Step 2: Enable RADIUS on hotspot server profiles
-            const enableResult = await this.mikrotikApi.enableHotspotRadius(conn, routerId);
+            const enableResult = await this.mikrotikApi.enableHotspotRadius(conn);
             if (enableResult.success) {
                 this.logger.log(`RADIUS enabled on hotspot for router ${routerName} with location-name=${routerId}`);
                 radiusConfigured = true;
@@ -422,7 +422,7 @@ export class RoutersService {
                 username: router.username,
                 password: passwordToUse,
             };
-            const enableResult = await this.mikrotikApi.enableHotspotRadius(conn, id);
+            const enableResult = await this.mikrotikApi.enableHotspotRadius(conn);
             if (enableResult.success) {
                 this.logger.log(`RADIUS config updated on hotspot for ${router.name}`);
             } else {
