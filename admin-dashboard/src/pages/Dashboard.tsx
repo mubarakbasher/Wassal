@@ -125,7 +125,8 @@ export function Dashboard() {
                                             borderRadius: '8px',
                                             fontSize: '13px',
                                         }}
-                                        formatter={(value: string | number | Array<string | number>) => [`$${Number(value).toLocaleString()}`, 'Revenue']}
+                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                        formatter={(value: any) => [`$${Number(value).toLocaleString()}`, 'Revenue']}
                                     />
                                     <Area
                                         type="monotone"

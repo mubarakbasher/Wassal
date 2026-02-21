@@ -25,7 +25,7 @@ const Tabs = ({ active, onChange, items }: any) => (
 export function SystemPage() {
     const [activeTab, setActiveTab] = useState('status');
     const [logs, setLogs] = useState<any[]>([]);
-    const [config, setConfig] = useState<any[]>([]);
+    const [_config, setConfig] = useState<any[]>([]);
 
     useEffect(() => {
         if (activeTab === 'logs') fetchLogs();

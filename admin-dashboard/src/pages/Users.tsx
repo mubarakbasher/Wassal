@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, MoreVertical, Ban, CheckCircle, Smartphone, Plus, Download } from 'lucide-react';
+import { Search, Ban, CheckCircle, Smartphone, Plus, Download } from 'lucide-react';
 import api from '../lib/axios';
 import { Badge } from '../components/ui/Badge';
 import { UserModal } from '../components/users/UserModal';
