@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Smartphone, CreditCard, Activity, Calendar, Plus, Ban, Trash2 } from 'lucide-react';
+import { ArrowLeft, Smartphone, CreditCard, Activity, Calendar, Plus, Ban, Trash2, Wifi, WifiOff } from 'lucide-react';
 import api from '../lib/axios';
 import { Badge } from '../components/ui/Badge';
 import { ManualSubscriptionModal } from '../components/subscriptions/ManualSubscriptionModal';
@@ -161,12 +161,23 @@ export function UserDetailsPage() {
                                         <div className="flex items-center">
                                             <div className={`w-2 h-2 rounded-full mr-3 ${router.status === 'ONLINE' ? 'bg-green-500' : 'bg-gray-300'}`}></div>
                                             <div>
-                                                <div className="flex items-center">
-                                                    <p className="font-medium text-gray-900 mr-2">{router.name}</p>
+                                                <div className="flex items-center gap-2">
+                                                    <p className="font-medium text-gray-900">{router.name}</p>
                                                     <span className={`text-[10px] px-1.5 py-0.5 rounded uppercase font-bold tracking-wider ${router.status === 'ONLINE' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
                                                         }`}>
                                                         {router.status === 'ONLINE' ? 'ONLINE' : 'OFFLINE'}
                                                     </span>
+                                                    {router.radiusConnected ? (
+                                                        <span className="text-[10px] px-1.5 py-0.5 rounded uppercase font-bold tracking-wider bg-blue-100 text-blue-700 flex items-center gap-0.5">
+                                                            <Wifi className="w-3 h-3" />
+                                                            RADIUS
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-[10px] px-1.5 py-0.5 rounded uppercase font-bold tracking-wider bg-amber-100 text-amber-700 flex items-center gap-0.5">
+                                                            <WifiOff className="w-3 h-3" />
+                                                            No RADIUS
+                                                        </span>
+                                                    )}
                                                 </div>
                                                 <p className="text-xs text-gray-500 font-mono">{router.ipAddress}</p>
                                             </div>

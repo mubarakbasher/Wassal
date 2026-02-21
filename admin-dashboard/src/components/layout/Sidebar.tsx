@@ -1,13 +1,13 @@
-import React from 'react';
 import { NavLink } from 'react-router-dom';
 import {
     LayoutDashboard,
     Users,
     CreditCard,
     Settings,
-    ShieldAlert,
     LogOut,
-    Activity
+    Activity,
+    Router,
+    Ticket
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -19,6 +19,8 @@ function cn(...inputs: (string | undefined | null | false)[]) {
 export function Sidebar() {
     const navItems = [
         { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
+        { icon: Router, label: 'Routers', path: '/routers' },
+        { icon: Ticket, label: 'Vouchers', path: '/vouchers' },
         { icon: Users, label: 'Users', path: '/users' },
         { icon: CreditCard, label: 'Subscriptions', path: '/subscriptions' },
         { icon: CreditCard, label: 'Payments', path: '/payments' },

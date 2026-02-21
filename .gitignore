@@ -40,3 +40,16 @@ coverage/
 dist/
 build/
 *.tsbuildinfo
+
+# Firebase / Google Service Account credentials
+*-firebase-adminsdk-*.json
+
+# Generated nginx config (created by deploy.sh from template)
+nginx/nginx.conf
+
+# Temp / debug artifacts
+*.tmp*
+*.dll.node.tmp*
+backend/voucher_debug.json
+backend/voucher_validation.txt
+backend/mikrotik_output.txt

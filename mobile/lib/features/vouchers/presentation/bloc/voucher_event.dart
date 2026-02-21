@@ -28,6 +28,7 @@ class GenerateVoucherEvent extends VoucherEvent {
   final int? quantity;
   final String? charset;
   final String? authType;
+  final String? countType; // WALL_CLOCK or ONLINE_ONLY
 
   const GenerateVoucherEvent({
     required this.routerId,
@@ -40,10 +41,11 @@ class GenerateVoucherEvent extends VoucherEvent {
     this.quantity,
     this.charset,
     this.authType,
+    this.countType,
   });
 
    @override
-  List<Object?> get props => [routerId, profileId, mikrotikProfile, planName, price, duration, dataLimit, quantity, charset, authType];
+  List<Object?> get props => [routerId, profileId, mikrotikProfile, planName, price, duration, dataLimit, quantity, charset, authType, countType];
 }
 
 class LoadVouchersEvent extends VoucherEvent {

@@ -50,10 +50,115 @@ export class RoutersService {
     }
 
     /**
+     * Configure RADIUS on a MikroTik router (reusable helper)
+     * 1. Generates a RADIUS secret if not provided
+     * 2. Registers the router as a NAS client in FreeRADIUS
+     * 3. Adds the RADIUS server entry on the MikroTik router
+     * 4. Enables RADIUS authentication on all hotspot server profiles
+     * Returns { radiusSecret, radiusConfigured, warnings }
+     */
+    async configureRadiusOnRouter(
+        routerId: string,
+        ipAddress: string,
+        apiPort: number,
+        username: string,
+        password: string,
+        routerName: string,
+        description?: string,
+        existingSecret?: string,
+    ): Promise<{ radiusSecret: string; radiusConfigured: boolean; warnings: string[] }> {
+        const warnings: string[] = [];
+        let radiusConfigured = false;
+
+        // Generate or use existing RADIUS secret
+        const radiusSecret = existingSecret || crypto.randomBytes(16).toString('hex');
+
+        // Register as NAS client in FreeRADIUS DB
+        try {
+            await this.radiusService.registerNas(
+                ipAddress,
+                radiusSecret,
+                routerName,
+                description || undefined,
+            );
+            this.logger.log(`NAS client registered for ${routerName} (${ipAddress})`);
+        } catch (error) {
+            warnings.push(`Failed to register NAS: ${error.message}`);
+            this.logger.warn(`Failed to register NAS for ${routerName}: ${error.message}`);
+        }
+
+        // Update router record with the radiusSecret
+        await this.prisma.router.update({
+            where: { id: routerId },
+            data: { radiusSecret },
+        });
+
+        // Auto-configure RADIUS on the MikroTik router
+        const radiusServerIp = process.env.RADIUS_SERVER_IP;
+        if (!radiusServerIp) {
+            warnings.push('RADIUS_SERVER_IP not set in .env — cannot configure RADIUS on router');
+            this.logger.warn('RADIUS_SERVER_IP not set — skipping auto RADIUS configuration');
+            return { radiusSecret, radiusConfigured, warnings };
+        }
+
+        try {
+            const conn = { host: ipAddress, port: apiPort, username, password };
+
+            // Step 1: Add RADIUS server entry on the router
+            const addResult = await this.mikrotikApi.addRadiusServer(conn, radiusServerIp, radiusSecret);
+            if (addResult.success) {
+                this.logger.log(`RADIUS server ${radiusServerIp} added to router ${routerName}`);
+            } else {
+                warnings.push(`Failed to add RADIUS server entry: ${addResult.error}`);
+                this.logger.warn(`Failed to add RADIUS server to ${routerName}: ${addResult.error}`);
+            }
+
+            // Step 2: Enable RADIUS on hotspot server profiles
+            const enableResult = await this.mikrotikApi.enableHotspotRadius(conn, routerId);
+            if (enableResult.success) {
+                this.logger.log(`RADIUS enabled on hotspot for router ${routerName} with location-name=${routerId}`);
+                radiusConfigured = true;
+            } else {
+                warnings.push(`Failed to enable RADIUS on hotspot: ${enableResult.error}`);
+                this.logger.warn(`Failed to enable RADIUS on hotspot for ${routerName}: ${enableResult.error}`);
+            }
+
+            // Step 3: Configure hotspot login to HTTP PAP (fixes "did not send challenge response" error)
+            const loginResult = await this.mikrotikApi.configureHotspotLogin(conn);
+            if (loginResult.success) {
+                this.logger.log(`Hotspot login set to HTTP PAP on ${routerName}`);
+            } else {
+                warnings.push(`Failed to set login method: ${loginResult.error}`);
+            }
+
+            // Step 4: Upload username-only login page (hides password field)
+            const pageResult = await this.mikrotikApi.uploadUsernameOnlyLoginPage(conn);
+            if (pageResult.success) {
+                this.logger.log(`Username-only login page uploaded to ${routerName}`);
+            } else {
+                warnings.push(`Login page upload failed: ${pageResult.error} — may need manual setup`);
+            }
+        } catch (error) {
+            warnings.push(`Auto RADIUS setup failed: ${error.message}`);
+            this.logger.warn(`Auto RADIUS setup failed for ${routerName}: ${error.message}`);
+        }
+
+        return { radiusSecret, radiusConfigured, warnings };
+    }
+
+    /**
      * Create a new router
      */
     async create(userId: string, createRouterDto: CreateRouterDto) {
         const { name, ipAddress, apiPort, username, password, description, location } = createRouterDto;
+
+        // Check for duplicate IP address
+        const existingRouter = await this.prisma.router.findFirst({
+            where: { ipAddress, userId },
+        });
+        if (existingRouter) {
+            throw new BadRequestException(`A router with IP ${ipAddress} already exists (${existingRouter.name}). Please delete it first or update the existing one.`);
+        }
 
         // Test connection before saving
         const connectionTest = await this.mikrotikApi.testConnection({
@@ -104,46 +209,17 @@ export class RoutersService {
             },
         });
 
-        // Register this router as a RADIUS NAS client
-        await this.radiusService.registerNas(
-            router.ipAddress,
-            radiusSecret,
+        // Configure RADIUS on the router (NAS registration + RADIUS server + hotspot enable)
+        const radiusResult = await this.configureRadiusOnRouter(
+            router.id,
+            ipAddress,
+            apiPort || 8728,
+            username,
+            password,
             router.name,
             router.description || undefined,
+            radiusSecret,
         );
-
-        // Auto-configure RADIUS on the MikroTik router
-        const radiusServerIp = process.env.RADIUS_SERVER_IP;
-        if (radiusServerIp) {
-            try {
-                const conn = {
-                    host: ipAddress,
-                    port: apiPort || 8728,
-                    username,
-                    password,
-                };
-
-                // Add RADIUS server entry on the router
-                const addResult = await this.mikrotikApi.addRadiusServer(conn, radiusServerIp, radiusSecret);
-                if (addResult.success) {
-                    this.logger.log(`RADIUS server ${radiusServerIp} added to router ${router.name}`);
-                } else {
-                    this.logger.warn(`Failed to add RADIUS server to ${router.name}: ${addResult.error}`);
-                }
-
-                // Enable RADIUS on hotspot server profile
-                const enableResult = await this.mikrotikApi.enableHotspotRadius(conn);
-                if (enableResult.success) {
-                    this.logger.log(`RADIUS enabled on hotspot for router ${router.name}`);
-                } else {
-                    this.logger.warn(`Failed to enable RADIUS on hotspot for ${router.name}: ${enableResult.error}`);
-                }
-            } catch (error) {
-                this.logger.warn(`Auto RADIUS setup failed for ${router.name}: ${error.message}. You can configure it manually.`);
-            }
-        } else {
-            this.logger.warn('RADIUS_SERVER_IP not set - skipping auto RADIUS configuration on router');
-        }
 
         // Log activity
         await this.prisma.activityLog.create({
@@ -156,7 +232,11 @@ export class RoutersService {
 
         this.logger.log(`Router ${router.name} (${router.ipAddress}) added by user ${userId}`);
 
-        return router;
+        return {
+            ...router,
+            radiusEnabled: radiusResult.radiusConfigured,
+            radiusWarnings: radiusResult.warnings.length > 0 ? radiusResult.warnings : undefined,
+        };
     }
 
     /**
@@ -332,6 +412,25 @@ export class RoutersService {
                 details: JSON.stringify({ routerId: router.id, name: router.name }),
             },
         });
+
+        // Try to push latest RADIUS configuration to the router
+        try {
+            const passwordToUse = updateRouterDto.password ? updateRouterDto.password : this.decryptPassword(existingRouter.password);
+            const conn = {
+                host: router.ipAddress,
+                port: router.apiPort,
+                username: router.username,
+                password: passwordToUse,
+            };
+            const enableResult = await this.mikrotikApi.enableHotspotRadius(conn, id);
+            if (enableResult.success) {
+                this.logger.log(`RADIUS config updated on hotspot for ${router.name}`);
+            } else {
+                this.logger.warn(`Failed to update RADIUS config on router ${router.name}: ${enableResult.error}`);
+            }
+        } catch (error) {
+            this.logger.warn(`Failed to update RADIUS config on router ${router.name}: ${error.message}`);
+        }
 
         return router;
     }
@@ -679,15 +778,31 @@ export class RoutersService {
                     });
 
                     this.logger.log(`Router at ${ip} reassigned from user ${existing.userId} to user ${userId}`);
-                    return {
-                        message: 'Router reassigned to your account',
-                        routerId: existing.id,
-                        userId: userId
-                    };
                 }
             }
 
-            // Router already belongs to this user or no userId provided
+            // Configure RADIUS if not already set up
+            if (!existing.radiusSecret) {
+                this.logger.log(`Router ${ip} exists but has no RADIUS configured, setting up...`);
+                const decryptedPw = this.decryptPassword(existing.password);
+                const radiusResult = await this.configureRadiusOnRouter(
+                    existing.id,
+                    existing.ipAddress,
+                    existing.apiPort,
+                    existing.username,
+                    decryptedPw,
+                    existing.name,
+                    existing.description || undefined,
+                );
+                return {
+                    message: 'Router already registered - RADIUS configured',
+                    routerId: existing.id,
+                    userId: existing.userId,
+                    radiusEnabled: radiusResult.radiusConfigured,
+                    radiusWarnings: radiusResult.warnings.length > 0 ? radiusResult.warnings : undefined,
+                };
+            }
+
             this.logger.log(`Router at ${ip} already exists with id: ${existing.id}`);
             return { message: 'Router already registered', routerId: existing.id, userId: existing.userId };
         }
@@ -732,6 +847,17 @@ export class RoutersService {
             }
         });
 
+        // Configure RADIUS on the auto-discovered router
+        const radiusResult = await this.configureRadiusOnRouter(
+            router.id,
+            ip,
+            8728,
+            credentials.username,
+            credentials.password,
+            router.name,
+            'Added via Script Auto-Discovery',
+        );
+
         // Log activity
         await this.prisma.activityLog.create({
             data: {
@@ -747,7 +873,13 @@ export class RoutersService {
         });
 
         this.logger.log(`Auto-registered router: ${router.name} (${router.id}) for user ${assignToUser.id}`);
-        return { message: 'Router registered successfully', routerId: router.id, userId: assignToUser.id };
+        return {
+            message: 'Router registered successfully',
+            routerId: router.id,
+            userId: assignToUser.id,
+            radiusEnabled: radiusResult.radiusConfigured,
+            radiusWarnings: radiusResult.warnings.length > 0 ? radiusResult.warnings : undefined,
+        };
     }
 
     /**
@@ -938,6 +1070,42 @@ export class RoutersService {
             this.logger.error(`Failed to restart router ${id}: ${error.message}`);
             throw new BadRequestException('Failed to restart router');
         }
+    }
+
+    /**
+     * Manually setup/reconfigure RADIUS on an existing router
+     */
+    async setupRadius(id: string, userId: string) {
+        const router = await this.prisma.router.findFirst({
+            where: { id, userId },
+        });
+
+        if (!router) {
+            throw new NotFoundException('Router not found');
+        }
+
+        const decryptedPassword = this.decryptPassword(router.password);
+
+        const result = await this.configureRadiusOnRouter(
+            router.id,
+            router.ipAddress,
+            router.apiPort,
+            router.username,
+            decryptedPassword,
+            router.name,
+            router.description || undefined,
+            router.radiusSecret || undefined,
+        );
+
+        this.logger.log(`RADIUS setup triggered for ${router.name}: configured=${result.radiusConfigured}`);
+
+        return {
+            message: result.radiusConfigured
+                ? 'RADIUS configured successfully on router'
+                : 'RADIUS configuration had issues — check warnings',
+            radiusEnabled: result.radiusConfigured,
+            warnings: result.warnings.length > 0 ? result.warnings : undefined,
+        };
     }
 }
 

@@ -453,11 +453,11 @@ model RadUserGroup {
 /// Accounting data — session tracking (auto-populated by FreeRADIUS)
 model RadAcct {
   radacctid           BigInt    @id @default(autoincrement())
-  acctsessionid       String    @default("") @db.VarChar(64)
-  acctuniqueid        String    @default("") @unique @db.VarChar(32)
-  username            String    @default("") @db.VarChar(64)
-  realm               String    @default("") @db.VarChar(64)
-  nasipaddress        String    @default("") @db.VarChar(15)
+  acctsessionid       String?   @default("") @db.VarChar(64)
+  acctuniqueid        String?   @default("") @unique @db.VarChar(32)
+  username            String?   @default("") @db.VarChar(64)
+  realm               String?   @db.VarChar(64)
+  nasipaddress        String?   @default("") @db.VarChar(15)
   nasportid           String?   @db.VarChar(32)
   nasporttype         String?   @db.VarChar(32)
   acctstarttime       DateTime?
@@ -470,16 +470,16 @@ model RadAcct {
   connectinfo_stop    String?   @db.VarChar(128)
   acctinputoctets     BigInt?   // Bytes received
   acctoutputoctets    BigInt?   // Bytes sent
-  calledstationid     String    @default("") @db.VarChar(50)
-  callingstationid    String    @default("") @db.VarChar(50) // MAC address
-  acctterminatecause  String    @default("") @db.VarChar(32)
+  calledstationid     String?   @default("") @db.VarChar(50)
+  callingstationid    String?   @default("") @db.VarChar(50) // MAC address
+  acctterminatecause  String?   @db.VarChar(32)
   servicetype         String?   @db.VarChar(32)
   framedprotocol      String?   @db.VarChar(32)
-  framedipaddress     String    @default("") @db.VarChar(15)
-  framedipv6address   String    @default("") @db.VarChar(45)
-  framedipv6prefix    String    @default("") @db.VarChar(45)
-  framedinterfaceid   String    @default("") @db.VarChar(44)
-  delegatedipv6prefix String    @default("") @db.VarChar(45)
+  framedipaddress     String?   @db.VarChar(15)
+  framedipv6address   String?   @db.VarChar(45)
+  framedipv6prefix    String?   @db.VarChar(45)
+  framedinterfaceid   String?   @db.VarChar(44)
+  delegatedipv6prefix String?   @db.VarChar(45)
   class               String?   @db.VarChar(64)
 
   @@index([username])

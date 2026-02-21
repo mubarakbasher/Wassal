@@ -173,12 +173,10 @@ export class VouchersService {
                 // Create RADIUS user in database (replaces MikroTik hotspot user)
                 await this.radiusService.createRadiusUser(username, password, groupName);
 
-                // Set time-based expiration (real-time countdown)
+                // Set Max-All-Session so FreeRADIUS sqlcounter tracks total
+                // uptime across all sessions. Time only counts while connected.
                 if (planType === PlanType.TIME_BASED && duration) {
-                    const expiresAt = new Date(Date.now() + duration * 60 * 1000);
-                    await this.radiusService.setExpiration(username, expiresAt);
-                    // Set Session-Timeout as remaining seconds for MikroTik
-                    await this.radiusService.setSessionTimeout(username, duration * 60);
+                    await this.radiusService.setMaxAllSession(username, duration * 60);
                 }
 
                 // Set data limit if applicable
@@ -193,7 +191,7 @@ export class VouchersService {
                 throw new BadRequestException('Failed to create RADIUS user for voucher.');
             }
 
-            // Create voucher in database
+            // Create voucher in database as UNUSED — timer starts on first login
             const voucher = await this.prisma.voucher.create({
                 data: {
                     username,
@@ -203,11 +201,9 @@ export class VouchersService {
                     duration,
                     dataLimit: dataLimit ? BigInt(dataLimit) : null,
                     price,
-                    status: VoucherStatus.ACTIVE,
+                    status: VoucherStatus.UNUSED,
                     profileId: targetProfileId!,
                     routerId,
-                    activatedAt: new Date(),
-                    expiresAt: this.calculateExpiration(planType, duration),
                 },
                 select: {
                     id: true,
@@ -391,22 +387,17 @@ export class VouchersService {
         const groupName = `${voucher.profile.name}_${voucher.routerId.substring(0, 8)}`;
         await this.radiusService.createRadiusUser(voucher.username, voucher.password, groupName);
 
-        // Set expiration for time-based plans
+        // Set Max-All-Session for uptime-based time tracking
         if (voucher.planType === PlanType.TIME_BASED && voucher.duration) {
-            const expiresAt = new Date(Date.now() + voucher.duration * 60 * 1000);
-            await this.radiusService.setExpiration(voucher.username, expiresAt);
-            await this.radiusService.setSessionTimeout(voucher.username, voucher.duration * 60);
+            await this.radiusService.setMaxAllSession(voucher.username, voucher.duration * 60);
         }
 
-        // Update voucher status
-        const expiration = this.calculateExpiration(voucher.planType, voucher.duration || undefined);
-
+        // Update voucher status — no absolute expiresAt, time is tracked via radacct
         const updatedVoucher = await this.prisma.voucher.update({
             where: { id },
             data: {
                 status: VoucherStatus.ACTIVE,
                 activatedAt: new Date(),
-                expiresAt: expiration,
             },
         });
 
@@ -507,8 +498,8 @@ export class VouchersService {
             throw new NotFoundException('Voucher not found');
         }
 
-        // If voucher is active, remove RADIUS user
-        if (voucher.status === VoucherStatus.ACTIVE) {
+        // Remove RADIUS user if voucher is active or unused (has RADIUS credentials)
+        if (voucher.status === VoucherStatus.ACTIVE || voucher.status === VoucherStatus.UNUSED) {
             await this.radiusService.removeRadiusUser(voucher.username);
         }
 

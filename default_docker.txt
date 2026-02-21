@@ -1,0 +1,84 @@
+server default {
+
+listen {
+    type = auth
+    ipaddr = *
+    port = 0
+    limit {
+        max_connections = 16
+        lifetime = 0
+        idle_timeout = 30
+    }
+}
+
+listen {
+    type = acct
+    ipaddr = *
+    port = 0
+    limit {
+        max_connections = 16
+        lifetime = 0
+        idle_timeout = 30
+    }
+}
+
+authorize {
+    preprocess
+    chap
+    mschap
+    suffix
+
+    # SQL-based authorization ??? checks radcheck and radusergroup
+    sql
+
+    # Uptime-based session limit ??? checks Max-All-Session against radacct total
+    # Returns remaining time as Session-Timeout
+    totaltimelimit
+
+    # Enable PAP for Cleartext-Password
+    if (!control:Auth-Type) {
+        update control {
+            Auth-Type := PAP
+        }
+    }
+
+    pap
+}
+
+authenticate {
+    Auth-Type PAP {
+        pap
+    }
+    Auth-Type CHAP {
+        chap
+    }
+    Auth-Type MS-CHAP {
+        mschap
+    }
+}
+
+preacct {
+    preprocess
+    acct_unique
+    suffix
+}
+
+accounting {
+    # Write accounting data to radacct table
+    sql
+}
+
+session {
+    sql
+}
+
+post-auth {
+    # Log successful auth to radpostauth table
+    sql
+
+    Post-Auth-Type REJECT {
+        sql
+    }
+}
+
+}

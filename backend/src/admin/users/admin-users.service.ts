@@ -78,7 +78,25 @@ export class AdminUsersService {
         });
 
         if (!user) throw new NotFoundException('User not found');
-        return user;
+
+        // Enrich routers with RADIUS NAS connection status
+        const routersWithRadius = await Promise.all(
+            user.routers.map(async (router) => {
+                const nasEntry = await this.prisma.nas.findFirst({
+                    where: { nasname: router.ipAddress },
+                });
+                return {
+                    ...router,
+                    radiusConnected: !!nasEntry,
+                    radiusNasId: nasEntry?.id || null,
+                };
+            }),
+        );
+
+        return {
+            ...user,
+            routers: routersWithRadius,
+        };
     }
 
     async updateUserStatus(id: string, isActive: boolean) {

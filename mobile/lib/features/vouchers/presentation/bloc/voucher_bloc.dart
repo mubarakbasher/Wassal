@@ -147,6 +147,7 @@ class VoucherBloc extends Bloc<VoucherEvent, VoucherState> {
           quantity: event.quantity,
           charset: event.charset,
           authType: event.authType,
+          countType: event.countType,
       );
 
       result.fold(

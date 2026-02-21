@@ -24,6 +24,6 @@ import { PrismaModule } from '../../prisma/prisma.module';
     ],
     controllers: [AdminAuthController],
     providers: [AdminAuthService, AdminJwtStrategy],
-    exports: [AdminAuthService],
+    exports: [AdminAuthService, AdminJwtStrategy],
 })
 export class AdminAuthModule { }

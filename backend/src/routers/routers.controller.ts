@@ -124,6 +124,11 @@ export class RoutersController {
     restartRouter(@Param('id') id: string, @CurrentUser() user: any) {
         return this.routersService.restartRouter(id, user.id);
     }
+
+    @Post(':id/setup-radius')
+    setupRadius(@Param('id') id: string, @CurrentUser() user: any) {
+        return this.routersService.setupRadius(id, user.id);
+    }
 }
 
 @Controller('public/routers')

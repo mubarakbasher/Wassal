@@ -19,6 +19,7 @@ abstract class VoucherRemoteDataSource {
     int? quantity,
     String? charset,
     String? authType,
+    String? countType,
   });
   Future<List<VoucherModel>> getVouchers({
     String? routerId,
@@ -79,6 +80,7 @@ class VoucherRemoteDataSourceImpl implements VoucherRemoteDataSource {
     int? quantity,
     String? charset,
     String? authType,
+    String? countType,
   }) async {
     try {
       final data = {
@@ -95,6 +97,7 @@ class VoucherRemoteDataSourceImpl implements VoucherRemoteDataSource {
 
       if (profileId != null) data['profileId'] = profileId;
       if (mikrotikProfile != null) data['mikrotikProfile'] = mikrotikProfile;
+      if (countType != null) data['countType'] = countType;
 
       final response = await apiClient.post(
         '/vouchers',

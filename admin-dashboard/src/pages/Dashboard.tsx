@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Users, DollarSign, Activity, TrendingUp, Clock } from 'lucide-react';
+import { Users, DollarSign, Activity, Clock } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import api from '../lib/axios';
+import { RadiusStats } from '../components/radius/RadiusStats';
 
 const StatCard = ({ title, value, change, icon: Icon, color }: any) => (
     <div className="p-6 bg-white rounded-xl shadow-sm border border-gray-100">
@@ -64,9 +65,11 @@ export function Dashboard() {
         <div>
             <h1 className="text-2xl font-bold text-gray-800 mb-6">Dashboard Overview</h1>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <RadiusStats />
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 <StatCard
-                    title="Total Users"
+                    title="Total Register Users"
                     value={stats.totalUsers.toLocaleString()}
                     change="+0%"
                     icon={Users}
@@ -85,12 +88,6 @@ export function Dashboard() {
                     change="+0%"
                     icon={Activity}
                     color="bg-indigo-500"
-                />
-                <StatCard
-                    title="System Status"
-                    value="Online"
-                    icon={TrendingUp}
-                    color="bg-purple-500"
                 />
             </div>
 

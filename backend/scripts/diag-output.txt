@@ -1,0 +1,13 @@
+Router: super | IP: 192.168.1.67:8728
+Username: admin
+Password: asdf@1234
+RADIUS_SERVER_IP: 192.168.1.227
+radiusSecret: bae4bbbfc0f8c509c9dd47bda89586be
+
+1. Connecting...
+   CONNECTED OK
+2. /system/identity/print
+   Result: [{"name":"MikroTik"}]
+3. /radius/print
+UNCAUGHT: errno=UNKNOWNREPLY msg=Tried to process unknown reply: !empty
+UNCAUGHT: errno=SOCKTMOUT msg=Timed out after 30 seconds

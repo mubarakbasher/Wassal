@@ -1,5 +1,5 @@
 import { IsString, IsNotEmpty, IsEnum, IsInt, IsOptional, Min, IsNumber } from 'class-validator';
-import { PlanType } from '@prisma/client';
+import { PlanType, CountType } from '@prisma/client';
 
 export enum VoucherCharset {
     NUMERIC = 'NUMERIC',
@@ -28,6 +28,10 @@ export class CreateVoucherDto {
 
     @IsEnum(PlanType)
     planType: PlanType;
+
+    @IsEnum(CountType)
+    @IsOptional()
+    countType?: CountType = CountType.WALL_CLOCK;
 
     @IsString()
     @IsNotEmpty()

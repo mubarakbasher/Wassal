@@ -171,6 +171,36 @@ export class RadiusService {
     }
 
     /**
+     * Set Max-All-Session for a user (total allowed seconds across all sessions).
+     * Used by the FreeRADIUS sqlcounter module for uptime-based counting.
+     * FreeRADIUS queries radacct for total used time, subtracts from this value,
+     * and returns the remaining time as Session-Timeout on each login.
+     */
+    async setMaxAllSession(username: string, seconds: number): Promise<void> {
+        const existing = await this.prisma.radCheck.findFirst({
+            where: { username, attribute: 'Max-All-Session' },
+        });
+
+        if (existing) {
+            await this.prisma.radCheck.update({
+                where: { id: existing.id },
+                data: { value: seconds.toString() },
+            });
+        } else {
+            await this.prisma.radCheck.create({
+                data: {
+                    username,
+                    attribute: 'Max-All-Session',
+                    op: ':=',
+                    value: seconds.toString(),
+                },
+            });
+        }
+
+        this.logger.debug(`Set Max-All-Session for ${username}: ${seconds}s`);
+    }
+
+    /**
      * Set Simultaneous-Use for a specific user (max devices).
      */
     async setUserSimultaneousUse(username: string, limit: number): Promise<void> {

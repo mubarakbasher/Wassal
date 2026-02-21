@@ -46,6 +46,9 @@ class _GenerateVoucherViewState extends State<GenerateVoucherView>
   String? _selectedPlanName;
   String _charset = "NUMERIC";
   String _authType = "USER_SAME_PASS";
+  String _countType = "ONLINE_ONLY"; // WALL_CLOCK or ONLINE_ONLY
+
+  bool get _needsProfile => _limitType == 'Time' && _countType == 'WALL_CLOCK';
 
   @override
   void initState() {
@@ -127,6 +130,8 @@ class _GenerateVoucherViewState extends State<GenerateVoucherView>
                 vouchers: state.vouchers,
                 networkName: networkName,
                 onDismiss: () {
+                  // Reload voucher list so the management page shows fresh data
+                  context.read<VoucherBloc>().add(const LoadVouchersEvent());
                   Navigator.pop(context); // Close dialog
                   Navigator.pop(context); // Go back to list
                 },
@@ -511,17 +516,36 @@ class _GenerateVoucherViewState extends State<GenerateVoucherView>
             ),
             const SizedBox(height: 24),
 
-            // Profile Selection
-            Text('Select Profile', style: AppTextStyles.labelLarge),
+            // Limit Type (moved up — determines whether count type is relevant)
+            Text('Limit Type', style: AppTextStyles.labelLarge),
             const SizedBox(height: 12),
-            if (formData.isLoadingProfiles)
-              _buildProfileLoadingState()
-            else if (formData.profiles.isEmpty)
-              _buildNoProfilesState()
-            else
-              _buildProfileGrid(formData),
+            _buildLimitTypeSelector(),
+
+            const SizedBox(height: 16),
+            _buildLimitValueField(),
 
             const SizedBox(height: 24),
+
+            // Count Type Selection — only for Time limits
+            if (_limitType == 'Time') ...[
+              Text('Count Type', style: AppTextStyles.labelLarge),
+              const SizedBox(height: 12),
+              _buildCountTypeSelector(),
+              const SizedBox(height: 24),
+            ],
+
+            // Profile Selection — only for WALL_CLOCK + Time limit
+            if (_limitType == 'Time' && _countType == 'WALL_CLOCK') ...[
+              Text('Select Profile', style: AppTextStyles.labelLarge),
+              const SizedBox(height: 12),
+              if (formData.isLoadingProfiles)
+                _buildProfileLoadingState()
+              else if (formData.profiles.isEmpty)
+                _buildNoProfilesState()
+              else
+                _buildProfileGrid(formData),
+              const SizedBox(height: 24),
+            ],
 
             // Price and Quantity
             Row(
@@ -534,24 +558,15 @@ class _GenerateVoucherViewState extends State<GenerateVoucherView>
 
             const SizedBox(height: 24),
 
-            // Limit Type
-            Text('Limit Type', style: AppTextStyles.labelLarge),
-            const SizedBox(height: 12),
-            _buildLimitTypeSelector(),
-
-            const SizedBox(height: 16),
-            _buildLimitValueField(),
-
-            const SizedBox(height: 24),
-
             // Advanced Options
             _buildAdvancedOptions(),
 
             const SizedBox(height: 32),
             _buildContinueButton(
-              enabled: _selectedProfileId != null,
+              enabled: _needsProfile ? _selectedProfileId != null : true,
               onPressed: () {
-                if (_formKey.currentState!.validate() && _selectedProfileId != null) {
+                final profileValid = _needsProfile ? _selectedProfileId != null : true;
+                if (_formKey.currentState!.validate() && profileValid) {
                   _nextStep();
                 }
               },
@@ -708,6 +723,72 @@ class _GenerateVoucherViewState extends State<GenerateVoucherView>
           validator: (v) => v!.isEmpty ? 'Required' : null,
         ),
       ],
+    );
+  }
+
+  Widget _buildCountTypeSelector() {
+    return Row(
+      children: [
+        _buildCountTypeChip('ONLINE_ONLY', 'Online Time', Icons.wifi_rounded),
+        const SizedBox(width: 12),
+        _buildCountTypeChip('WALL_CLOCK', 'Wall Clock', Icons.schedule_rounded),
+      ],
+    );
+  }
+
+  Widget _buildCountTypeChip(String type, String label, IconData icon) {
+    final isSelected = _countType == type;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          HapticFeedback.selectionClick();
+          setState(() {
+            _countType = type;
+            if (type == 'ONLINE_ONLY') {
+              // Clear profile selection when switching to online-only
+              _selectedProfileId = null;
+              _selectedPlanName = null;
+            }
+          });
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          decoration: BoxDecoration(
+            gradient: isSelected ? AppColors.primaryGradient : null,
+            color: isSelected ? null : Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isSelected ? Colors.transparent : AppColors.border,
+            ),
+          ),
+          child: Column(
+            children: [
+              Icon(
+                icon,
+                size: 20,
+                color: isSelected ? Colors.white : AppColors.textSecondary,
+              ),
+              const SizedBox(height: 6),
+              Text(
+                label,
+                style: AppTextStyles.labelMedium.copyWith(
+                  color: isSelected ? Colors.white : AppColors.textPrimary,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                type == 'ONLINE_ONLY' ? 'RADIUS tracking' : 'MikroTik profile',
+                style: AppTextStyles.labelSmall.copyWith(
+                  color: isSelected ? Colors.white70 : AppColors.textTertiary,
+                  fontSize: 10,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -1178,10 +1259,13 @@ class _GenerateVoucherViewState extends State<GenerateVoucherView>
       else if (_dataUnit == 'GB') dataLimit = limitVal * 1024 * 1024 * 1024;
     }
 
+    // For data-based vouchers, always use ONLINE_ONLY (RADIUS tracking)
+    final effectiveCountType = _limitType == 'Data' ? 'ONLINE_ONLY' : _countType;
+
     context.read<VoucherBloc>().add(GenerateVoucherEvent(
       routerId: formData.selectedRouterId!,
       profileId: null,
-      mikrotikProfile: _selectedPlanName,
+      mikrotikProfile: _needsProfile ? _selectedPlanName : null,
       planName: _selectedPlanName ?? 'Standard',
       price: double.parse(_priceController.text),
       quantity: int.parse(_quantityController.text),
@@ -1189,6 +1273,7 @@ class _GenerateVoucherViewState extends State<GenerateVoucherView>
       dataLimit: dataLimit,
       charset: _charset,
       authType: _authType,
+      countType: effectiveCountType,
     ));
   }
 }

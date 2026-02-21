@@ -8,6 +8,8 @@ import { SubscriptionsPage } from './pages/Subscriptions';
 import { SystemPage } from './pages/System';
 import { PaymentsPage } from './pages/Payments';
 import { SettingsPage } from './pages/Settings';
+import { RoutersPage } from './pages/Routers';
+import { VouchersPage } from './pages/Vouchers';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const token = localStorage.getItem('admin_token');
@@ -29,6 +31,8 @@ function App() {
           </ProtectedRoute>
         }>
           <Route index element={<Dashboard />} />
+          <Route path="routers" element={<RoutersPage />} />
+          <Route path="vouchers" element={<VouchersPage />} />
           <Route path="users" element={<UsersPage />} />
           <Route path="users/:id" element={<UserDetailsPage />} />
           <Route path="subscriptions" element={<SubscriptionsPage />} />

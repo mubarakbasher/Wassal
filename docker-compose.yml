@@ -6,9 +6,9 @@ services:
     image: postgres:14-alpine
     container_name: wassal-db
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: mikrotik_hotspot
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-mikrotik_hotspot}
     ports:
       - "5432:5432"
     volumes:
@@ -19,6 +19,25 @@ services:
       timeout: 5s
       retries: 5
 
+  # FreeRADIUS Server
+  freeradius:
+    build:
+      context: ./freeradius
+      dockerfile: Dockerfile
+    container_name: wassal-freeradius
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ENV_RADIUS_DB_HOST: postgres
+      ENV_RADIUS_DB_USER: ${DB_USER:-postgres}
+      ENV_RADIUS_DB_PASS: ${DB_PASSWORD:-postgres}
+      ENV_RADIUS_DB_NAME: ${DB_NAME:-mikrotik_hotspot}
+    ports:
+      - "127.0.0.1:1812:1812/udp"
+      - "127.0.0.1:1813:1813/udp"
+    restart: unless-stopped
+
   # NestJS Backend
   backend:
     build:
@@ -28,10 +47,14 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      freeradius:
+        condition: service_started
     environment:
-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/mikrotik_hotspot
+      DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@postgres:5432/${DB_NAME:-mikrotik_hotspot}
       JWT_SECRET: ${JWT_SECRET:-wassal-jwt-secret-change-in-production}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-wassal-refresh-secret-change-in-production}
+      RADIUS_SERVER_IP: ${RADIUS_SERVER_IP:-freeradius}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-default-encryption-key-change-me!}
       PORT: 3001
     ports:
       - "3001:3001"

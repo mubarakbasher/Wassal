@@ -1,0 +1,95 @@
+{
+  "Wi-Fi 3": [
+    {
+      "address": "2605:59c0:3961:3608:118c:39dd:3ba2:5601",
+      "netmask": "ffff:ffff:ffff:ffff::",
+      "family": "IPv6",
+      "mac": "8c:b8:7e:f3:34:19",
+      "internal": false,
+      "cidr": "2605:59c0:3961:3608:118c:39dd:3ba2:5601/64",
+      "scopeid": 0
+    },
+    {
+      "address": "fd4e:9577:7d6d:8:178e:b059:2152:701a",
+      "netmask": "ffff:ffff:ffff:ffff::",
+      "family": "IPv6",
+      "mac": "8c:b8:7e:f3:34:19",
+      "internal": false,
+      "cidr": "fd4e:9577:7d6d:8:178e:b059:2152:701a/64",
+      "scopeid": 0
+    },
+    {
+      "address": "2605:59c0:3961:3608:88dc:ebd4:ce3d:1dca",
+      "netmask": "ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff",
+      "family": "IPv6",
+      "mac": "8c:b8:7e:f3:34:19",
+      "internal": false,
+      "cidr": "2605:59c0:3961:3608:88dc:ebd4:ce3d:1dca/128",
+      "scopeid": 0
+    },
+    {
+      "address": "fd4e:9577:7d6d:8:88dc:ebd4:ce3d:1dca",
+      "netmask": "ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff",
+      "family": "IPv6",
+      "mac": "8c:b8:7e:f3:34:19",
+      "internal": false,
+      "cidr": "fd4e:9577:7d6d:8:88dc:ebd4:ce3d:1dca/128",
+      "scopeid": 0
+    },
+    {
+      "address": "fe80::e27b:18b7:ca43:95c8",
+      "netmask": "ffff:ffff:ffff:ffff::",
+      "family": "IPv6",
+      "mac": "8c:b8:7e:f3:34:19",
+      "internal": false,
+      "cidr": "fe80::e27b:18b7:ca43:95c8/64",
+      "scopeid": 6
+    },
+    {
+      "address": "192.168.1.227",
+      "netmask": "255.255.255.0",
+      "family": "IPv4",
+      "mac": "8c:b8:7e:f3:34:19",
+      "internal": false,
+      "cidr": "192.168.1.227/24"
+    }
+  ],
+  "Loopback Pseudo-Interface 1": [
+    {
+      "address": "::1",
+      "netmask": "ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff",
+      "family": "IPv6",
+      "mac": "00:00:00:00:00:00",
+      "internal": true,
+      "cidr": "::1/128",
+      "scopeid": 0
+    },
+    {
+      "address": "127.0.0.1",
+      "netmask": "255.0.0.0",
+      "family": "IPv4",
+      "mac": "00:00:00:00:00:00",
+      "internal": true,
+      "cidr": "127.0.0.1/8"
+    }
+  ],
+  "vEthernet (WSL (Hyper-V firewall))": [
+    {
+      "address": "fe80::c3dc:e99c:ece3:8f07",
+      "netmask": "ffff:ffff:ffff:ffff::",
+      "family": "IPv6",
+      "mac": "00:15:5d:9d:82:d5",
+      "internal": false,
+      "cidr": "fe80::c3dc:e99c:ece3:8f07/64",
+      "scopeid": 55
+    },
+    {
+      "address": "172.24.32.1",
+      "netmask": "255.255.240.0",
+      "family": "IPv4",
+      "mac": "00:15:5d:9d:82:d5",
+      "internal": false,
+      "cidr": "172.24.32.1/20"
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+Router: super | 192.168.1.67:8728
+Username: admin
+RADIUS IP: 192.168.1.227
+Secret: bae4bbbf...
+
+=== Step 1: Add RADIUS server entry ===
+SUCCESS: RADIUS entry added! Result: [{"ret":"*1"}]
+
+=== Step 2: Enable RADIUS on hotspot profiles ===
+Profiles result: ok=true count=2
+Setting use-radius=yes on profile: default
+  Result: ok=true
+Setting use-radius=yes on profile: hsprof1
+  Result: ok=true
+
+=== Step 3: Verification ===
+RADIUS entries after setup:
+  address=192.168.1.227 service=hotspot secret=***
+
+COMPLETE! Check MikroTik Winbox RADIUS window.

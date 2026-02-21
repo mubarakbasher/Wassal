@@ -2,11 +2,12 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-# Install dependencies
+ARG VITE_API_URL=http://localhost:3001
+ENV VITE_API_URL=${VITE_API_URL}
+
 COPY package*.json ./
 RUN npm ci
 
-# Copy source and build
 COPY . .
 RUN npm run build
 

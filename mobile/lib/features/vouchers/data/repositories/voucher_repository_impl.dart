@@ -58,6 +58,7 @@ class VoucherRepositoryImpl implements VoucherRepository {
     int? quantity,
     String? charset,
     String? authType,
+    String? countType,
   }) async {
     try {
       final result = await remoteDataSource.generateVoucher(
@@ -71,6 +72,7 @@ class VoucherRepositoryImpl implements VoucherRepository {
         quantity: quantity,
         charset: charset,
         authType: authType,
+        countType: countType,
       );
       
       // Invalidate cache after generating new vouchers

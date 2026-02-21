@@ -1,20 +1,58 @@
 # FreeRADIUS Configuration Guide for Wassal
 
-## Prerequisites
+## Quick Start (Docker — Recommended)
+
+The easiest way to run FreeRADIUS is via Docker Compose:
+
+```bash
+# 1. Copy environment template
+cp .env.example .env
+
+# 2. Edit .env — set RADIUS_SERVER_IP to your server's LAN IP
+#    (the IP your MikroTik routers can reach)
+nano .env
+
+# 3. Start all services (PostgreSQL + FreeRADIUS + Backend)
+docker-compose up -d
+
+# 4. Run database migrations
+cd backend && npx prisma migrate deploy
+```
+
+FreeRADIUS will automatically connect to PostgreSQL and read:
+- **`radcheck`** — User credentials (populated when vouchers are created)
+- **`radreply`** — Reply attributes like speed limits
+- **`radusergroup`** / **`radgroupreply`** — Group-level profiles
+- **`nas`** — NAS clients (populated when routers are added)
+- **`radacct`** — Accounting data (written by FreeRADIUS on sessions)
+- **`radpostauth`** — Authentication logs
+
+### Test Authentication
+```bash
+# From the FreeRADIUS container:
+docker exec wassal-freeradius radtest <username> <password> 127.0.0.1 0 testing123
+
+# Expected for active voucher:
+# Received Access-Accept with Mikrotik-Rate-Limit and Session-Timeout
+```
+
+---
+
+## Manual Installation (Ubuntu/Debian)
+
+### Prerequisites
 - FreeRADIUS 3.x installed
 - PostgreSQL database (same as backend)
 - MikroTik RouterOS v6 or v7
 
----
-
-## 1. Install FreeRADIUS (Ubuntu/Debian)
+### 1. Install FreeRADIUS
 
 ```bash
 sudo apt update
 sudo apt install freeradius freeradius-postgresql freeradius-utils
 ```
 
-## 2. Configure PostgreSQL Module
+### 2. Configure PostgreSQL Module
 
 Edit `/etc/freeradius/3.0/mods-available/sql`:
 
@@ -34,7 +72,6 @@ sql {
     read_clients = yes
     client_table = "nas"
 
-    # Use standard FreeRADIUS SQL queries
     # The tables (radcheck, radreply, etc.) are already created by Prisma migration
 }
 ```
@@ -45,7 +82,7 @@ cd /etc/freeradius/3.0/mods-enabled
 sudo ln -s ../mods-available/sql sql
 ```
 
-## 3. Configure Sites
+### 3. Configure Sites
 
 Edit `/etc/freeradius/3.0/sites-enabled/default`:
 
@@ -89,16 +126,7 @@ post-auth {
 }
 ```
 
-## 4. MikroTik Dictionary
-
-The MikroTik vendor attributes dictionary should already be included with FreeRADIUS.
-Verify it exists at `/etc/freeradius/3.0/dictionary.mikrotik` or `/usr/share/freeradius/dictionary.mikrotik`.
-
-Key attributes used:
-- `Mikrotik-Rate-Limit` — Speed limit (e.g., "2M/2M")
-- `Mikrotik-Total-Limit` — Total bytes limit
-
-## 5. Test FreeRADIUS
+### 4. Test FreeRADIUS
 
 Start in debug mode first:
 ```bash
@@ -110,19 +138,7 @@ Test authentication with a voucher:
 radtest <username> <password> localhost 0 testing123
 ```
 
-Expected output for active voucher:
-```
-Received Access-Accept Id ... from 127.0.0.1:1812
-    Mikrotik-Rate-Limit = "2M/2M"
-    Session-Timeout = 3600
-```
-
-Expected output for expired voucher:
-```
-Received Access-Reject Id ... from 127.0.0.1:1812
-```
-
-## 6. Run as Service
+### 5. Run as Service
 
 ```bash
 sudo systemctl enable freeradius
@@ -131,9 +147,68 @@ sudo systemctl start freeradius
 
 ---
 
+## How the Integration Works
+
+### Flow: Voucher Created → FreeRADIUS → MikroTik
+
+```
+┌──────────────────┐     ┌───────────────────┐     ┌──────────────────┐
+│   Wassal App     │     │   FreeRADIUS       │     │   MikroTik       │
+│                  │     │                    │     │   Router         │
+│  Create Voucher  │     │                    │     │                  │
+│  ─────────────►  │     │                    │     │                  │
+│  Writes to:      │     │                    │     │                  │
+│  • radcheck      │     │                    │     │                  │
+│  • radusergroup  │     │                    │     │                  │
+│  • radreply      │     │                    │     │                  │
+│                  │     │                    │     │                  │
+│  Add Router      │     │                    │     │                  │
+│  ─────────────►  │     │                    │     │                  │
+│  Writes to:      │     │                    │     │  Configured to   │
+│  • nas table     │     │  Reads nas table   │     │  use RADIUS      │
+│                  │     │                    │     │                  │
+│                  │     │  User connects ◄───┤─────┤  Hotspot login   │
+│                  │     │  to hotspot        │     │                  │
+│                  │     │                    │     │                  │
+│                  │     │  Checks radcheck   │     │                  │
+│                  │     │  Returns Accept ───┤────►│  User gets       │
+│                  │     │  with speed limit  │     │  internet access │
+│                  │     │                    │     │                  │
+│                  │     │  Writes radacct ───┤─    │                  │
+│  Session Sync    │◄────┤──────────────────  │     │                  │
+│  (every 5 min)   │     │                    │     │                  │
+└──────────────────┘     └───────────────────┘     └──────────────────┘
+```
+
+### Backend RADIUS API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/radius/status` | RADIUS table counts and health |
+| GET | `/radius/users` | List all RADIUS users |
+| GET | `/radius/users/:username` | User details with attributes |
+| GET | `/radius/online` | Currently online users |
+| GET | `/radius/accounting/:username` | Session history |
+| GET | `/radius/nas` | Registered NAS clients |
+
+### Cron Jobs (Automatic)
+
+| Job | Frequency | Action |
+|-----|-----------|--------|
+| Session Sync | Every 5 min | Syncs `radacct` → app `Session` table |
+| Voucher Expiration | Every 1 min | Expires vouchers and removes RADIUS credentials |
+
+---
+
 ## MikroTik Router Configuration
 
-### Via WinBox / Terminal (v6 & v7 compatible)
+### Automatic (via Wassal App)
+When you add a router through the app, RADIUS is configured automatically:
+1. NAS entry created in database
+2. RADIUS server added to the MikroTik router
+3. Hotspot profile set to `use-radius=yes`
+
+### Manual (via WinBox / Terminal)
 
 ```
 # 1. Add RADIUS server
@@ -150,22 +225,18 @@ sudo systemctl start freeradius
 ```
 
 > **Note**: The `<RADIUS_SECRET>` is automatically generated and stored in the router
-> record when you add a router through the Wassal app. You can find it in the 
-> database or the router details in the admin panel.
+> record when you add a router through the Wassal app.
 
-### Via Wassal Backend API
+---
 
-The RADIUS secret is returned when you add a router via the API:
-```json
-{
-    "id": "router-uuid",
-    "name": "My Router",
-    "ipAddress": "192.168.1.1",
-    "radiusSecret": "abc123def456..."
-}
-```
+## MikroTik Dictionary
 
-Use this secret when configuring `/radius` on the MikroTik.
+The MikroTik vendor attributes dictionary should already be included with FreeRADIUS.
+Verify it exists at `/etc/freeradius/3.0/dictionary.mikrotik` or `/usr/share/freeradius/dictionary.mikrotik`.
+
+Key attributes used:
+- `Mikrotik-Rate-Limit` — Speed limit (e.g., "2M/2M")
+- `Mikrotik-Total-Limit` — Total bytes limit
 
 ---
 
@@ -178,3 +249,5 @@ Use this secret when configuring `/radius` on the MikroTik.
 | Time not expiring | Verify `Expiration` attribute in `radcheck` |
 | MikroTik can't reach RADIUS | Check firewall, verify `nas` table has the router IP |
 | "Unknown client" in RADIUS log | Router IP not in `nas` table, or FreeRADIUS needs restart |
+| Docker: FreeRADIUS can't connect to DB | Check `ENV_RADIUS_DB_*` env vars in docker-compose |
+| Vouchers not expiring | Check that `RadiusSyncService` cron is running (see backend logs) |

@@ -1,0 +1,14 @@
+sqlcounter totaltimelimit {
+    sql_module_instance = sql
+    dialect = postgresql
+    counter_name = Max-All-Session-Time
+    check_name = Max-All-Session
+    reply_name = Session-Timeout
+    key = User-Name
+    reset = never
+
+    query = "\
+        SELECT COALESCE(SUM(acctsessiontime), 0) \
+        FROM radacct \
+        WHERE username = '%{${key}}'"
+}

@@ -16,6 +16,7 @@ abstract class VoucherRepository {
     int? quantity,
     String? charset,
     String? authType,
+    String? countType,
   });
   Future<Either<String, List<Voucher>>> getVouchers({
     String? routerId,

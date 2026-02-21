@@ -526,6 +526,7 @@ export class MikroTikApiService {
         if (existing.success && existing.data && existing.data.length > 0) {
             // Update existing entry
             const id = existing.data[0]['.id'];
+            this.logger.log(`Updating existing RADIUS entry ${id} on ${connection.host}`);
             return this.executeCommand(connection, '/radius/set', [
                 `=.id=${id}`,
                 `=service=hotspot`,
@@ -533,19 +534,26 @@ export class MikroTikApiService {
                 `=secret=${secret}`,
                 `=authentication-port=${authPort}`,
                 `=accounting-port=${acctPort}`,
-                `=timeout=3000`,
+                `=timeout=3000ms`,
             ]);
         }
 
         // Create new RADIUS server entry
-        return this.executeCommand(connection, '/radius/add', [
+        this.logger.log(`Creating RADIUS entry: address=${radiusServerIp}, service=hotspot, authPort=${authPort}, acctPort=${acctPort}`);
+        const result = await this.executeCommand(connection, '/radius/add', [
             `=service=hotspot`,
             `=address=${radiusServerIp}`,
             `=secret=${secret}`,
             `=authentication-port=${authPort}`,
             `=accounting-port=${acctPort}`,
-            `=timeout=3000`,
+            `=timeout=3000ms`,
         ]);
+        if (!result.success) {
+            this.logger.error(`Failed to create RADIUS entry: ${result.error}`);
+        } else {
+            this.logger.log(`RADIUS entry created successfully on ${connection.host}`);
+        }
+        return result;
     }
 
     /**
