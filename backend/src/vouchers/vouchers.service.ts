@@ -384,7 +384,8 @@ export class VouchersService {
         }
 
         // Create RADIUS user with profile group
-        const groupName = `${voucher.profile.name}_${voucher.routerId.substring(0, 8)}`;
+        const profileName = voucher.profile?.name ?? 'default';
+        const groupName = `${profileName}_${voucher.routerId.substring(0, 8)}`;
         await this.radiusService.createRadiusUser(voucher.username, voucher.password, groupName);
 
         // Set Max-All-Session for uptime-based time tracking
