@@ -7,7 +7,7 @@ import { PlanModal } from '../components/subscriptions/PlanModal';
 export function SubscriptionsPage() {
     const [plans, setPlans] = useState<any[]>([]);
     const [subscriptions, setSubscriptions] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [, setLoading] = useState(true);
 
     // Modal State
     const [isModalOpen, setIsModalOpen] = useState(false);

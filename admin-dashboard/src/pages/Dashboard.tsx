@@ -125,7 +125,7 @@ export function Dashboard() {
                                             borderRadius: '8px',
                                             fontSize: '13px',
                                         }}
-                                        formatter={(value: number) => [`$${value.toLocaleString()}`, 'Revenue']}
+                                        formatter={(value: string | number | Array<string | number>) => [`$${Number(value).toLocaleString()}`, 'Revenue']}
                                     />
                                     <Area
                                         type="monotone"

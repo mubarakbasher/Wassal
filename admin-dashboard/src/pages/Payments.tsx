@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { CheckCircle, XCircle, Search, Eye, Download } from 'lucide-react';
+import { CheckCircle, XCircle, Eye, Download } from 'lucide-react';
 import api from '../lib/axios';
 import { Badge } from '../components/ui/Badge';
 
