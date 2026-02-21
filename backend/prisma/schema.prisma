@@ -171,9 +171,9 @@ model Voucher {
   expiresAt   DateTime?     // Expiration timestamp
   soldAt      DateTime?     // When marked as sold
 
-  // Profile reference
-  profileId String
-  profile   HotspotProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  // Profile reference (optional — vouchers can be created without a profile)
+  profileId String?
+  profile   HotspotProfile? @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
   // Router reference
   routerId String

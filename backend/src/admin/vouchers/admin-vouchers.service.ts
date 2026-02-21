@@ -145,7 +145,7 @@ export class AdminVouchersService {
                     dataLimit: dataLimit ? BigInt(dataLimit) : null,
                     price,
                     status: VoucherStatus.UNUSED,
-                    profileId: profileId || undefined,
+                    profileId: profileId || null,
                     routerId,
                 },
                 select: {
