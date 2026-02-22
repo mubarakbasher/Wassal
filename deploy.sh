@@ -97,7 +97,7 @@ sleep 10
 
 # Step 2: Obtain SSL certificate
 echo "==> Step 2/4: Obtaining SSL certificate from Let's Encrypt..."
-docker compose -f docker-compose.prod.yml run --rm certbot \
+docker compose -f docker-compose.prod.yml run --rm --entrypoint "" certbot \
     certbot certonly \
     --webroot \
     --webroot-path=/var/www/certbot \
