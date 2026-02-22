@@ -1,8 +1,9 @@
 FROM node:18-alpine
 
+RUN apk add --no-cache openssl
+
 WORKDIR /app
 
-# Install dependencies
 COPY package*.json ./
 RUN npm ci
 
