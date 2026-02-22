@@ -71,7 +71,9 @@ if [ "${1:-}" = "update" ]; then
     docker exec wassal-nginx nginx -s reload 2>/dev/null || true
 
     echo ""
-    echo "Update complete. Site: https://${DOMAIN}"
+    echo "Update complete."
+    echo "  Dashboard: https://admin.${DOMAIN}"
+    echo "  API:       https://api.${DOMAIN}"
     exit 0
 fi
 
@@ -79,7 +81,9 @@ fi
 
 echo "============================================"
 echo "  Wassal — First-Time Deployment"
-echo "  Domain: ${DOMAIN}"
+echo "  Domain:    ${DOMAIN}"
+echo "  Admin:     admin.${DOMAIN}"
+echo "  API:       api.${DOMAIN}"
 echo "============================================"
 echo ""
 
@@ -100,7 +104,9 @@ docker compose -f docker-compose.prod.yml run --rm certbot \
     --email "${CERTBOT_EMAIL}" \
     --agree-tos \
     --no-eff-email \
-    -d "${DOMAIN}"
+    -d "${DOMAIN}" \
+    -d "admin.${DOMAIN}" \
+    -d "api.${DOMAIN}"
 
 # Step 3: Switch to full HTTPS nginx config
 echo "==> Step 3/4: Switching to HTTPS nginx config..."
@@ -114,9 +120,9 @@ echo ""
 echo "============================================"
 echo "  Deployment complete!"
 echo ""
-echo "  Dashboard:  https://${DOMAIN}"
-echo "  API:        https://${DOMAIN}/api"
-echo "  Swagger:    https://${DOMAIN}/api/api/docs"
+echo "  Dashboard:  https://admin.${DOMAIN}"
+echo "  API:        https://api.${DOMAIN}"
+echo "  Swagger:    https://api.${DOMAIN}/api/docs"
 echo ""
 echo "  RADIUS:     ${RADIUS_SERVER_IP}:1812/udp"
 echo ""

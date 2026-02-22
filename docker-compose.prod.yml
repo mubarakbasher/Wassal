@@ -63,7 +63,7 @@ services:
       context: ./admin-dashboard
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: https://${DOMAIN}/api
+        VITE_API_URL: https://api.${DOMAIN}
     container_name: wassal-admin
     depends_on:
       - backend
