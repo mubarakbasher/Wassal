@@ -110,6 +110,11 @@ model Router {
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
+  // WireGuard VPN
+  vpnIp        String?   @unique  // WireGuard VPN IP (e.g., 10.10.10.5)
+  wgPublicKey  String?            // Router's WireGuard public key
+  wgPrivateKey String?            // Router's WireGuard private key (encrypted, shown to user once)
+
   // Owner
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)

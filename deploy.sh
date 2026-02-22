@@ -57,6 +57,10 @@ generate_nginx_conf() {
     echo "Generated nginx/nginx.conf for domain: ${DOMAIN}"
 }
 
+# ---- Ensure WireGuard peers directory exists ----
+mkdir -p /opt/wassal/wireguard/peers
+touch /opt/wassal/wireguard/peers/.trigger
+
 # ---- UPDATE mode: pull & rebuild ----
 if [ "${1:-}" = "update" ]; then
     echo "==> Pulling latest code..."
@@ -74,6 +78,11 @@ if [ "${1:-}" = "update" ]; then
     echo "Update complete."
     echo "  Dashboard: https://admin.${DOMAIN}"
     echo "  API:       https://api.${DOMAIN}"
+    if [ -n "${WG_SERVER_PUBLIC_KEY:-}" ]; then
+        echo "  WireGuard: active (port 51820)"
+    else
+        echo "  WireGuard: not configured (run wireguard/setup-host.sh)"
+    fi
     exit 0
 fi
 

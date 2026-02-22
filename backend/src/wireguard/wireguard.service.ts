@@ -1,0 +1,193 @@
+import { Injectable, Logger } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import * as crypto from 'crypto';
+import * as fs from 'fs';
+import * as path from 'path';
+
+@Injectable()
+export class WireGuardService {
+    private readonly logger = new Logger(WireGuardService.name);
+    private readonly peersDir: string;
+    private readonly serverPublicKey: string;
+    private readonly serverEndpoint: string;
+    private readonly vpnSubnetBase = '10.10.10';
+
+    constructor(private prisma: PrismaService) {
+        this.peersDir = process.env.WG_PEERS_DIR || '/app/wireguard-peers';
+        this.serverPublicKey = process.env.WG_SERVER_PUBLIC_KEY || '';
+        this.serverEndpoint = process.env.WG_SERVER_ENDPOINT || '';
+
+        if (!this.serverPublicKey) {
+            this.logger.warn('WG_SERVER_PUBLIC_KEY not set — WireGuard setup will not work');
+        }
+
+        try {
+            if (!fs.existsSync(this.peersDir)) {
+                fs.mkdirSync(this.peersDir, { recursive: true });
+            }
+        } catch {
+            this.logger.warn(`Could not create peers directory: ${this.peersDir}`);
+        }
+    }
+
+    /**
+     * Generate a WireGuard Curve25519 keypair using Node.js crypto.
+     * Returns base64-encoded keys compatible with `wg` CLI.
+     */
+    generateKeyPair(): { privateKey: string; publicKey: string } {
+        const { privateKey, publicKey } = crypto.generateKeyPairSync('x25519', {
+            publicKeyEncoding: { type: 'spki', format: 'der' },
+            privateKeyEncoding: { type: 'pkcs8', format: 'der' },
+        });
+
+        // x25519 DER-encoded keys: raw 32-byte key is the last 32 bytes
+        const privRaw = privateKey.slice(-32);
+        const pubRaw = publicKey.slice(-32);
+
+        return {
+            privateKey: privRaw.toString('base64'),
+            publicKey: pubRaw.toString('base64'),
+        };
+    }
+
+    /**
+     * Allocate the next available VPN IP from the 10.10.10.0/16 pool.
+     * .1 is reserved for the VPS server. Starts at .2.
+     */
+    async allocateVpnIp(): Promise<string> {
+        const usedIps = await this.prisma.router.findMany({
+            where: { vpnIp: { not: null } },
+            select: { vpnIp: true },
+        });
+
+        const usedSet = new Set(usedIps.map((r) => r.vpnIp));
+
+        // Scan 10.10.10.2 through 10.10.255.254
+        for (let third = 10; third <= 255; third++) {
+            for (let fourth = 2; fourth <= 254; fourth++) {
+                const candidate = `10.10.${third}.${fourth}`;
+                if (!usedSet.has(candidate)) {
+                    return candidate;
+                }
+            }
+        }
+
+        throw new Error('VPN IP pool exhausted');
+    }
+
+    /**
+     * Write a peer config file so the host watcher can add it to WireGuard.
+     */
+    addPeer(publicKey: string, vpnIp: string): void {
+        const safeName = vpnIp.replace(/\./g, '_');
+        const peerFile = path.join(this.peersDir, `${safeName}.conf`);
+
+        const content = [
+            `[Peer]`,
+            `PublicKey = ${publicKey}`,
+            `AllowedIPs = ${vpnIp}/32`,
+            '',
+        ].join('\n');
+
+        try {
+            fs.writeFileSync(peerFile, content, 'utf-8');
+            this.triggerSync();
+            this.logger.log(`Added WireGuard peer: ${vpnIp}`);
+        } catch (err) {
+            this.logger.error(`Failed to write peer config for ${vpnIp}: ${err}`);
+        }
+    }
+
+    /**
+     * Remove a peer config file.
+     */
+    removePeer(vpnIp: string): void {
+        const safeName = vpnIp.replace(/\./g, '_');
+        const peerFile = path.join(this.peersDir, `${safeName}.conf`);
+
+        try {
+            if (fs.existsSync(peerFile)) {
+                fs.unlinkSync(peerFile);
+                this.triggerSync();
+                this.logger.log(`Removed WireGuard peer: ${vpnIp}`);
+            }
+        } catch (err) {
+            this.logger.error(`Failed to remove peer config for ${vpnIp}: ${err}`);
+        }
+    }
+
+    /**
+     * Write a trigger file to signal the host watcher to reload WireGuard config.
+     */
+    private triggerSync(): void {
+        try {
+            const triggerFile = path.join(this.peersDir, '.trigger');
+            fs.writeFileSync(triggerFile, Date.now().toString(), 'utf-8');
+        } catch {
+            this.logger.warn('Could not write WireGuard sync trigger');
+        }
+    }
+
+    /**
+     * Build the MikroTik RouterOS v7 WireGuard setup script.
+     */
+    generateMikrotikScript(
+        routerPrivateKey: string,
+        vpnIp: string,
+        userId: string,
+        callbackBaseUrl: string,
+    ): { steps: { title: string; command: string; description: string }[] } {
+        const steps = [
+            {
+                title: 'Setup WireGuard VPN',
+                description: 'Creates the WireGuard tunnel to Wassal cloud',
+                command: [
+                    '/interface wireguard add name=wg-wassal listen-port=13231 private-key="' + routerPrivateKey + '"',
+                ].join(''),
+            },
+            {
+                title: 'Connect to Wassal Server',
+                description: 'Adds Wassal VPS as a WireGuard peer',
+                command: [
+                    '/interface wireguard peers add interface=wg-wassal',
+                    ` public-key="${this.serverPublicKey}"`,
+                    ` endpoint-address=${this.serverEndpoint.split(':')[0]}`,
+                    ` endpoint-port=${this.serverEndpoint.split(':')[1] || '51820'}`,
+                    ` allowed-address=10.10.10.1/32`,
+                    ` persistent-keepalive=25`,
+                ].join(''),
+            },
+            {
+                title: 'Assign VPN Address',
+                description: 'Sets the VPN IP on the WireGuard interface',
+                command: `/ip address add address=${vpnIp}/16 interface=wg-wassal`,
+            },
+            {
+                title: 'Allow API Access',
+                description: 'Opens the MikroTik API port through the VPN',
+                command: `/ip firewall filter add chain=input src-address=10.10.10.1 dst-port=8728 protocol=tcp action=accept comment="Wassal VPN API" place-before=0`,
+            },
+            {
+                title: 'Create API User',
+                description: 'Creates the management user for Wassal',
+                command: `:do { /user remove wassal_auto } on-error={}; /user add name=wassal_auto group=full password=Wassal@123 comment="Wassal Auto-Connect"`,
+            },
+            {
+                title: 'Enable API Service',
+                description: 'Enables the RouterOS API service',
+                command: '/ip service set api disabled=no',
+            },
+            {
+                title: 'Register Router',
+                description: 'Sends router info to Wassal for auto-discovery',
+                command: `/tool fetch url="${callbackBaseUrl}/public/routers/script-callback?vpnIp=${vpnIp}&userId=${userId}" mode=https check-certificate=no keep-result=no`,
+            },
+        ];
+
+        return { steps };
+    }
+
+    isConfigured(): boolean {
+        return !!this.serverPublicKey && !!this.serverEndpoint;
+    }
+}

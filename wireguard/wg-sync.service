@@ -1,0 +1,6 @@
+[Unit]
+Description=Sync WireGuard peers from Wassal backend
+
+[Service]
+Type=oneshot
+ExecStart=/opt/wassal/wireguard/sync-peers.sh

@@ -18,6 +18,7 @@ import { MonitoringModule } from './monitoring/monitoring.module';
 import { AdminModule } from './admin/admin.module';
 import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 import { RadiusModule } from './radius/radius.module';
+import { WireGuardModule } from './wireguard/wireguard.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { RadiusModule } from './radius/radius.module';
     AdminModule,
     SubscriptionsModule,
     RadiusModule,
+    WireGuardModule,
   ],
   controllers: [AppController],
   providers: [

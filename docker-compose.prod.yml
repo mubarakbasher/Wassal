@@ -54,8 +54,16 @@ services:
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
       RADIUS_SERVER_IP: ${RADIUS_SERVER_IP}
       ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      DOMAIN: ${DOMAIN}
+      WG_SERVER_PUBLIC_KEY: ${WG_SERVER_PUBLIC_KEY:-}
+      WG_SERVER_ENDPOINT: ${WG_SERVER_ENDPOINT:-}
+      WG_PEERS_DIR: /app/wireguard-peers
       NODE_ENV: production
       PORT: 3001
+    volumes:
+      - wireguard_peers:/app/wireguard-peers
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     restart: unless-stopped
 
   admin-dashboard:
@@ -97,3 +105,9 @@ volumes:
   postgres_data:
   certbot_webroot:
   certbot_certs:
+  wireguard_peers:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/wassal/wireguard/peers

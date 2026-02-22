@@ -87,179 +87,173 @@ class AddRouterPage extends StatelessWidget {
   }
 }
 
-class ScriptAddRouterView extends StatelessWidget {
+class ScriptAddRouterView extends StatefulWidget {
   const ScriptAddRouterView({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return BlocBuilder<AuthBloc, AuthState>(
-      builder: (context, authState) {
-        final backendUrl = AppConstants.apiBaseUrl;
-        
-        // Get the current user's ID from AuthBloc
-        String? userId;
-        if (authState is AuthAuthenticated) {
-          userId = authState.user.id;
-        }
-        
-        // Show error if userId is null
-        if (userId == null) {
-          return Center(
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
-                  const SizedBox(height: 16),
-                  const Text(
-                    "Unable to get user information",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    "Please log out and log back in, then try again.",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text("Go Back"),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }
-        
-        return _buildScriptContent(context, backendUrl, userId);
-      },
-    );
-  }
-  
-  Widget _buildScriptContent(BuildContext context, String backendUrl, String userId) {
-      // Step 1: Enable advanced device mode (required for fetch tool)
-      const step1 = '/system/device-mode/update mode=advanced';
-      // Step 2: Remove existing user if present, then create new one
-      const step2 = ':do { /user remove wassal_auto } on-error={}; /user add name=wassal_auto group=full password=Wassal@123 comment="Wassal Auto-Connect"';
-      const step3 = '/ip service set api disabled=no';
-      // Step 4: Auto-detect IP from router interface and send with userId
-      // Try multiple interface names that are commonly used
-      final step4 = ':local ip ""; :do { :set ip [/ip address get [find interface=ether1] address] } on-error={ :do { :set ip [/ip address get [find interface=bridge] address] } on-error={ :set ip [/ip address get [find interface~"ether"] address] } }; :set ip [:pick \$ip 0 [:find \$ip "/"]]; /tool fetch url="$backendUrl/public/routers/script-callback?ip=\$ip&userId=$userId" mode=http keep-result=no';
+  State<ScriptAddRouterView> createState() => _ScriptAddRouterViewState();
+}
 
-      return SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              "Run these commands on your MikroTik Terminal:",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-            ),
-            const SizedBox(height: 20),
-            
-            // Step 1
-            _buildStepCard(
-              context,
-              number: 1,
-              title: "Enable Advanced Mode",
-              command: step1,
-              description: "Enables advanced features (may require reboot)",
-            ),
-            const SizedBox(height: 16),
-            
-            // Step 2
-            _buildStepCard(
-              context,
-              number: 2,
-              title: "Create API User",
-              command: step2,
-              description: "Creates a user for Wassal to connect",
-            ),
-            const SizedBox(height: 16),
-            
-            // Step 3
-            _buildStepCard(
-              context,
-              number: 3,
-              title: "Enable API Service",
-              command: step3,
-              description: "Enables the MikroTik API",
-            ),
-            const SizedBox(height: 16),
-            
-            // Step 4
-            _buildStepCard(
-              context,
-              number: 4,
-              title: "Register Router",
-              command: step4,
-              description: "Sends your router info to Wassal",
-            ),
-            
-            const SizedBox(height: 24),
-            
-            // Warning box
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.orange[50],
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.orange[200]!),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Row(
-                    children: [
-                      Icon(Icons.warning_amber, color: Colors.orange, size: 20),
-                      SizedBox(width: 8),
-                      Text(
-                        "Important Notes:",
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    "• Step 1 may require pressing a button on the router\\n"
-                    "• If step 4 fails, use the Manual tab instead\\n"
-                    "• Make sure your MikroTik can reach $backendUrl",
-                    style: const TextStyle(fontSize: 13),
-                  ),
-                ],
-              ),
-            ),
-            
-            const SizedBox(height: 16),
-            
-            // Copy all button
-            ElevatedButton.icon(
-              onPressed: () {
-                 final allCommands = "$step1\n$step2\n$step3\n$step4";
-                 Clipboard.setData(ClipboardData(text: allCommands));
-                 ScaffoldMessenger.of(context).showSnackBar(
-                   const SnackBar(content: Text("All commands copied!")),
-                 );
-              },
-              icon: const Icon(Icons.copy_all),
-              label: const Text("Copy All Commands"),
-              style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size(double.infinity, 50),
-              ),
-            ),
-            
-            const SizedBox(height: 20),
-            Text(
-              "Backend URL: $backendUrl",
-              style: TextStyle(fontSize: 11, color: Colors.grey[500]),
-            ),
-          ],
+class _ScriptAddRouterViewState extends State<ScriptAddRouterView> {
+  List<Map<String, dynamic>>? _steps;
+  String? _vpnIp;
+  String? _error;
+  bool _loading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchWireguardSetup();
+  }
+
+  Future<void> _fetchWireguardSetup() async {
+    setState(() { _loading = true; _error = null; });
+    try {
+      final dio = ApiClient().dio;
+      final response = await dio.post('/routers/wireguard-setup');
+      final data = response.data;
+      setState(() {
+        _vpnIp = data['vpnIp'];
+        _steps = List<Map<String, dynamic>>.from(data['steps']);
+        _loading = false;
+      });
+    } on DioException catch (e) {
+      setState(() {
+        _error = e.response?.data?['message'] ?? 'Failed to generate setup. Try again.';
+        _loading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = 'Unexpected error: $e';
+        _loading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_error != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
+              const SizedBox(height: 16),
+              Text(_error!, textAlign: TextAlign.center, style: const TextStyle(fontSize: 16)),
+              const SizedBox(height: 24),
+              ElevatedButton(onPressed: _fetchWireguardSetup, child: const Text("Retry")),
+            ],
+          ),
         ),
       );
+    }
+
+    if (_steps == null || _steps!.isEmpty) {
+      return const Center(child: Text("No setup steps available."));
+    }
+
+    return _buildStepsList();
+  }
+
+  Widget _buildStepsList() {
+    final allCommands = _steps!.map((s) => s['command'] as String).join('\n');
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (_vpnIp != null)
+            Container(
+              padding: const EdgeInsets.all(12),
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: Colors.green[50],
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.green[200]!),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.vpn_lock, color: Colors.green[700], size: 20),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      "VPN IP assigned: $_vpnIp",
+                      style: TextStyle(fontWeight: FontWeight.w600, color: Colors.green[800]),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          const Text(
+            "Run these commands on your MikroTik Terminal (RouterOS v7):",
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+          ),
+          const SizedBox(height: 20),
+          ...List.generate(_steps!.length, (i) {
+            final step = _steps![i];
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: _buildStepCard(
+                context,
+                number: i + 1,
+                title: step['title'] as String,
+                command: step['command'] as String,
+                description: step['description'] as String? ?? '',
+              ),
+            );
+          }),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.orange[50],
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.orange[200]!),
+            ),
+            child: const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(children: [
+                  Icon(Icons.warning_amber, color: Colors.orange, size: 20),
+                  SizedBox(width: 8),
+                  Text("Important Notes:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                ]),
+                SizedBox(height: 8),
+                Text(
+                  "• Requires RouterOS v7 or later (WireGuard support)\n"
+                  "• Run each command in order in the MikroTik terminal\n"
+                  "• The VPN tunnel connects your router to Wassal securely",
+                  style: TextStyle(fontSize: 13),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton.icon(
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: allCommands));
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("All commands copied!")),
+              );
+            },
+            icon: const Icon(Icons.copy_all),
+            label: const Text("Copy All Commands"),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              minimumSize: const Size(double.infinity, 50),
+            ),
+          ),
+          const SizedBox(height: 20),
+        ],
+      ),
+    );
   }
   
   Widget _buildStepCard(

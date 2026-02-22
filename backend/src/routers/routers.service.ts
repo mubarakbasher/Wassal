@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, BadRequestException, Logger } from '@nes
 import { PrismaService } from '../prisma/prisma.service';
 import { MikroTikApiService } from '../mikrotik/mikrotik-api.service';
 import { RadiusService } from '../radius/radius.service';
+import { WireGuardService } from '../wireguard/wireguard.service';
 import { CreateRouterDto, UpdateRouterDto } from './dto/router.dto';
 import { RouterStatus } from '@prisma/client';
 import * as crypto from 'crypto';
@@ -14,7 +15,16 @@ export class RoutersService {
         private prisma: PrismaService,
         private mikrotikApi: MikroTikApiService,
         private radiusService: RadiusService,
+        private wireguardService: WireGuardService,
     ) { }
+
+    /**
+     * Get the best host address to connect to a router.
+     * Prefers VPN IP (reachable through WireGuard) over the stored ipAddress.
+     */
+    private getRouterHost(router: { vpnIp?: string | null; ipAddress: string }): string {
+        return router.vpnIp || router.ipAddress;
+    }
 
     /**
      * Encrypt router password for storage
@@ -202,6 +212,7 @@ export class RoutersService {
                 description: true,
                 location: true,
                 radiusSecret: true,
+                vpnIp: true,
                 status: true,
                 lastSeen: true,
                 createdAt: true,
@@ -255,6 +266,7 @@ export class RoutersService {
                 password: true, // Need password for connection test
                 description: true,
                 location: true,
+                vpnIp: true,
                 status: true,
                 lastSeen: true,
                 createdAt: true,
@@ -276,7 +288,7 @@ export class RoutersService {
                     const decryptedPassword = this.decryptPassword(router.password);
                     // Use quick test with short timeout for status checks
                     const isOnline = await this.mikrotikApi.quickTestConnection({
-                        host: router.ipAddress,
+                        host: this.getRouterHost(router),
                         port: router.apiPort,
                         username: router.username,
                         password: decryptedPassword,
@@ -328,6 +340,7 @@ export class RoutersService {
                 username: true,
                 description: true,
                 location: true,
+                vpnIp: true,
                 status: true,
                 lastSeen: true,
                 createdAt: true,
@@ -398,6 +411,7 @@ export class RoutersService {
                 username: true,
                 description: true,
                 location: true,
+                vpnIp: true,
                 status: true,
                 lastSeen: true,
                 updatedAt: true,
@@ -417,7 +431,7 @@ export class RoutersService {
         try {
             const passwordToUse = updateRouterDto.password ? updateRouterDto.password : this.decryptPassword(existingRouter.password);
             const conn = {
-                host: router.ipAddress,
+                host: this.getRouterHost(router),
                 port: router.apiPort,
                 username: router.username,
                 password: passwordToUse,
@@ -454,7 +468,7 @@ export class RoutersService {
             try {
                 const decryptedPassword = this.decryptPassword(router.password);
                 const conn = {
-                    host: router.ipAddress,
+                    host: this.getRouterHost(router),
                     port: router.apiPort,
                     username: router.username,
                     password: decryptedPassword,
@@ -468,6 +482,11 @@ export class RoutersService {
 
         // Unregister NAS from RADIUS
         await this.radiusService.removeNas(router.ipAddress);
+
+        // Remove WireGuard peer if this router had a VPN IP
+        if (router.vpnIp) {
+            this.wireguardService.removePeer(router.vpnIp);
+        }
 
         // Delete router (cascade will handle related records)
         await this.prisma.router.delete({
@@ -503,7 +522,7 @@ export class RoutersService {
         const decryptedPassword = this.decryptPassword(router.password);
 
         const isOnline = await this.mikrotikApi.testConnection({
-            host: router.ipAddress,
+            host: this.getRouterHost(router),
             port: router.apiPort,
             username: router.username,
             password: decryptedPassword,
@@ -545,7 +564,7 @@ export class RoutersService {
 
         try {
             const systemInfo = await this.mikrotikApi.getSystemInfo({
-                host: router.ipAddress,
+                host: this.getRouterHost(router),
                 port: router.apiPort,
                 username: router.username,
                 password: decryptedPassword,
@@ -585,7 +604,7 @@ export class RoutersService {
         const password = this.decryptPassword(router.password);
 
         const connection = {
-            host: router.ipAddress,
+            host: this.getRouterHost(router),
             port: router.apiPort,
             username: router.username,
             password: password,
@@ -671,7 +690,7 @@ export class RoutersService {
 
         try {
             const profiles = await this.mikrotikApi.getHotspotProfiles({
-                host: router.ipAddress,
+                host: this.getRouterHost(router),
                 port: router.apiPort,
                 username: router.username,
                 password: decryptedPassword,
@@ -715,7 +734,7 @@ export class RoutersService {
         try {
             const result = await this.mikrotikApi.createHotspotProfile(
                 {
-                    host: router.ipAddress,
+                    host: this.getRouterHost(router),
                     port: router.apiPort,
                     username: router.username,
                     password: decryptedPassword,
@@ -736,14 +755,18 @@ export class RoutersService {
 
     /**
      * Handle router script callback (Auto-Discovery)
-     * @param ip - Router IP address
+     * @param ip - Router IP address (or VPN IP if coming through WireGuard)
      * @param userId - Optional user ID to assign the router to
+     * @param vpnIp - Optional WireGuard VPN IP passed by the setup script
      */
-    async handleScriptCallback(ip: string, userId?: string) {
-        this.logger.log(`Received script callback from IP: ${ip}, userId: ${userId || 'not provided'}`);
+    async handleScriptCallback(ip: string, userId?: string, vpnIp?: string) {
+        this.logger.log(`Received script callback from IP: ${ip}, userId: ${userId || 'not provided'}, vpnIp: ${vpnIp || 'none'}`);
+
+        // Use VPN IP for connecting if available, otherwise fall back to detected IP
+        const connectHost = vpnIp || ip;
 
         const credentials = {
-            host: ip,
+            host: connectHost,
             port: 8728,
             username: 'wassal_auto',
             password: 'Wassal@123',
@@ -753,13 +776,15 @@ export class RoutersService {
         const isConnected = await this.mikrotikApi.testConnection(credentials);
 
         if (!isConnected) {
-            this.logger.warn(`Failed to connect to router at ${ip} with script credentials.`);
-            throw new BadRequestException(`Unable to connect to router at ${ip}`);
+            this.logger.warn(`Failed to connect to router at ${connectHost} with script credentials.`);
+            throw new BadRequestException(`Unable to connect to router at ${connectHost}`);
         }
 
-        // 2. Check if already exists
+        // 2. Check if already exists (by VPN IP or regular IP)
         const existing = await this.prisma.router.findFirst({
-            where: { ipAddress: ip }
+            where: vpnIp
+                ? { OR: [{ vpnIp }, { ipAddress: ip }] }
+                : { ipAddress: ip },
         });
 
         if (existing) {
@@ -832,15 +857,33 @@ export class RoutersService {
 
         const encryptedPassword = this.encryptPassword(credentials.password);
 
+        // Look up pre-generated WG keys if this is a WireGuard setup
+        let wgPublicKey: string | undefined;
+        let wgPrivateKey: string | undefined;
+        if (vpnIp) {
+            const pending = await this.prisma.router.findFirst({
+                where: { vpnIp, status: RouterStatus.OFFLINE },
+            });
+            if (pending) {
+                wgPublicKey = pending.wgPublicKey ?? undefined;
+                wgPrivateKey = pending.wgPrivateKey ?? undefined;
+                // Delete the pending placeholder — we'll create the real record
+                await this.prisma.router.delete({ where: { id: pending.id } });
+            }
+        }
+
         const router = await this.prisma.router.create({
             data: {
-                name: `Auto-Discovered [${ip}]`,
-                ipAddress: ip,
+                name: `Auto-Discovered [${connectHost}]`,
+                ipAddress: connectHost,
                 apiPort: 8728,
                 username: credentials.username,
                 password: encryptedPassword,
-                description: 'Added via Script Auto-Discovery',
+                description: vpnIp ? 'Added via WireGuard Auto-Discovery' : 'Added via Script Auto-Discovery',
                 location: 'Unknown',
+                vpnIp: vpnIp || null,
+                wgPublicKey: wgPublicKey || null,
+                wgPrivateKey: wgPrivateKey || null,
                 status: RouterStatus.ONLINE,
                 lastSeen: new Date(),
                 userId: assignToUser.id,
@@ -850,12 +893,12 @@ export class RoutersService {
         // Configure RADIUS on the auto-discovered router
         const radiusResult = await this.configureRadiusOnRouter(
             router.id,
-            ip,
+            connectHost,
             8728,
             credentials.username,
             credentials.password,
             router.name,
-            'Added via Script Auto-Discovery',
+            vpnIp ? 'Added via WireGuard Auto-Discovery' : 'Added via Script Auto-Discovery',
         );
 
         // Log activity
@@ -883,6 +926,61 @@ export class RoutersService {
     }
 
     /**
+     * Generate WireGuard VPN setup for a new router.
+     * Pre-allocates a VPN IP, generates keys, adds the WireGuard peer on the host,
+     * and returns MikroTik commands the user pastes into their router.
+     */
+    async generateWireguardSetup(userId: string) {
+        if (!this.wireguardService.isConfigured()) {
+            throw new BadRequestException('WireGuard is not configured on this server. Contact the administrator.');
+        }
+
+        const keyPair = this.wireguardService.generateKeyPair();
+        const vpnIp = await this.wireguardService.allocateVpnIp();
+
+        // Add peer to WireGuard host config
+        this.wireguardService.addPeer(keyPair.publicKey, vpnIp);
+
+        // Create a pending router record to reserve the VPN IP and store the keys
+        const encryptedPrivKey = this.encryptPassword(keyPair.privateKey);
+        await this.prisma.router.create({
+            data: {
+                name: `Pending WireGuard [${vpnIp}]`,
+                ipAddress: vpnIp,
+                apiPort: 8728,
+                username: 'wassal_auto',
+                password: this.encryptPassword('Wassal@123'),
+                description: 'Pending WireGuard setup — waiting for router callback',
+                vpnIp,
+                wgPublicKey: keyPair.publicKey,
+                wgPrivateKey: encryptedPrivKey,
+                status: RouterStatus.OFFLINE,
+                userId,
+            },
+        });
+
+        // Determine the callback URL base
+        const domain = process.env.DOMAIN || 'localhost';
+        const callbackBase = process.env.NODE_ENV === 'production'
+            ? `https://api.${domain}`
+            : `http://localhost:${process.env.PORT || 3001}`;
+
+        const { steps } = this.wireguardService.generateMikrotikScript(
+            keyPair.privateKey,
+            vpnIp,
+            userId,
+            callbackBase,
+        );
+
+        this.logger.log(`Generated WireGuard setup for user ${userId}: VPN IP ${vpnIp}`);
+
+        return {
+            vpnIp,
+            steps,
+        };
+    }
+
+    /**
      * Get active hotspot users from router
      */
     async getActiveUsers(id: string, userId: string) {
@@ -898,7 +996,7 @@ export class RoutersService {
 
         try {
             const sessions = await this.mikrotikApi.getActiveSessions({
-                host: router.ipAddress,
+                host: this.getRouterHost(router),
                 port: router.apiPort,
                 username: router.username,
                 password: decryptedPassword,
@@ -937,7 +1035,7 @@ export class RoutersService {
 
         try {
             const interfaces = await this.mikrotikApi.getInterfaces({
-                host: router.ipAddress,
+                host: this.getRouterHost(router),
                 port: router.apiPort,
                 username: router.username,
                 password: decryptedPassword,
@@ -977,7 +1075,7 @@ export class RoutersService {
         try {
             const logs = await this.mikrotikApi.getSystemLogs(
                 {
-                    host: router.ipAddress,
+                    host: this.getRouterHost(router),
                     port: router.apiPort,
                     username: router.username,
                     password: decryptedPassword,
@@ -1015,7 +1113,7 @@ export class RoutersService {
         try {
             const result = await this.mikrotikApi.disconnectUser(
                 {
-                    host: router.ipAddress,
+                    host: this.getRouterHost(router),
                     port: router.apiPort,
                     username: router.username,
                     password: decryptedPassword,
@@ -1050,7 +1148,7 @@ export class RoutersService {
 
         try {
             const result = await this.mikrotikApi.rebootRouter({
-                host: router.ipAddress,
+                host: this.getRouterHost(router),
                 port: router.apiPort,
                 username: router.username,
                 password: decryptedPassword,

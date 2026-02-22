@@ -129,6 +129,11 @@ export class RoutersController {
     setupRadius(@Param('id') id: string, @CurrentUser() user: any) {
         return this.routersService.setupRadius(id, user.id);
     }
+
+    @Post('wireguard-setup')
+    generateWireguardSetup(@CurrentUser() user: any) {
+        return this.routersService.generateWireguardSetup(user.id);
+    }
 }
 
 @Controller('public/routers')
@@ -138,14 +143,16 @@ export class PublicRoutersController {
     @Get('script-callback')
     handleCallback(
         @Query('ip') ip: string,
+        @Query('vpnIp') vpnIp: string,
         @Query('userId') userId: string,
         @Req() req: any
     ) {
-        // Try to get IP from multiple sources in priority order:
-        // 1. Query parameter (explicitly passed by script)
-        // 2. X-Forwarded-For header (if behind proxy/NAT)
-        // 3. X-Real-IP header
-        // 4. Request socket remote address
+        // WireGuard VPN path: vpnIp is provided by the script
+        if (vpnIp) {
+            return this.routersService.handleScriptCallback(vpnIp, userId, vpnIp);
+        }
+
+        // Legacy path: detect IP from request
         const forwardedFor = req.headers['x-forwarded-for'];
         const realIp = req.headers['x-real-ip'];
         const socketIp = req.ip || req.connection?.remoteAddress;
@@ -153,7 +160,6 @@ export class PublicRoutersController {
         let requestIp = ip;
 
         if (!requestIp && forwardedFor) {
-            // X-Forwarded-For can contain multiple IPs, first one is the client
             requestIp = forwardedFor.split(',')[0].trim();
         }
 
@@ -165,7 +171,6 @@ export class PublicRoutersController {
             requestIp = socketIp;
         }
 
-        // Clean up IP (remove ::ffff: prefix if present for IPv4-mapped IPv6)
         const cleanIp = requestIp?.replace('::ffff:', '') || '';
 
         if (!cleanIp || cleanIp === '127.0.0.1' || cleanIp === '::1') {
@@ -175,7 +180,6 @@ export class PublicRoutersController {
             };
         }
 
-        // Pass userId to service for proper router-user linking
         return this.routersService.handleScriptCallback(cleanIp, userId);
     }
 }
