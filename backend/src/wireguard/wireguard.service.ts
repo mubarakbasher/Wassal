@@ -169,7 +169,7 @@ export class WireGuardService {
             {
                 title: 'Create API User',
                 description: 'Creates the management user for Wassal',
-                command: `:do { /user remove wassal_auto } on-error={}; /user add name=wassal_auto group=full password=Wassal@123 comment="Wassal Auto-Connect"`,
+                command: `:do { /user remove wassal_auto } on-error={}; /user add name=wassal_auto group=full password=WassalAuto2026 comment="Wassal Auto-Connect"`,
             },
             {
                 title: 'Enable API Service',

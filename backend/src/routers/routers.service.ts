@@ -769,7 +769,7 @@ export class RoutersService {
             host: connectHost,
             port: 8728,
             username: 'wassal_auto',
-            password: 'Wassal@123',
+            password: 'WassalAuto2026',
         };
 
         // 1. Validate connection
@@ -949,7 +949,7 @@ export class RoutersService {
                 ipAddress: vpnIp,
                 apiPort: 8728,
                 username: 'wassal_auto',
-                password: this.encryptPassword('Wassal@123'),
+                password: this.encryptPassword('WassalAuto2026'),
                 description: 'Pending WireGuard setup — waiting for router callback',
                 vpnIp,
                 wgPublicKey: keyPair.publicKey,

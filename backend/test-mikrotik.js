@@ -7,7 +7,7 @@ async function testMikrotikConnection() {
     const api = new RouterOSAPI({
         host: '192.168.1.68',
         user: 'wassal_auto',
-        password: 'Wassal@123',
+        password: 'WassalAuto2026',
         port: 8728,
         timeout: 10,
     });
