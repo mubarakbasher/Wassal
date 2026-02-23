@@ -164,7 +164,7 @@ export class WireGuardService {
             {
                 title: 'Allow API Access',
                 description: 'Opens the MikroTik API port through the VPN',
-                command: `/ip firewall filter add chain=input src-address=10.10.0.0/16 dst-port=8728 protocol=tcp action=accept comment="Wassal VPN API" place-before=0`,
+                command: `/ip firewall filter add chain=input src-address=10.10.0.0/16 dst-port=8729 protocol=tcp action=accept comment="Wassal VPN API" place-before=0`,
             },
             {
                 title: 'Create API User',
@@ -172,9 +172,9 @@ export class WireGuardService {
                 command: `:do { /user remove wassal_auto } on-error={}; /user add name=wassal_auto group=full password=WassalAuto2026 comment="Wassal Auto-Connect"`,
             },
             {
-                title: 'Enable API Service',
-                description: 'Enables the RouterOS API service',
-                command: '/ip service set api disabled=no',
+                title: 'Enable API-SSL Service',
+                description: 'Enables the RouterOS API-SSL service for remote access',
+                command: '/ip service set api-ssl disabled=no',
             },
             {
                 title: 'Register Router',

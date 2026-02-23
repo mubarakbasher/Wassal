@@ -173,7 +173,7 @@ export class RoutersService {
         // Test connection before saving
         const connectionTest = await this.mikrotikApi.testConnection({
             host: ipAddress,
-            port: apiPort || 8728,
+            port: apiPort || 8729,
             username,
             password,
         });
@@ -193,7 +193,7 @@ export class RoutersService {
             data: {
                 name,
                 ipAddress,
-                apiPort: apiPort || 8728,
+                apiPort: apiPort || 8729,
                 username,
                 password: encryptedPassword,
                 description,
@@ -224,7 +224,7 @@ export class RoutersService {
         const radiusResult = await this.configureRadiusOnRouter(
             router.id,
             ipAddress,
-            apiPort || 8728,
+            apiPort || 8729,
             username,
             password,
             router.name,
@@ -767,7 +767,7 @@ export class RoutersService {
 
         const credentials = {
             host: connectHost,
-            port: 8728,
+            port: 8729,
             username: 'wassal_auto',
             password: 'WassalAuto2026',
         };
@@ -876,7 +876,7 @@ export class RoutersService {
             data: {
                 name: `Auto-Discovered [${connectHost}]`,
                 ipAddress: connectHost,
-                apiPort: 8728,
+                apiPort: 8729,
                 username: credentials.username,
                 password: encryptedPassword,
                 description: vpnIp ? 'Added via WireGuard Auto-Discovery' : 'Added via Script Auto-Discovery',
@@ -894,7 +894,7 @@ export class RoutersService {
         const radiusResult = await this.configureRadiusOnRouter(
             router.id,
             connectHost,
-            8728,
+            8729,
             credentials.username,
             credentials.password,
             router.name,
@@ -947,7 +947,7 @@ export class RoutersService {
             data: {
                 name: `Pending WireGuard [${vpnIp}]`,
                 ipAddress: vpnIp,
-                apiPort: 8728,
+                apiPort: 8729,
                 username: 'wassal_auto',
                 password: this.encryptPassword('WassalAuto2026'),
                 description: 'Pending WireGuard setup — waiting for router callback',

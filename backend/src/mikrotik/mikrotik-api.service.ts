@@ -18,17 +18,25 @@ export interface MikroTikCommandResult {
 export class MikroTikApiService {
     private readonly logger = new Logger(MikroTikApiService.name);
 
-    /**
-     * Test connection to a MikroTik router
-     */
-    async testConnection(connection: MikroTikConnection): Promise<boolean> {
-        const api = new RouterOSAPI({
+    private createApi(connection: MikroTikConnection, timeout: number) {
+        const opts: any = {
             host: connection.host,
             user: connection.username,
             password: connection.password,
             port: connection.port,
-            timeout: 15,
-        });
+            timeout,
+        };
+        if (connection.port === 8729) {
+            opts.tls = { rejectUnauthorized: false };
+        }
+        return new RouterOSAPI(opts);
+    }
+
+    /**
+     * Test connection to a MikroTik router
+     */
+    async testConnection(connection: MikroTikConnection): Promise<boolean> {
+        const api = this.createApi(connection, 15);
 
         try {
             await api.connect();
@@ -55,13 +63,7 @@ export class MikroTikApiService {
      * Returns quickly if router is offline
      */
     async quickTestConnection(connection: MikroTikConnection): Promise<boolean> {
-        const api = new RouterOSAPI({
-            host: connection.host,
-            user: connection.username,
-            password: connection.password,
-            port: connection.port,
-            timeout: 10, // 10 second timeout for reliable status check
-        });
+        const api = this.createApi(connection, 10);
 
         try {
             await api.connect();
@@ -85,13 +87,7 @@ export class MikroTikApiService {
         command: string,
         params?: any[],
     ): Promise<MikroTikCommandResult> {
-        const api = new RouterOSAPI({
-            host: connection.host,
-            user: connection.username,
-            password: connection.password,
-            port: connection.port,
-            timeout: 20, // Increased timeout for slower routers
-        });
+        const api = this.createApi(connection, 20);
 
         try {
             await api.connect();
@@ -472,14 +468,7 @@ export class MikroTikApiService {
      * Get system logs
      */
     async getSystemLogs(connection: MikroTikConnection, limit: number = 50): Promise<any[]> {
-        // Use a longer timeout for logs as they can be large
-        const api = new RouterOSAPI({
-            host: connection.host,
-            user: connection.username,
-            password: connection.password,
-            port: connection.port,
-            timeout: 30, // Extended timeout for logs
-        });
+        const api = this.createApi(connection, 30);
 
         try {
             await api.connect();

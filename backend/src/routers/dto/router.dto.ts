@@ -13,7 +13,7 @@ export class CreateRouterDto {
     @Min(1)
     @Max(65535)
     @IsOptional()
-    apiPort?: number = 8728;
+    apiPort?: number = 8729;
 
     @IsString()
     @IsNotEmpty()
