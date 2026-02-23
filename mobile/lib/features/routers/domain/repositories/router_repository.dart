@@ -3,7 +3,7 @@ import '../../../../core/errors/failures.dart';
 import '../entities/router.dart';
 
 abstract class RouterRepository {
-  Future<Either<Failure, List<Router>>> getRouters();
+  Future<Either<Failure, List<Router>>> getRouters({bool statusOnly = false});
   
   Future<Either<Failure, Router>> getRouterById(String id);
   

@@ -9,7 +9,12 @@ abstract class RouterEvent extends Equatable {
 }
 
 class LoadRoutersEvent extends RouterEvent {
-  const LoadRoutersEvent();
+  final bool statusOnly;
+
+  const LoadRoutersEvent({this.statusOnly = false});
+
+  @override
+  List<Object?> get props => [statusOnly];
 }
 
 class CreateRouterEvent extends RouterEvent {

@@ -39,6 +39,7 @@ export class RouterMonitorService implements OnModuleInit {
                     id: true,
                     name: true,
                     ipAddress: true,
+                    vpnIp: true,
                     apiPort: true,
                     username: true,
                     password: true,
@@ -64,6 +65,7 @@ export class RouterMonitorService implements OnModuleInit {
         id: string;
         name: string;
         ipAddress: string;
+        vpnIp: string | null;
         apiPort: number;
         username: string;
         password: string;
@@ -81,7 +83,7 @@ export class RouterMonitorService implements OnModuleInit {
 
             // Create connection object
             const connection: MikroTikConnection = {
-                host: router.ipAddress,
+                host: router.vpnIp || router.ipAddress,
                 port: router.apiPort,
                 username: router.username,
                 password: password,

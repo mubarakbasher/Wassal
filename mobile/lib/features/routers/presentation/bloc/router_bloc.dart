@@ -40,9 +40,11 @@ class RouterBloc extends Bloc<RouterEvent, RouterState> {
     LoadRoutersEvent event,
     Emitter<RouterState> emit,
   ) async {
-    emit(const RouterLoading());
+    if (!event.statusOnly) {
+      emit(const RouterLoading());
+    }
 
-    final result = await repository.getRouters();
+    final result = await repository.getRouters(statusOnly: event.statusOnly);
 
     result.fold(
       (failure) => emit(RouterError(failure.message)),

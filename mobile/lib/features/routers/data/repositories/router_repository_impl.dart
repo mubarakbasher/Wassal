@@ -12,9 +12,9 @@ class RouterRepositoryImpl implements RouterRepository {
   RouterRepositoryImpl({required this.remoteDataSource});
 
   @override
-  Future<Either<Failure, List<Router>>> getRouters() async {
+  Future<Either<Failure, List<Router>>> getRouters({bool statusOnly = false}) async {
     try {
-      final routers = await remoteDataSource.getRouters();
+      final routers = await remoteDataSource.getRouters(statusOnly: statusOnly);
       return Right(routers.map(_mapToEntity).toList());
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));

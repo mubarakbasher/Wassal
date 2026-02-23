@@ -29,8 +29,8 @@ export class RoutersController {
     }
 
     @Get()
-    findAll(@CurrentUser() user: any) {
-        return this.routersService.findAll(user.id);
+    findAll(@CurrentUser() user: any, @Query('statusOnly') statusOnly?: string) {
+        return this.routersService.findAll(user.id, statusOnly === 'true');
     }
 
     @Get(':id')

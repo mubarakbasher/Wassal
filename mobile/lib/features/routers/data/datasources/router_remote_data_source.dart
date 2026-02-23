@@ -6,7 +6,7 @@ import '../../../../core/utils/error_handler.dart';
 import '../models/router_model.dart';
 
 abstract class RouterRemoteDataSource {
-  Future<List<RouterModel>> getRouters();
+  Future<List<RouterModel>> getRouters({bool statusOnly = false});
   Future<RouterModel> getRouterById(String id);
   Future<RouterModel> createRouter(Map<String, dynamic> data);
   Future<RouterModel> updateRouter(String id, Map<String, dynamic> data);
@@ -23,9 +23,12 @@ class RouterRemoteDataSourceImpl implements RouterRemoteDataSource {
   RouterRemoteDataSourceImpl({required this.apiClient});
 
   @override
-  Future<List<RouterModel>> getRouters() async {
+  Future<List<RouterModel>> getRouters({bool statusOnly = false}) async {
     try {
-      final response = await apiClient.get(ApiEndpoints.routers);
+      final endpoint = statusOnly
+          ? '${ApiEndpoints.routers}?statusOnly=true'
+          : ApiEndpoints.routers;
+      final response = await apiClient.get(endpoint);
 
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data as List<dynamic>;

@@ -254,7 +254,7 @@ export class RoutersService {
      * Get all routers for a user
      * Includes real-time status check for each router
      */
-    async findAll(userId: string) {
+    async findAll(userId: string, statusOnly = false) {
         const routers = await this.prisma.router.findMany({
             where: { userId },
             select: {
@@ -263,7 +263,7 @@ export class RoutersService {
                 ipAddress: true,
                 apiPort: true,
                 username: true,
-                password: true, // Need password for connection test
+                password: true,
                 description: true,
                 location: true,
                 vpnIp: true,
@@ -281,12 +281,18 @@ export class RoutersService {
             orderBy: { createdAt: 'desc' },
         });
 
+        if (statusOnly) {
+            return routers.map((router) => {
+                const { password: _, ...routerWithoutPassword } = router;
+                return routerWithoutPassword;
+            });
+        }
+
         // Check connectivity for each router in parallel and update status
         const routersWithStatus = await Promise.all(
             routers.map(async (router) => {
                 try {
                     const decryptedPassword = this.decryptPassword(router.password);
-                    // Use quick test with short timeout for status checks
                     const isOnline = await this.mikrotikApi.quickTestConnection({
                         host: this.getRouterHost(router),
                         port: router.apiPort,
@@ -296,7 +302,6 @@ export class RoutersService {
 
                     const newStatus = isOnline ? RouterStatus.ONLINE : RouterStatus.OFFLINE;
 
-                    // Update status in database if changed
                     if (router.status !== newStatus) {
                         await this.prisma.router.update({
                             where: { id: router.id },
@@ -307,7 +312,6 @@ export class RoutersService {
                         });
                     }
 
-                    // Return router without password, with updated status
                     const { password: _, ...routerWithoutPassword } = router;
                     return {
                         ...routerWithoutPassword,
@@ -316,7 +320,6 @@ export class RoutersService {
                     };
                 } catch (error) {
                     this.logger.error(`Failed to check status for router ${router.id}: ${error.message}`);
-                    // Return router with current status if check fails
                     const { password: _, ...routerWithoutPassword } = router;
                     return routerWithoutPassword;
                 }
