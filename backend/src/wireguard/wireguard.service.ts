@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import * as crypto from 'crypto';
+import { execSync } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -31,23 +31,17 @@ export class WireGuardService {
     }
 
     /**
-     * Generate a WireGuard Curve25519 keypair using Node.js crypto.
-     * Returns base64-encoded keys compatible with `wg` CLI.
+     * Generate a WireGuard Curve25519 keypair using the native `wg` CLI tool.
+     * This guarantees 100% compatibility with WireGuard's key format.
      */
     generateKeyPair(): { privateKey: string; publicKey: string } {
-        const { privateKey, publicKey } = crypto.generateKeyPairSync('x25519', {
-            publicKeyEncoding: { type: 'spki', format: 'der' },
-            privateKeyEncoding: { type: 'pkcs8', format: 'der' },
-        });
+        const privateKey = execSync('wg genkey', { encoding: 'utf-8' }).trim();
+        const publicKey = execSync(`echo "${privateKey}" | wg pubkey`, {
+            encoding: 'utf-8',
+            shell: '/bin/sh',
+        }).trim();
 
-        // x25519 DER-encoded keys: raw 32-byte key is the last 32 bytes
-        const privRaw = privateKey.slice(-32);
-        const pubRaw = publicKey.slice(-32);
-
-        return {
-            privateKey: privRaw.toString('base64'),
-            publicKey: pubRaw.toString('base64'),
-        };
+        return { privateKey, publicKey };
     }
 
     /**
@@ -138,6 +132,11 @@ export class WireGuardService {
         callbackBaseUrl: string,
     ): { steps: { title: string; command: string; description: string }[] } {
         const steps = [
+            {
+                title: 'Clean Previous Setup',
+                description: 'Removes any existing Wassal WireGuard config for a clean start',
+                command: `:do { /ip address remove [find interface=wg-wassal] } on-error={}; :do { /interface wireguard peers remove [find interface=wg-wassal] } on-error={}; :do { /interface wireguard remove wg-wassal } on-error={}`,
+            },
             {
                 title: 'Setup WireGuard VPN',
                 description: 'Creates the WireGuard tunnel to Wassal cloud',
