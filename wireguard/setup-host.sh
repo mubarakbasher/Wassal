@@ -35,8 +35,8 @@ cat > /etc/wireguard/wg0.conf << EOF
 PrivateKey = ${PRIVATE_KEY}
 Address = 10.10.10.1/16
 ListenPort = 51820
-PostUp = iptables -A FORWARD -i wg0 -j ACCEPT; iptables -t nat -A POSTROUTING -o ${PRIMARY_IF} -j MASQUERADE
-PostDown = iptables -D FORWARD -i wg0 -j ACCEPT; iptables -t nat -D POSTROUTING -o ${PRIMARY_IF} -j MASQUERADE
+PostUp = iptables -A FORWARD -i wg0 -j ACCEPT; iptables -A FORWARD -o wg0 -j ACCEPT; iptables -t nat -A POSTROUTING -o ${PRIMARY_IF} -j MASQUERADE; iptables -t nat -A POSTROUTING -s 172.16.0.0/12 -d 10.10.0.0/16 -j MASQUERADE
+PostDown = iptables -D FORWARD -i wg0 -j ACCEPT; iptables -D FORWARD -o wg0 -j ACCEPT; iptables -t nat -D POSTROUTING -o ${PRIMARY_IF} -j MASQUERADE; iptables -t nat -D POSTROUTING -s 172.16.0.0/12 -d 10.10.0.0/16 -j MASQUERADE
 EOF
 
 chmod 600 /etc/wireguard/wg0.conf
@@ -74,7 +74,11 @@ systemctl enable wg-sync.path
 systemctl start wg-sync.path
 
 # 10. Allow Docker containers to reach WireGuard VPN IPs
-echo "==> Adding iptables rule for Docker -> WireGuard routing..."
+echo "==> Adding iptables rules for Docker <-> WireGuard routing..."
+iptables -C FORWARD -s 172.16.0.0/12 -d 10.10.0.0/16 -j ACCEPT 2>/dev/null || \
+    iptables -I FORWARD -s 172.16.0.0/12 -d 10.10.0.0/16 -j ACCEPT
+iptables -C FORWARD -s 10.10.0.0/16 -d 172.16.0.0/12 -j ACCEPT 2>/dev/null || \
+    iptables -I FORWARD -s 10.10.0.0/16 -d 172.16.0.0/12 -j ACCEPT
 iptables -t nat -C POSTROUTING -s 172.16.0.0/12 -d 10.10.0.0/16 -j MASQUERADE 2>/dev/null || \
     iptables -t nat -A POSTROUTING -s 172.16.0.0/12 -d 10.10.0.0/16 -j MASQUERADE
 

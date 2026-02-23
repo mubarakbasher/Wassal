@@ -165,7 +165,7 @@ export class WireGuardService {
             {
                 title: 'Allow API Access',
                 description: 'Opens the MikroTik API port through the VPN',
-                command: `/ip firewall filter add chain=input src-address=10.10.10.1 dst-port=8728 protocol=tcp action=accept comment="Wassal VPN API" place-before=0`,
+                command: `/ip firewall filter add chain=input src-address=10.10.0.0/16 dst-port=8728 protocol=tcp action=accept comment="Wassal VPN API" place-before=0`,
             },
             {
                 title: 'Create API User',

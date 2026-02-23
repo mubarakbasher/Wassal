@@ -29,8 +29,8 @@ for peer_file in "$PEERS_DIR"/*.conf; do
     cat "$peer_file" >> "$TMPCONF"
 done
 
-# Apply without bringing the interface down
-wg syncconf "$WG_INTERFACE" <(wg-quick strip "$WG_INTERFACE" < "$TMPCONF" 2>/dev/null || cat "$TMPCONF")
+# Strip wg-quick directives (Address, DNS, PostUp, PostDown, SaveConfig) and apply
+wg syncconf "$WG_INTERFACE" <(grep -v "^\s*\(Address\|DNS\|PostUp\|PostDown\|SaveConfig\|Table\|PreUp\|PreDown\|MTU\)\s*=" "$TMPCONF")
 
 rm -f "$TMPCONF"
 
