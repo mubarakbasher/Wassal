@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/app_colors.dart';
@@ -17,11 +18,23 @@ class HomeRoutersPage extends StatefulWidget {
 }
 
 class _HomeRoutersPageState extends State<HomeRoutersPage> {
+  Timer? _refreshTimer;
+
   @override
   void initState() {
     super.initState();
-    // Load routers on init to ensure fresh data
     context.read<RouterBloc>().add(const LoadRoutersEvent());
+    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (mounted) {
+        context.read<RouterBloc>().add(const LoadRoutersEvent());
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
   }
 
   @override

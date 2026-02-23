@@ -780,30 +780,58 @@ export class RoutersService {
             throw new BadRequestException(`Unable to connect to router at ${connectHost}`);
         }
 
-        // 2. Check if already exists (by VPN IP or regular IP)
+        // 2. Fetch the router's WireGuard public key for identity matching
+        let routerWgPublicKey: string | undefined;
+        try {
+            const wgResult = await this.mikrotikApi.executeCommand(credentials, '/interface/wireguard/print');
+            if (wgResult.success && wgResult.data?.length > 0) {
+                routerWgPublicKey = wgResult.data[0]['public-key'] || wgResult.data[0]['publicKey'];
+                this.logger.log(`Router WG public key: ${routerWgPublicKey?.substring(0, 10)}...`);
+            }
+        } catch {
+            this.logger.debug('Could not fetch WireGuard public key from router');
+        }
+
+        // 3. Check if already exists (by wgPublicKey, vpnIp, or ipAddress)
+        const orConditions: any[] = [];
+        if (routerWgPublicKey) orConditions.push({ wgPublicKey: routerWgPublicKey });
+        if (vpnIp) orConditions.push({ vpnIp });
+        orConditions.push({ ipAddress: ip });
+
         const existing = await this.prisma.router.findFirst({
-            where: vpnIp
-                ? { OR: [{ vpnIp }, { ipAddress: ip }] }
-                : { ipAddress: ip },
+            where: { OR: orConditions },
         });
 
         if (existing) {
-            // If router exists and userId is provided and different, update the owner
+            // Update vpnIp/ipAddress if changed (same physical router, new VPN IP)
+            const updateData: any = {};
+            if (vpnIp && existing.vpnIp !== vpnIp) updateData.vpnIp = vpnIp;
+            if (existing.ipAddress !== connectHost) updateData.ipAddress = connectHost;
+            if (routerWgPublicKey && existing.wgPublicKey !== routerWgPublicKey) updateData.wgPublicKey = routerWgPublicKey;
+            updateData.status = RouterStatus.ONLINE;
+            updateData.lastSeen = new Date();
+
             if (userId && existing.userId !== userId) {
-                // Verify the new user exists
-                const newOwner = await this.prisma.user.findUnique({
-                    where: { id: userId }
-                });
-
+                const newOwner = await this.prisma.user.findUnique({ where: { id: userId } });
                 if (newOwner) {
-                    // Reassign router to the new user
-                    await this.prisma.router.update({
-                        where: { id: existing.id },
-                        data: { userId: newOwner.id }
-                    });
-
-                    this.logger.log(`Router at ${ip} reassigned from user ${existing.userId} to user ${userId}`);
+                    updateData.userId = newOwner.id;
+                    this.logger.log(`Router at ${ip} reassigned to user ${userId}`);
                 }
+            }
+
+            await this.prisma.router.update({
+                where: { id: existing.id },
+                data: updateData,
+            });
+
+            // Remove duplicate entries for the same physical router
+            if (routerWgPublicKey) {
+                await this.prisma.router.deleteMany({
+                    where: {
+                        wgPublicKey: routerWgPublicKey,
+                        id: { not: existing.id },
+                    },
+                });
             }
 
             // Configure RADIUS if not already set up
@@ -828,7 +856,7 @@ export class RoutersService {
                 };
             }
 
-            this.logger.log(`Router at ${ip} already exists with id: ${existing.id}`);
+            this.logger.log(`Router at ${ip} already exists with id: ${existing.id}, updated VPN info`);
             return { message: 'Router already registered', routerId: existing.id, userId: existing.userId };
         }
 
@@ -857,18 +885,29 @@ export class RoutersService {
 
         const encryptedPassword = this.encryptPassword(credentials.password);
 
-        // Look up pre-generated WG keys if this is a WireGuard setup
-        let wgPublicKey: string | undefined;
+        // Look up pre-generated WG keys and clean up ALL pending placeholders
+        let wgPublicKey: string | undefined = routerWgPublicKey;
         let wgPrivateKey: string | undefined;
-        if (vpnIp) {
-            const pending = await this.prisma.router.findFirst({
-                where: { vpnIp, status: RouterStatus.OFFLINE },
+
+        // Find pending records by vpnIp or wgPublicKey
+        const pendingConditions: any[] = [];
+        if (vpnIp) pendingConditions.push({ vpnIp, status: RouterStatus.OFFLINE });
+        if (routerWgPublicKey) pendingConditions.push({ wgPublicKey: routerWgPublicKey, status: RouterStatus.OFFLINE });
+
+        if (pendingConditions.length > 0) {
+            const pendingRecords = await this.prisma.router.findMany({
+                where: { OR: pendingConditions },
             });
-            if (pending) {
-                wgPublicKey = pending.wgPublicKey ?? undefined;
-                wgPrivateKey = pending.wgPrivateKey ?? undefined;
-                // Delete the pending placeholder — we'll create the real record
-                await this.prisma.router.delete({ where: { id: pending.id } });
+            for (const pending of pendingRecords) {
+                if (!wgPrivateKey && pending.wgPrivateKey) wgPrivateKey = pending.wgPrivateKey;
+                if (!wgPublicKey && pending.wgPublicKey) wgPublicKey = pending.wgPublicKey;
+            }
+            // Delete all pending placeholders
+            if (pendingRecords.length > 0) {
+                await this.prisma.router.deleteMany({
+                    where: { id: { in: pendingRecords.map(p => p.id) } },
+                });
+                this.logger.log(`Cleaned up ${pendingRecords.length} pending placeholder(s)`);
             }
         }
 
