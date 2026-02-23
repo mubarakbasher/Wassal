@@ -63,6 +63,8 @@ services:
       WG_PEERS_DIR: /opt/wassal/wireguard/peers
       NODE_ENV: production
       PORT: 3001
+    volumes:
+      - /opt/wassal/wireguard/peers:/opt/wassal/wireguard/peers
     restart: unless-stopped
 
   admin-dashboard:
