@@ -13,6 +13,8 @@ services:
       POSTGRES_DB: ${DB_NAME:-mikrotik_hotspot}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
@@ -43,13 +45,14 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: wassal-backend
+    network_mode: host
     depends_on:
       postgres:
         condition: service_healthy
       freeradius:
         condition: service_started
     environment:
-      DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD}@postgres:5432/${DB_NAME:-mikrotik_hotspot}
+      DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD}@127.0.0.1:5432/${DB_NAME:-mikrotik_hotspot}
       JWT_SECRET: ${JWT_SECRET}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
       RADIUS_SERVER_IP: ${RADIUS_SERVER_IP}
@@ -57,13 +60,9 @@ services:
       DOMAIN: ${DOMAIN}
       WG_SERVER_PUBLIC_KEY: ${WG_SERVER_PUBLIC_KEY:-}
       WG_SERVER_ENDPOINT: ${WG_SERVER_ENDPOINT:-}
-      WG_PEERS_DIR: /app/wireguard-peers
+      WG_PEERS_DIR: /opt/wassal/wireguard/peers
       NODE_ENV: production
       PORT: 3001
-    volumes:
-      - wireguard_peers:/app/wireguard-peers
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     restart: unless-stopped
 
   admin-dashboard:
@@ -81,11 +80,12 @@ services:
     image: nginx:alpine
     container_name: wassal-nginx
     depends_on:
-      - backend
       - admin-dashboard
     ports:
       - "80:80"
       - "443:443"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - certbot_webroot:/var/www/certbot:ro
@@ -105,9 +105,3 @@ volumes:
   postgres_data:
   certbot_webroot:
   certbot_certs:
-  wireguard_peers:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: /opt/wassal/wireguard/peers
