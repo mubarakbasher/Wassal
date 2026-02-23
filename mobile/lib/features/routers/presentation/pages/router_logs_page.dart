@@ -43,7 +43,7 @@ class _RouterLogsPageState extends State<RouterLogsPage> {
             _logs = response.data ?? [];
             _isLoading = false;
             _isRefreshing = false;
-            _error = _logs.isEmpty ? null : null;
+            _error = null;
           });
         } else {
           setState(() {

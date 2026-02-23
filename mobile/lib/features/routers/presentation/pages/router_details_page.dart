@@ -64,7 +64,9 @@ class _RouterDetailsPageState extends State<RouterDetailsPage> {
         debugPrint('Stats loaded: $data');
         setState(() {
           _stats = data is Map<String, dynamic> ? data : null;
-          _isOnline = _stats?['isOnline'] ?? false;
+          if (_stats != null && _stats!.containsKey('isOnline')) {
+            _isOnline = _stats!['isOnline'] == true;
+          }
         });
       }
     } catch (e) {

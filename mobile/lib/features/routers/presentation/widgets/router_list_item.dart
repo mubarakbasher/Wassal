@@ -18,7 +18,7 @@ class RouterListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isOnline = router.status == 'ONLINE';
+    final isOnline = router.status.toUpperCase() == 'ONLINE';
 
     return Card(
       elevation: 2,

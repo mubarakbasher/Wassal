@@ -37,6 +37,10 @@ export class AdminRoutersService {
         return decrypted;
     }
 
+    private getRouterHost(router: { vpnIp?: string | null; ipAddress: string }): string {
+        return router.vpnIp || router.ipAddress;
+    }
+
     /** Get ALL routers (admin sees everything) */
     async findAll() {
         const routers = await this.prisma.router.findMany({
@@ -44,6 +48,7 @@ export class AdminRoutersService {
                 id: true,
                 name: true,
                 ipAddress: true,
+                vpnIp: true,
                 apiPort: true,
                 username: true,
                 password: true,
@@ -71,7 +76,7 @@ export class AdminRoutersService {
                 try {
                     const decryptedPassword = this.decryptPassword(router.password);
                     const isOnline = await this.mikrotikApi.quickTestConnection({
-                        host: router.ipAddress,
+                        host: this.getRouterHost(router),
                         port: router.apiPort,
                         username: router.username,
                         password: decryptedPassword,
@@ -330,6 +335,7 @@ export class AdminRoutersService {
                 id: true,
                 name: true,
                 ipAddress: true,
+                vpnIp: true,
                 apiPort: true,
                 username: true,
                 description: true,
@@ -343,7 +349,7 @@ export class AdminRoutersService {
         try {
             const passwordToUse = data.password ? data.password : this.decryptPassword(existingRouter.password);
             const conn = {
-                host: updatedRouter.ipAddress,
+                host: this.getRouterHost(updatedRouter),
                 port: updatedRouter.apiPort,
                 username: updatedRouter.username,
                 password: passwordToUse,
@@ -386,7 +392,7 @@ export class AdminRoutersService {
 
         try {
             return await this.mikrotikApi.getHotspotProfiles({
-                host: router.ipAddress,
+                host: this.getRouterHost(router),
                 port: router.apiPort,
                 username: router.username,
                 password: decryptedPassword,
@@ -409,7 +415,7 @@ export class AdminRoutersService {
 
         const decryptedPassword = this.decryptPassword(router.password);
         const conn = {
-            host: router.ipAddress,
+            host: this.getRouterHost(router),
             port: router.apiPort,
             username: router.username,
             password: decryptedPassword,

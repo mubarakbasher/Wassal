@@ -1228,7 +1228,7 @@ export class RoutersService {
 
         const result = await this.configureRadiusOnRouter(
             router.id,
-            router.ipAddress,
+            this.getRouterHost(router),
             router.apiPort,
             router.username,
             decryptedPassword,
