@@ -163,7 +163,7 @@ export class AdminRoutersService {
         // Test connection
         const connectionTest = await this.mikrotikApi.testConnection({
             host: ipAddress,
-            port: apiPort || 8729,
+            port: apiPort || 8728,
             username,
             password,
         });
@@ -179,7 +179,7 @@ export class AdminRoutersService {
             data: {
                 name,
                 ipAddress,
-                apiPort: apiPort || 8729,
+                apiPort: apiPort || 8728,
                 username,
                 password: encryptedPassword,
                 description,
@@ -225,7 +225,7 @@ export class AdminRoutersService {
         const radiusServerIp = process.env.RADIUS_SERVER_IP;
         if (radiusServerIp) {
             try {
-                const conn = { host: ipAddress, port: apiPort || 8729, username, password };
+                const conn = { host: ipAddress, port: apiPort || 8728, username, password };
 
                 // Add RADIUS server entry on the router (works on both v6 and v7)
                 const addResult = await this.mikrotikApi.addRadiusServer(conn, radiusServerIp, radiusSecret);
