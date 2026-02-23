@@ -153,7 +153,7 @@ export class WireGuardService {
                     ` public-key="${this.serverPublicKey}"`,
                     ` endpoint-address=${this.serverEndpoint.split(':')[0]}`,
                     ` endpoint-port=${this.serverEndpoint.split(':')[1] || '51820'}`,
-                    ` allowed-address=10.10.10.1/32`,
+                    ` allowed-address=10.10.0.0/16`,
                     ` persistent-keepalive=25`,
                 ].join(''),
             },
