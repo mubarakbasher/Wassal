@@ -135,8 +135,8 @@ export class RouterMonitorService implements OnModuleInit {
     private decryptPassword(encryptedPassword: string): string {
         try {
             const algorithm = 'aes-256-cbc';
-            const key = process.env.ENCRYPTION_KEY || 'default-encryption-key-change-me!';
-            const keyBuffer = crypto.scryptSync(key, 'salt', 32);
+            // Must match the key used for encryption in routers.service.ts
+            const key = crypto.scryptSync(process.env.JWT_SECRET || 'secret', 'salt', 32);
 
             const parts = encryptedPassword.split(':');
             if (parts.length !== 2) {
@@ -144,12 +144,13 @@ export class RouterMonitorService implements OnModuleInit {
             }
 
             const iv = Buffer.from(parts[0], 'hex');
-            const encryptedText = Buffer.from(parts[1], 'hex');
-            const decipher = crypto.createDecipheriv(algorithm, keyBuffer, iv);
-            let decrypted = decipher.update(encryptedText);
-            decrypted = Buffer.concat([decrypted, decipher.final()]);
-            return decrypted.toString();
+            const encrypted = parts[1];
+            const decipher = crypto.createDecipheriv(algorithm, key, iv);
+            let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+            decrypted += decipher.final('utf8');
+            return decrypted;
         } catch (error) {
+            this.logger.error(`Failed to decrypt password: ${error.message}`);
             return encryptedPassword;
         }
     }
