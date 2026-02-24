@@ -73,10 +73,7 @@ export class AdminRoutersService {
         // Check connectivity for each router
         const routersWithStatus = await Promise.all(
             routers.map(async (router) => {
-                if (router.description?.includes('Pending WireGuard setup')) {
-                    const { password: _, ...routerWithoutPassword } = router;
-                    return routerWithoutPassword;
-                }
+                const isPending = router.description?.includes('Pending WireGuard setup');
 
                 try {
                     const decryptedPassword = this.decryptPassword(router.password);
@@ -87,7 +84,9 @@ export class AdminRoutersService {
                         password: decryptedPassword,
                     });
 
-                    const newStatus = isOnline ? RouterStatus.ONLINE : RouterStatus.OFFLINE;
+                    const newStatus = isOnline
+                        ? RouterStatus.ONLINE
+                        : (isPending ? router.status : RouterStatus.OFFLINE);
 
                     if (router.status !== newStatus) {
                         await this.prisma.router.update({

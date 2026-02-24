@@ -50,9 +50,9 @@ export class RouterMonitorService implements OnModuleInit {
                 },
             });
 
-            const activeRouters = routers.filter(r => !r.description?.includes('Pending WireGuard setup'));
-            for (const router of activeRouters) {
-                await this.checkRouterStatus(router);
+            for (const router of routers) {
+                const isPending = router.description?.includes('Pending WireGuard setup');
+                await this.checkRouterStatus(router, isPending);
             }
 
             this.logger.debug(`Completed monitoring ${routers.length} routers`);
@@ -74,16 +74,14 @@ export class RouterMonitorService implements OnModuleInit {
         status: RouterStatus;
         lastSeen: Date | null;
         userId: string;
-    }) {
+    }, isPending = false) {
         const previousStatus = router.status;
         let currentStatus: RouterStatus;
         let isReachable = false;
 
         try {
-            // Decrypt the password
             const password = this.decryptPassword(router.password);
 
-            // Create connection object
             const connection: MikroTikConnection = {
                 host: router.vpnIp || router.ipAddress,
                 port: router.apiPort,
@@ -91,16 +89,15 @@ export class RouterMonitorService implements OnModuleInit {
                 password: password,
             };
 
-            // Use quick test connection
             isReachable = await this.mikrotikApi.quickTestConnection(connection);
-            currentStatus = isReachable ? RouterStatus.ONLINE : RouterStatus.OFFLINE;
+            currentStatus = isReachable
+                ? RouterStatus.ONLINE
+                : (isPending ? previousStatus : RouterStatus.OFFLINE);
         } catch (error) {
-            // Connection failed
-            currentStatus = RouterStatus.OFFLINE;
+            currentStatus = isPending ? previousStatus : RouterStatus.OFFLINE;
             this.logger.debug(`Router ${router.name} (${router.ipAddress}) check failed: ${error.message}`);
         }
 
-        // Update status in database if changed
         if (previousStatus !== currentStatus) {
             await this.prisma.router.update({
                 where: { id: router.id },
@@ -114,13 +111,11 @@ export class RouterMonitorService implements OnModuleInit {
                 `Router ${router.name} status changed: ${previousStatus} -> ${currentStatus}`,
             );
 
-            // Get user's notification preference
             const user = await this.prisma.user.findUnique({
                 where: { id: router.userId },
                 select: { notifyRouterStatus: true },
             });
 
-            // Send notification if user has notifications enabled
             if (user?.notifyRouterStatus) {
                 await this.notificationsService.sendRouterStatusNotification(
                     router.userId,
@@ -130,7 +125,6 @@ export class RouterMonitorService implements OnModuleInit {
                 );
             }
         } else if (isReachable) {
-            // Update lastSeen even if status didn't change
             await this.prisma.router.update({
                 where: { id: router.id },
                 data: { lastSeen: new Date() },
