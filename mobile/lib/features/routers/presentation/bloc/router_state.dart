@@ -19,22 +19,26 @@ class RouterLoading extends RouterState {
 class RouterLoaded extends RouterState {
   final List<Router> routers;
   final Router? selectedRouter;
+  final Set<String> checkingStatuses;
 
   const RouterLoaded({
     required this.routers,
     this.selectedRouter,
+    this.checkingStatuses = const {},
   });
 
   @override
-  List<Object?> get props => [routers, selectedRouter];
+  List<Object?> get props => [routers, selectedRouter, checkingStatuses];
 
   RouterLoaded copyWith({
     List<Router>? routers,
     Router? selectedRouter,
+    Set<String>? checkingStatuses,
   }) {
     return RouterLoaded(
       routers: routers ?? this.routers,
       selectedRouter: selectedRouter ?? this.selectedRouter,
+      checkingStatuses: checkingStatuses ?? this.checkingStatuses,
     );
   }
 }

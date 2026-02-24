@@ -203,11 +203,37 @@ class _RouterCard extends StatelessWidget {
                       color: _getStatusColor(router.status).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Text(
-                      router.status,
-                      style: AppTextStyles.labelMedium.copyWith(
-                        color: _getStatusColor(router.status),
-                      ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Builder(
+                          builder: (context) {
+                            final state = context.watch<RouterBloc>().state;
+                            final isChecking = state is RouterLoaded &&
+                                state.checkingStatuses.contains(router.id);
+                            if (isChecking) {
+                              return Padding(
+                                padding: const EdgeInsets.only(right: 4),
+                                child: SizedBox(
+                                  width: 8,
+                                  height: 8,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 1.5,
+                                    color: _getStatusColor(router.status),
+                                  ),
+                                ),
+                              );
+                            }
+                            return const SizedBox.shrink();
+                          },
+                        ),
+                        Text(
+                          router.status,
+                          style: AppTextStyles.labelMedium.copyWith(
+                            color: _getStatusColor(router.status),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],

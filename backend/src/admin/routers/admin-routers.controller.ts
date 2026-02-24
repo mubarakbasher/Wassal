@@ -44,6 +44,11 @@ export class AdminRoutersController {
         return this.routersService.remove(id);
     }
 
+    @Get(':id/status')
+    checkStatus(@Param('id') id: string) {
+        return this.routersService.checkStatus(id);
+    }
+
     @Get(':id/profiles/mikrotik')
     getMikrotikProfiles(@Param('id') id: string) {
         return this.routersService.getMikrotikProfiles(id);

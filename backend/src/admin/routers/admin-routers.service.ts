@@ -41,7 +41,7 @@ export class AdminRoutersService {
         return router.vpnIp || router.ipAddress;
     }
 
-    /** Get ALL routers (admin sees everything) */
+    /** Get ALL routers (admin sees everything) – returns cached DB status for fast loading */
     async findAll() {
         const routers = await this.prisma.router.findMany({
             select: {
@@ -51,7 +51,6 @@ export class AdminRoutersService {
                 vpnIp: true,
                 apiPort: true,
                 username: true,
-                password: true,
                 description: true,
                 location: true,
                 status: true,
@@ -70,49 +69,9 @@ export class AdminRoutersService {
             orderBy: { createdAt: 'desc' },
         });
 
-        // Check connectivity for each router
-        const routersWithStatus = await Promise.all(
-            routers.map(async (router) => {
-                const isPending = router.description?.includes('Pending WireGuard setup');
-
-                try {
-                    const decryptedPassword = this.decryptPassword(router.password);
-                    const isOnline = await this.mikrotikApi.quickTestConnection({
-                        host: this.getRouterHost(router),
-                        port: router.apiPort,
-                        username: router.username,
-                        password: decryptedPassword,
-                    });
-
-                    const newStatus = isOnline
-                        ? RouterStatus.ONLINE
-                        : (isPending ? router.status : RouterStatus.OFFLINE);
-
-                    if (router.status !== newStatus) {
-                        await this.prisma.router.update({
-                            where: { id: router.id },
-                            data: {
-                                status: newStatus,
-                                lastSeen: isOnline ? new Date() : router.lastSeen,
-                            },
-                        });
-                    }
-
-                    const { password: _, ...routerWithoutPassword } = router;
-                    return {
-                        ...routerWithoutPassword,
-                        status: newStatus,
-                        lastSeen: isOnline ? new Date() : router.lastSeen,
-                    };
-                } catch (error) {
-                    this.logger.error(`Failed to check status for router ${router.id}: ${error.message}`);
-                    const { password: _, ...routerWithoutPassword } = router;
-                    return routerWithoutPassword;
-                }
-            }),
-        );
-
-        return routersWithStatus;
+        // Return cached status directly – the RouterMonitorService cron job
+        // updates status every 60 seconds, so no need to block here.
+        return routers;
     }
 
     async findOne(id: string) {
@@ -122,6 +81,7 @@ export class AdminRoutersService {
                 id: true,
                 name: true,
                 ipAddress: true,
+                vpnIp: true,
                 apiPort: true,
                 username: true,
                 description: true,
@@ -145,6 +105,68 @@ export class AdminRoutersService {
         }
 
         return router;
+    }
+
+    /** On-demand live status check for a single router */
+    async checkStatus(id: string) {
+        const router = await this.prisma.router.findUnique({
+            where: { id },
+            select: {
+                id: true,
+                name: true,
+                ipAddress: true,
+                vpnIp: true,
+                apiPort: true,
+                username: true,
+                password: true,
+                description: true,
+                status: true,
+                lastSeen: true,
+            },
+        });
+
+        if (!router) {
+            throw new NotFoundException('Router not found');
+        }
+
+        const isPending = router.description?.includes('Pending WireGuard setup');
+
+        try {
+            const decryptedPassword = this.decryptPassword(router.password);
+            const isOnline = await this.mikrotikApi.quickTestConnection({
+                host: this.getRouterHost(router),
+                port: router.apiPort,
+                username: router.username,
+                password: decryptedPassword,
+            });
+
+            const newStatus = isOnline
+                ? RouterStatus.ONLINE
+                : (isPending ? router.status : RouterStatus.OFFLINE);
+
+            if (router.status !== newStatus || isOnline) {
+                await this.prisma.router.update({
+                    where: { id: router.id },
+                    data: {
+                        status: newStatus,
+                        lastSeen: isOnline ? new Date() : router.lastSeen,
+                    },
+                });
+            }
+
+            return {
+                id: router.id,
+                status: newStatus,
+                lastSeen: isOnline ? new Date() : router.lastSeen,
+            };
+        } catch (error) {
+            this.logger.error(`Failed to check status for router ${router.id}: ${error.message}`);
+            return {
+                id: router.id,
+                status: router.status,
+                lastSeen: router.lastSeen,
+            };
+        }
     }
 
     /** Admin creates a router (requires assigning to a user) */

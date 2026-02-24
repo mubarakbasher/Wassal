@@ -252,7 +252,9 @@ export class RoutersService {
 
     /**
      * Get all routers for a user
-     * Includes real-time status check for each router
+     * Returns cached DB status for fast loading – the RouterMonitorService
+     * updates status every 60 seconds in the background.
+     * Use GET /routers/:id/health for on-demand live status checks.
      */
     async findAll(userId: string, statusOnly = false) {
         const routers = await this.prisma.router.findMany({
@@ -263,7 +265,6 @@ export class RoutersService {
                 ipAddress: true,
                 apiPort: true,
                 username: true,
-                password: true,
                 description: true,
                 location: true,
                 vpnIp: true,
@@ -281,56 +282,8 @@ export class RoutersService {
             orderBy: { createdAt: 'desc' },
         });
 
-        if (statusOnly) {
-            return routers.map((router) => {
-                const { password: _, ...routerWithoutPassword } = router;
-                return routerWithoutPassword;
-            });
-        }
-
-        // Check connectivity for each router in parallel and update status
-        const routersWithStatus = await Promise.all(
-            routers.map(async (router) => {
-                const isPending = router.description?.includes('Pending WireGuard setup');
-
-                try {
-                    const decryptedPassword = this.decryptPassword(router.password);
-                    const isOnline = await this.mikrotikApi.quickTestConnection({
-                        host: this.getRouterHost(router),
-                        port: router.apiPort,
-                        username: router.username,
-                        password: decryptedPassword,
-                    });
-
-                    const newStatus = isOnline
-                        ? RouterStatus.ONLINE
-                        : (isPending ? router.status : RouterStatus.OFFLINE);
-
-                    if (router.status !== newStatus) {
-                        await this.prisma.router.update({
-                            where: { id: router.id },
-                            data: {
-                                status: newStatus,
-                                lastSeen: isOnline ? new Date() : router.lastSeen,
-                            },
-                        });
-                    }
-
-                    const { password: _, ...routerWithoutPassword } = router;
-                    return {
-                        ...routerWithoutPassword,
-                        status: newStatus,
-                        lastSeen: isOnline ? new Date() : router.lastSeen,
-                    };
-                } catch (error) {
-                    this.logger.error(`Failed to check status for router ${router.id}: ${error.message}`);
-                    const { password: _, ...routerWithoutPassword } = router;
-                    return routerWithoutPassword;
-                }
-            })
-        );
-
-        return routersWithStatus;
+        // Return cached status directly – no blocking connectivity checks
+        return routers;
     }
 
     /**
@@ -542,7 +495,7 @@ export class RoutersService {
         }
 
         // #region agent log
-        fetch('http://127.0.0.1:7328/ingest/857f322b-6c86-42e9-b382-336861bf180f',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'f5682d'},body:JSON.stringify({sessionId:'f5682d',location:'routers.service.ts:checkHealth',message:'checkHealth result',data:{routerId:id,isOnline,isPending,dbStatus:router.status},timestamp:Date.now(),hypothesisId:'H1'})}).catch(()=>{});
+        fetch('http://127.0.0.1:7328/ingest/857f322b-6c86-42e9-b382-336861bf180f', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': 'f5682d' }, body: JSON.stringify({ sessionId: 'f5682d', location: 'routers.service.ts:checkHealth', message: 'checkHealth result', data: { routerId: id, isOnline, isPending, dbStatus: router.status }, timestamp: Date.now(), hypothesisId: 'H1' }) }).catch(() => { });
         // #endregion
 
         const newStatus = isOnline
@@ -657,7 +610,7 @@ export class RoutersService {
         let uptime = '0s';
 
         // #region agent log
-        fetch('http://127.0.0.1:7328/ingest/857f322b-6c86-42e9-b382-336861bf180f',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'f5682d'},body:JSON.stringify({sessionId:'f5682d',location:'routers.service.ts:getRouterStats',message:'getRouterStats called',data:{routerId:id,isPending,dbStatus:router.status,description:router.description?.substring(0,50)},timestamp:Date.now(),hypothesisId:'H1'})}).catch(()=>{});
+        fetch('http://127.0.0.1:7328/ingest/857f322b-6c86-42e9-b382-336861bf180f', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': 'f5682d' }, body: JSON.stringify({ sessionId: 'f5682d', location: 'routers.service.ts:getRouterStats', message: 'getRouterStats called', data: { routerId: id, isPending, dbStatus: router.status, description: router.description?.substring(0, 50) }, timestamp: Date.now(), hypothesisId: 'H1' }) }).catch(() => { });
         // #endregion
 
         try {
@@ -690,7 +643,7 @@ export class RoutersService {
         const totalBytes = (BigInt(bandwidthAgg._sum.bytesIn || 0) + BigInt(bandwidthAgg._sum.bytesOut || 0)).toString();
 
         // #region agent log
-        fetch('http://127.0.0.1:7328/ingest/857f322b-6c86-42e9-b382-336861bf180f',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'f5682d'},body:JSON.stringify({sessionId:'f5682d',location:'routers.service.ts:getRouterStats:return',message:'getRouterStats returning',data:{routerId:router.id,isOnline,isPending,dbStatus:router.status,uptime},timestamp:Date.now(),hypothesisId:'H1'})}).catch(()=>{});
+        fetch('http://127.0.0.1:7328/ingest/857f322b-6c86-42e9-b382-336861bf180f', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': 'f5682d' }, body: JSON.stringify({ sessionId: 'f5682d', location: 'routers.service.ts:getRouterStats:return', message: 'getRouterStats returning', data: { routerId: router.id, isOnline, isPending, dbStatus: router.status, uptime }, timestamp: Date.now(), hypothesisId: 'H1' }) }).catch(() => { });
         // #endregion
 
         return {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Router as RouterIcon, Trash2, Edit, RefreshCw } from 'lucide-react';
 import api from '../../lib/axios';
 
@@ -21,22 +21,62 @@ interface Router {
 export function RouterList({ onEdit }: { onEdit: (router: Router) => void }) {
     const [routers, setRouters] = useState<Router[]>([]);
     const [loading, setLoading] = useState(true);
+    const [checkingStatus, setCheckingStatus] = useState<Record<string, boolean>>({});
 
-    const fetchRouters = async () => {
+    const fetchRouters = useCallback(async () => {
         try {
             setLoading(true);
             const response = await api.get('/admin/routers');
             setRouters(response.data);
+            return response.data as Router[];
         } catch (error) {
             console.error('Failed to fetch routers:', error);
+            return [];
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
+
+    // Fire background live-status checks for each router
+    const refreshLiveStatuses = useCallback(async (routerList: Router[]) => {
+        // Mark all as checking
+        const checking: Record<string, boolean> = {};
+        routerList.forEach(r => { checking[r.id] = true; });
+        setCheckingStatus(checking);
+
+        // Fire requests in parallel – each one updates the row as it completes
+        routerList.forEach(async (router) => {
+            try {
+                const res = await api.get(`/admin/routers/${router.id}/status`);
+                const { status, lastSeen } = res.data;
+                setRouters(prev =>
+                    prev.map(r =>
+                        r.id === router.id ? { ...r, status, lastSeen } : r
+                    )
+                );
+            } catch {
+                // Keep cached status on error
+            } finally {
+                setCheckingStatus(prev => ({ ...prev, [router.id]: false }));
+            }
+        });
+    }, []);
 
     useEffect(() => {
-        fetchRouters();
-    }, []);
+        (async () => {
+            const list = await fetchRouters();
+            if (list.length > 0) {
+                refreshLiveStatuses(list);
+            }
+        })();
+    }, [fetchRouters, refreshLiveStatuses]);
+
+    const handleRefresh = async () => {
+        const list = await fetchRouters();
+        if (list.length > 0) {
+            refreshLiveStatuses(list);
+        }
+    };
 
     const handleDelete = async (id: string) => {
         if (!confirm('Are you sure you want to delete this router?')) return;
@@ -61,9 +101,9 @@ export function RouterList({ onEdit }: { onEdit: (router: Router) => void }) {
                     Connected Routers
                 </h3>
                 <button
-                    onClick={fetchRouters}
+                    onClick={handleRefresh}
                     className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100"
-                    title="Refresh List"
+                    title="Refresh List & Check Status"
                 >
                     <RefreshCw className="h-4 w-4" />
                 </button>
@@ -95,10 +135,13 @@ export function RouterList({ onEdit }: { onEdit: (router: Router) => void }) {
                                     {router.ipAddress}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
-                                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${router.status === 'ONLINE' ? 'bg-green-100 text-green-800' :
+                                    <span className={`px-2 inline-flex items-center gap-1 text-xs leading-5 font-semibold rounded-full ${router.status === 'ONLINE' ? 'bg-green-100 text-green-800' :
                                         router.status === 'ERROR' ? 'bg-red-100 text-red-800' :
                                             'bg-gray-100 text-gray-800'
                                         }`}>
+                                        {checkingStatus[router.id] && (
+                                            <span className="inline-block h-2 w-2 rounded-full bg-current animate-pulse" />
+                                        )}
                                         {router.status}
                                     </span>
                                 </td>

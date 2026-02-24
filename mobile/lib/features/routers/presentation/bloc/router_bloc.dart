@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/utils/error_handler.dart';
+import '../../domain/entities/router.dart';
 import '../../domain/repositories/router_repository.dart';
 import 'router_event.dart';
 import 'router_state.dart';
@@ -15,17 +16,13 @@ class RouterBloc extends Bloc<RouterEvent, RouterState> {
     on<CheckRouterHealthEvent>(_onCheckHealth);
     on<GetRouterStatsEvent>(_onGetRouterStats);
     on<SelectRouterEvent>(_onSelectRouter);
+    on<RefreshRouterStatusesEvent>(_onRefreshRouterStatuses);
   }
 
   Future<void> _onGetRouterStats(
     GetRouterStatsEvent event,
     Emitter<RouterState> emit,
   ) async {
-    // Keep loading state separate so we don't clear list?
-    // Or assume UI handles it. Let's emit Loading then Result.
-    // Ideally we might want separate state or status, but RouterState is single-stream.
-    // If we emit RouterLoading, we might lose list of routers if UI listens to generic RouterLoaded.
-    // But RouterStatsLoaded is a distinct state.
     emit(const RouterLoading());
 
     final result = await repository.getRouterStats(event.id);
@@ -48,8 +45,77 @@ class RouterBloc extends Bloc<RouterEvent, RouterState> {
 
     result.fold(
       (failure) => emit(RouterError(failure.message)),
-      (routers) => emit(RouterLoaded(routers: routers)),
+      (routers) {
+        emit(RouterLoaded(routers: routers));
+        // Auto-trigger background status refresh
+        add(const RefreshRouterStatusesEvent());
+      },
     );
+  }
+
+  /// Fires background health checks for each router and updates status in-place
+  Future<void> _onRefreshRouterStatuses(
+    RefreshRouterStatusesEvent event,
+    Emitter<RouterState> emit,
+  ) async {
+    if (state is! RouterLoaded) return;
+    final currentState = state as RouterLoaded;
+    final routers = currentState.routers;
+    if (routers.isEmpty) return;
+
+    // Mark all as checking
+    emit(currentState.copyWith(
+      checkingStatuses: routers.map((r) => r.id).toSet(),
+    ));
+
+    // Check each router's health sequentially to avoid overwhelming the server
+    for (final router in routers) {
+      if (state is! RouterLoaded) return; // State changed, stop
+      final loaded = state as RouterLoaded;
+
+      final result = await repository.checkRouterHealth(router.id);
+
+      result.fold(
+        (_) {
+          // On error, just remove from checking set
+          if (state is RouterLoaded) {
+            final s = state as RouterLoaded;
+            final updated = Set<String>.from(s.checkingStatuses)..remove(router.id);
+            emit(s.copyWith(checkingStatuses: updated));
+          }
+        },
+        (health) {
+          if (state is RouterLoaded) {
+            final s = state as RouterLoaded;
+            final newStatus = health['status'] ?? router.status;
+            final lastSeenStr = health['lastSeen'];
+            DateTime? lastSeen;
+            if (lastSeenStr is String) {
+              lastSeen = DateTime.tryParse(lastSeenStr);
+            }
+
+            final updatedRouters = s.routers.map((r) {
+              if (r.id == router.id) {
+                return Router(
+                  id: r.id,
+                  name: r.name,
+                  ipAddress: r.ipAddress,
+                  apiPort: r.apiPort,
+                  username: r.username,
+                  status: newStatus,
+                  lastSeen: lastSeen ?? r.lastSeen,
+                  createdAt: r.createdAt,
+                );
+              }
+              return r;
+            }).toList();
+
+            final updated = Set<String>.from(s.checkingStatuses)..remove(router.id);
+            emit(s.copyWith(routers: updatedRouters, checkingStatuses: updated));
+          }
+        },
+      );
+    }
   }
 
   Future<void> _onCreateRouter(

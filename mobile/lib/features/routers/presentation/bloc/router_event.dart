@@ -91,3 +91,9 @@ class GetRouterStatsEvent extends RouterEvent {
   @override
   List<Object?> get props => [id];
 }
+
+/// Fires background health checks for each router to refresh live status.
+/// Does not show loading state – updates routers in-place as checks complete.
+class RefreshRouterStatusesEvent extends RouterEvent {
+  const RefreshRouterStatusesEvent();
+}
