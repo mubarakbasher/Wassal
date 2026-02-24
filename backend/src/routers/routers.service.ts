@@ -527,6 +527,20 @@ export class RoutersService {
             throw new NotFoundException('Router not found');
         }
 
+        if (router.description?.includes('Pending WireGuard setup')) {
+            // #region agent log
+            fetch('http://127.0.0.1:7328/ingest/857f322b-6c86-42e9-b382-336861bf180f',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'f5682d'},body:JSON.stringify({sessionId:'f5682d',location:'routers.service.ts:checkHealth',message:'Skipping pending router health check',data:{routerId:id,dbStatus:router.status},timestamp:Date.now(),hypothesisId:'H1'})}).catch(()=>{});
+            // #endregion
+            return {
+                routerId: id,
+                name: router.name,
+                status: router.status,
+                isOnline: router.status === RouterStatus.ONLINE,
+                lastSeen: router.lastSeen,
+                pending: true,
+            };
+        }
+
         const decryptedPassword = this.decryptPassword(router.password);
 
         const isOnline = await this.mikrotikApi.testConnection({
@@ -536,7 +550,6 @@ export class RoutersService {
             password: decryptedPassword,
         });
 
-        // Update router status
         const newStatus = isOnline ? RouterStatus.ONLINE : RouterStatus.OFFLINE;
 
         await this.prisma.router.update({
@@ -568,6 +581,10 @@ export class RoutersService {
             throw new NotFoundException('Router not found');
         }
 
+        if (router.description?.includes('Pending WireGuard setup')) {
+            return { pending: true, message: 'Router is pending WireGuard configuration' };
+        }
+
         const decryptedPassword = this.decryptPassword(router.password);
 
         try {
@@ -578,7 +595,6 @@ export class RoutersService {
                 password: decryptedPassword,
             });
 
-            // Update last seen
             await this.prisma.router.update({
                 where: { id },
                 data: {
@@ -589,7 +605,6 @@ export class RoutersService {
 
             return systemInfo;
         } catch (error) {
-            // Update status to offline
             await this.prisma.router.update({
                 where: { id },
                 data: { status: RouterStatus.ERROR },
@@ -608,6 +623,8 @@ export class RoutersService {
         if (!router) {
             throw new NotFoundException('Router not found');
         }
+
+        const isPending = router.description?.includes('Pending WireGuard setup');
 
         const password = this.decryptPassword(router.password);
 
@@ -636,37 +653,44 @@ export class RoutersService {
         ]);
 
         // Run MikroTik calls in PARALLEL with overall timeout
-        let isOnline = false;
+        let isOnline = router.status === RouterStatus.ONLINE;
         let activeSessions: any[] = [];
         let hotspotUsers: any[] = [];
         let uptime = '0s';
 
-        try {
-            // Quick test connection first (10 second timeout)
-            isOnline = await this.mikrotikApi.quickTestConnection(connection);
+        // #region agent log
+        fetch('http://127.0.0.1:7328/ingest/857f322b-6c86-42e9-b382-336861bf180f',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'f5682d'},body:JSON.stringify({sessionId:'f5682d',location:'routers.service.ts:getRouterStats',message:'getRouterStats called',data:{routerId:id,isPending,dbStatus:router.status,description:router.description?.substring(0,50)},timestamp:Date.now(),hypothesisId:'H1'})}).catch(()=>{});
+        // #endregion
 
-            if (isOnline) {
-                // Run all MikroTik calls in parallel (no internal timeout - mobile app has 30s timeout)
-                try {
-                    const [sessions, users, uptimeVal] = await Promise.all([
-                        this.mikrotikApi.getActiveSessions(connection).catch(() => []),
-                        this.mikrotikApi.getHotspotUsers(connection).catch(() => []),
-                        this.mikrotikApi.getUptime(connection).catch(() => '0s'),
-                    ]);
-                    activeSessions = sessions;
-                    hotspotUsers = users;
-                    uptime = uptimeVal;
-                } catch (dataErr) {
-                    this.logger.warn(`MikroTik stats failed for ${connection.host}: ${dataErr.message}`);
-                    // Keep isOnline true since connection test succeeded
+        if (!isPending) {
+            try {
+                isOnline = await this.mikrotikApi.quickTestConnection(connection);
+
+                if (isOnline) {
+                    try {
+                        const [sessions, users, uptimeVal] = await Promise.all([
+                            this.mikrotikApi.getActiveSessions(connection).catch(() => []),
+                            this.mikrotikApi.getHotspotUsers(connection).catch(() => []),
+                            this.mikrotikApi.getUptime(connection).catch(() => '0s'),
+                        ]);
+                        activeSessions = sessions;
+                        hotspotUsers = users;
+                        uptime = uptimeVal;
+                    } catch (dataErr) {
+                        this.logger.warn(`MikroTik stats failed for ${connection.host}: ${dataErr.message}`);
+                    }
                 }
+            } catch (error) {
+                this.logger.error(`Failed to get MikroTik stats: ${error.message}`);
+                isOnline = false;
             }
-        } catch (error) {
-            this.logger.error(`Failed to get MikroTik stats: ${error.message}`);
-            isOnline = false;
         }
 
         const totalBytes = (BigInt(bandwidthAgg._sum.bytesIn || 0) + BigInt(bandwidthAgg._sum.bytesOut || 0)).toString();
+
+        // #region agent log
+        fetch('http://127.0.0.1:7328/ingest/857f322b-6c86-42e9-b382-336861bf180f',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'f5682d'},body:JSON.stringify({sessionId:'f5682d',location:'routers.service.ts:getRouterStats:return',message:'getRouterStats returning',data:{routerId:router.id,isOnline,isPending,dbStatus:router.status,uptime},timestamp:Date.now(),hypothesisId:'H1'})}).catch(()=>{});
+        // #endregion
 
         return {
             routerId: router.id,
