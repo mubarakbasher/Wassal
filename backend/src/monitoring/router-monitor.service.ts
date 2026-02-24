@@ -43,13 +43,15 @@ export class RouterMonitorService implements OnModuleInit {
                     apiPort: true,
                     username: true,
                     password: true,
+                    description: true,
                     status: true,
                     lastSeen: true,
                     userId: true,
                 },
             });
 
-            for (const router of routers) {
+            const activeRouters = routers.filter(r => !r.description?.includes('Pending WireGuard setup'));
+            for (const router of activeRouters) {
                 await this.checkRouterStatus(router);
             }
 

@@ -73,6 +73,11 @@ export class AdminRoutersService {
         // Check connectivity for each router
         const routersWithStatus = await Promise.all(
             routers.map(async (router) => {
+                if (router.description?.includes('Pending WireGuard setup')) {
+                    const { password: _, ...routerWithoutPassword } = router;
+                    return routerWithoutPassword;
+                }
+
                 try {
                     const decryptedPassword = this.decryptPassword(router.password);
                     const isOnline = await this.mikrotikApi.quickTestConnection({
