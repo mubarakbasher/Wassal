@@ -63,7 +63,7 @@ export class MikroTikApiService {
      * Returns quickly if router is offline
      */
     async quickTestConnection(connection: MikroTikConnection): Promise<boolean> {
-        const api = this.createApi(connection, 10);
+        const api = this.createApi(connection, 5);
 
         try {
             await api.connect();

@@ -484,7 +484,7 @@ export class RoutersService {
 
         let isOnline = false;
         try {
-            isOnline = await this.mikrotikApi.testConnection({
+            isOnline = await this.mikrotikApi.quickTestConnection({
                 host: this.getRouterHost(router),
                 port: router.apiPort,
                 username: router.username,
