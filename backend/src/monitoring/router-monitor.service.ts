@@ -51,7 +51,7 @@ export class RouterMonitorService implements OnModuleInit {
             });
 
             for (const router of routers) {
-                const isPending = router.description?.includes('Pending WireGuard setup');
+                const isPending = router.description?.includes('Pending WireGuard setup') && !router.vpnIp;
                 await this.checkRouterStatus(router, isPending);
             }
 

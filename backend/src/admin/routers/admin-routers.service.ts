@@ -129,7 +129,7 @@ export class AdminRoutersService {
             throw new NotFoundException('Router not found');
         }
 
-        const isPending = router.description?.includes('Pending WireGuard setup');
+        const isPending = router.description?.includes('Pending WireGuard setup') && !router.vpnIp;
 
         try {
             const decryptedPassword = this.decryptPassword(router.password);

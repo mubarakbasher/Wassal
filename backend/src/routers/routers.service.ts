@@ -479,7 +479,7 @@ export class RoutersService {
             throw new NotFoundException('Router not found');
         }
 
-        const isPending = router.description?.includes('Pending WireGuard setup');
+        const isPending = router.description?.includes('Pending WireGuard setup') && !router.vpnIp;
         const decryptedPassword = this.decryptPassword(router.password);
 
         let isOnline = false;
@@ -533,7 +533,7 @@ export class RoutersService {
             throw new NotFoundException('Router not found');
         }
 
-        const isPending = router.description?.includes('Pending WireGuard setup');
+        const isPending = router.description?.includes('Pending WireGuard setup') && !router.vpnIp;
         const decryptedPassword = this.decryptPassword(router.password);
 
         try {
@@ -575,7 +575,7 @@ export class RoutersService {
             throw new NotFoundException('Router not found');
         }
 
-        const isPending = router.description?.includes('Pending WireGuard setup');
+        const isPending = router.description?.includes('Pending WireGuard setup') && !router.vpnIp;
 
         const password = this.decryptPassword(router.password);
 
