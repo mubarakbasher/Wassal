@@ -497,9 +497,7 @@ export class RoutersService {
             isOnline = false;
         }
 
-        // #region agent log
-        fetch('http://127.0.0.1:7328/ingest/857f322b-6c86-42e9-b382-336861bf180f', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': 'f5682d' }, body: JSON.stringify({ sessionId: 'f5682d', location: 'routers.service.ts:checkHealth', message: 'checkHealth result', data: { routerId: id, isOnline, isPending, dbStatus: router.status }, timestamp: Date.now(), hypothesisId: 'H1' }) }).catch(() => { });
-        // #endregion
+
 
         const newStatus = isOnline
             ? RouterStatus.ONLINE
@@ -612,9 +610,7 @@ export class RoutersService {
         let hotspotUsers: any[] = [];
         let uptime = '0s';
 
-        // #region agent log
-        fetch('http://127.0.0.1:7328/ingest/857f322b-6c86-42e9-b382-336861bf180f', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': 'f5682d' }, body: JSON.stringify({ sessionId: 'f5682d', location: 'routers.service.ts:getRouterStats', message: 'getRouterStats called', data: { routerId: id, isPending, dbStatus: router.status, description: router.description?.substring(0, 50) }, timestamp: Date.now(), hypothesisId: 'H1' }) }).catch(() => { });
-        // #endregion
+
 
         try {
             const testResult = await this.mikrotikApi.quickTestConnection(connection);
@@ -645,9 +641,7 @@ export class RoutersService {
 
         const totalBytes = (BigInt(bandwidthAgg._sum.bytesIn || 0) + BigInt(bandwidthAgg._sum.bytesOut || 0)).toString();
 
-        // #region agent log
-        fetch('http://127.0.0.1:7328/ingest/857f322b-6c86-42e9-b382-336861bf180f', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': 'f5682d' }, body: JSON.stringify({ sessionId: 'f5682d', location: 'routers.service.ts:getRouterStats:return', message: 'getRouterStats returning', data: { routerId: router.id, isOnline, isPending, dbStatus: router.status, uptime }, timestamp: Date.now(), hypothesisId: 'H1' }) }).catch(() => { });
-        // #endregion
+
 
         return {
             routerId: router.id,
@@ -1231,6 +1225,44 @@ export class RoutersService {
                 : 'RADIUS configuration had issues — check warnings',
             radiusEnabled: result.radiusConfigured,
             warnings: result.warnings.length > 0 ? result.warnings : undefined,
+        };
+    }
+
+    /**
+     * Debug connectivity for a router — returns detailed TCP + API test results
+     */
+    async debugConnectivity(id: string, userId: string) {
+        const router = await this.prisma.router.findFirst({
+            where: { id, userId },
+        });
+
+        if (!router) {
+            throw new NotFoundException('Router not found');
+        }
+
+        const decryptedPassword = this.decryptPassword(router.password);
+        const connectHost = this.getRouterHost(router);
+
+        const diagnosis = await this.mikrotikApi.diagnoseConnectivity({
+            host: connectHost,
+            port: router.apiPort,
+            username: router.username,
+            password: decryptedPassword,
+        });
+
+        return {
+            routerId: id,
+            routerName: router.name,
+            dbRecord: {
+                ipAddress: router.ipAddress,
+                vpnIp: router.vpnIp,
+                apiPort: router.apiPort,
+                username: router.username,
+                status: router.status,
+                lastSeen: router.lastSeen,
+            },
+            connectHost,
+            diagnosis,
         };
     }
 }

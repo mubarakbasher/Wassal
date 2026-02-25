@@ -63,14 +63,15 @@ export class MikroTikApiService {
      * Returns quickly if router is offline
      */
     async quickTestConnection(connection: MikroTikConnection): Promise<boolean> {
-        const api = this.createApi(connection, 5);
+        const api = this.createApi(connection, 10);
 
         try {
             await api.connect();
             await api.close();
+            this.logger.log(`[quickTestConnection] Successfully connected to ${connection.host}:${connection.port}`);
             return true;
         } catch (error) {
-            this.logger.debug(`[quickTestConnection] Failed to connect to ${connection.host}:${connection.port} - ${error.message}`);
+            this.logger.warn(`[quickTestConnection] Failed: ${connection.host}:${connection.port} user=${connection.username} - ${error.message}`);
             try {
                 await api.close();
             } catch (e) {
@@ -653,5 +654,85 @@ export class MikroTikApiService {
         }
 
         return { success: true };
+    }
+
+    /**
+     * Raw TCP connectivity test — verifies network-level reachability
+     * independent of MikroTik API authentication.
+     */
+    async rawTcpTest(host: string, port: number, timeoutMs = 5000): Promise<{ reachable: boolean; latencyMs: number; error?: string }> {
+        const net = require('net');
+        const start = Date.now();
+
+        return new Promise((resolve) => {
+            const socket = new net.Socket();
+
+            const timer = setTimeout(() => {
+                socket.destroy();
+                resolve({ reachable: false, latencyMs: Date.now() - start, error: 'TCP timeout' });
+            }, timeoutMs);
+
+            socket.connect(port, host, () => {
+                clearTimeout(timer);
+                const latencyMs = Date.now() - start;
+                socket.destroy();
+                resolve({ reachable: true, latencyMs });
+            });
+
+            socket.on('error', (err: any) => {
+                clearTimeout(timer);
+                resolve({ reachable: false, latencyMs: Date.now() - start, error: err.message });
+            });
+        });
+    }
+
+    /**
+     * Full connectivity diagnosis for a router — used by the debug endpoint.
+     * Tests raw TCP, then MikroTik API, and returns detailed results.
+     */
+    async diagnoseConnectivity(connection: MikroTikConnection): Promise<{
+        host: string;
+        port: number;
+        username: string;
+        tcpTest: { reachable: boolean; latencyMs: number; error?: string };
+        apiTest: { connected: boolean; identity?: string; error?: string; latencyMs: number };
+    }> {
+        // Step 1: Raw TCP test
+        const tcpTest = await this.rawTcpTest(connection.host, connection.port);
+
+        // Step 2: MikroTik API test
+        const apiStart = Date.now();
+        let apiResult: { connected: boolean; identity?: string; error?: string; latencyMs: number };
+
+        if (!tcpTest.reachable) {
+            apiResult = { connected: false, error: 'Skipped — TCP unreachable', latencyMs: 0 };
+        } else {
+            const api = this.createApi(connection, 15);
+            try {
+                await api.connect();
+                const identity = await api.write('/system/identity/print');
+                await api.close();
+                apiResult = {
+                    connected: true,
+                    identity: identity?.[0]?.name || 'Unknown',
+                    latencyMs: Date.now() - apiStart,
+                };
+            } catch (error) {
+                try { await api.close(); } catch { }
+                apiResult = {
+                    connected: false,
+                    error: error.message,
+                    latencyMs: Date.now() - apiStart,
+                };
+            }
+        }
+
+        return {
+            host: connection.host,
+            port: connection.port,
+            username: connection.username,
+            tcpTest,
+            apiTest: apiResult,
+        };
     }
 }

@@ -19,6 +19,8 @@ export class RouterMonitorService implements OnModuleInit {
 
     onModuleInit() {
         this.logger.log('Router Monitor Service initialized');
+        // Run an initial check immediately so routers don't wait 60s for first status update
+        setTimeout(() => this.monitorRouters(), 5000);
     }
 
     // Run every 60 seconds
@@ -30,7 +32,7 @@ export class RouterMonitorService implements OnModuleInit {
         }
 
         this.isMonitoring = true;
-        this.logger.debug('Starting router status monitoring cycle...');
+        this.logger.log('Starting router status monitoring cycle...');
 
         try {
             // Get all routers with their owners' notification preferences
@@ -55,7 +57,7 @@ export class RouterMonitorService implements OnModuleInit {
                 await this.checkRouterStatus(router, isPending);
             }
 
-            this.logger.debug(`Completed monitoring ${routers.length} routers`);
+            this.logger.log(`Completed monitoring ${routers.length} routers`);
         } catch (error) {
             this.logger.error(`Monitoring cycle failed: ${error.message}`);
         } finally {
@@ -79,23 +81,29 @@ export class RouterMonitorService implements OnModuleInit {
         let currentStatus: RouterStatus;
         let isReachable = false;
 
+        const connectHost = router.vpnIp || router.ipAddress;
+
         try {
             const password = this.decryptPassword(router.password);
 
             const connection: MikroTikConnection = {
-                host: router.vpnIp || router.ipAddress,
+                host: connectHost,
                 port: router.apiPort,
                 username: router.username,
                 password: password,
             };
 
+            this.logger.log(`[Monitor] Checking ${router.name}: ${connectHost}:${router.apiPort} (user=${router.username})`);
+
             isReachable = await this.mikrotikApi.quickTestConnection(connection);
             currentStatus = isReachable
                 ? RouterStatus.ONLINE
                 : (isPending ? previousStatus : RouterStatus.OFFLINE);
+
+            this.logger.log(`[Monitor] ${router.name}: ${isReachable ? 'ONLINE' : 'OFFLINE'} (was ${previousStatus})`);
         } catch (error) {
             currentStatus = isPending ? previousStatus : RouterStatus.OFFLINE;
-            this.logger.debug(`Router ${router.name} (${router.ipAddress}) check failed: ${error.message}`);
+            this.logger.warn(`[Monitor] ${router.name} (${connectHost}) check failed: ${error.message}`);
         }
 
         if (previousStatus !== currentStatus) {

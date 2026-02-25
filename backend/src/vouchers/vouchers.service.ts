@@ -125,10 +125,27 @@ export class VouchersService {
         }
 
         if (!targetProfileId) {
-            throw new BadRequestException('Either profileId or mikrotikProfile must be provided');
+            // No profile specified — auto-use or create a 'default' profile for this router
+            const defaultProfile = await this.prisma.hotspotProfile.findFirst({
+                where: { routerId, name: 'default' },
+            });
+
+            if (defaultProfile) {
+                targetProfileId = defaultProfile.id;
+            } else {
+                const newDefault = await this.prisma.hotspotProfile.create({
+                    data: {
+                        name: 'default',
+                        routerId,
+                        sharedUsers: 1,
+                    },
+                });
+                targetProfileId = newDefault.id;
+                this.logger.log(`Auto-created 'default' profile for router ${routerId}`);
+            }
         }
 
-        // Verify profile exists (double check if passed by ID)
+        // Verify profile exists
         const profile = await this.prisma.hotspotProfile.findFirst({
             where: { id: targetProfileId, routerId },
         });

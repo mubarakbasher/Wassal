@@ -38,6 +38,7 @@ class _GenerateVoucherViewState extends State<GenerateVoucherView>
   final _priceController = TextEditingController(text: "10");
   final _quantityController = TextEditingController(text: "1");
   final _limitValueController = TextEditingController(text: "1");
+  final _wallClockValueController = TextEditingController(text: "1");
 
   String _limitType = "Time";
   String _timeUnit = "Hours";
@@ -46,9 +47,8 @@ class _GenerateVoucherViewState extends State<GenerateVoucherView>
   String? _selectedPlanName;
   String _charset = "NUMERIC";
   String _authType = "USER_SAME_PASS";
-  String _countType = "ONLINE_ONLY"; // WALL_CLOCK or ONLINE_ONLY
-
-  bool get _needsProfile => _limitType == 'Time' && _countType == 'WALL_CLOCK';
+  String _countType = "ONLINE_ONLY"; // ONLINE_ONLY = total online time, WALL_CLOCK = total time (even offline)
+  String _wallClockUnit = "Hours";
 
   @override
   void initState() {
@@ -71,6 +71,7 @@ class _GenerateVoucherViewState extends State<GenerateVoucherView>
     _priceController.dispose();
     _quantityController.dispose();
     _limitValueController.dispose();
+    _wallClockValueController.dispose();
     super.dispose();
   }
 
@@ -526,26 +527,20 @@ class _GenerateVoucherViewState extends State<GenerateVoucherView>
 
             const SizedBox(height: 24),
 
-            // Count Type Selection — only for Time limits
-            if (_limitType == 'Time') ...[
-              Text('Count Type', style: AppTextStyles.labelLarge),
-              const SizedBox(height: 12),
-              _buildCountTypeSelector(),
+            // Total Use selector
+            Text('Total Use', style: AppTextStyles.labelLarge),
+            const SizedBox(height: 12),
+            _buildTotalUseSelector(),
+            const SizedBox(height: 24),
+
+            // Wall clock time input — when Total Time is selected with Data Limit
+            if (_countType == 'WALL_CLOCK') ...[
+              Text('Validity Duration', style: AppTextStyles.labelLarge),
+              const SizedBox(height: 8),
+              _buildWallClockTimeField(),
               const SizedBox(height: 24),
             ],
 
-            // Profile Selection — only for WALL_CLOCK + Time limit
-            if (_limitType == 'Time' && _countType == 'WALL_CLOCK') ...[
-              Text('Select Profile', style: AppTextStyles.labelLarge),
-              const SizedBox(height: 12),
-              if (formData.isLoadingProfiles)
-                _buildProfileLoadingState()
-              else if (formData.profiles.isEmpty)
-                _buildNoProfilesState()
-              else
-                _buildProfileGrid(formData),
-              const SizedBox(height: 24),
-            ],
 
             // Price and Quantity
             Row(
@@ -563,10 +558,9 @@ class _GenerateVoucherViewState extends State<GenerateVoucherView>
 
             const SizedBox(height: 32),
             _buildContinueButton(
-              enabled: _needsProfile ? _selectedProfileId != null : true,
+              enabled: true,
               onPressed: () {
-                final profileValid = _needsProfile ? _selectedProfileId != null : true;
-                if (_formKey.currentState!.validate() && profileValid) {
+                if (_formKey.currentState!.validate()) {
                   _nextStep();
                 }
               },
@@ -726,17 +720,18 @@ class _GenerateVoucherViewState extends State<GenerateVoucherView>
     );
   }
 
-  Widget _buildCountTypeSelector() {
+
+  Widget _buildTotalUseSelector() {
     return Row(
       children: [
-        _buildCountTypeChip('ONLINE_ONLY', 'Online Time', Icons.wifi_rounded),
+        _buildTotalUseChip('ONLINE_ONLY', 'Total Online Time', Icons.wifi_rounded, 'Counts only when connected'),
         const SizedBox(width: 12),
-        _buildCountTypeChip('WALL_CLOCK', 'Wall Clock', Icons.schedule_rounded),
+        _buildTotalUseChip('WALL_CLOCK', 'Total Time', Icons.schedule_rounded, 'Counts even when offline'),
       ],
     );
   }
 
-  Widget _buildCountTypeChip(String type, String label, IconData icon) {
+  Widget _buildTotalUseChip(String type, String label, IconData icon, String subtitle) {
     final isSelected = _countType == type;
     return Expanded(
       child: GestureDetector(
@@ -745,7 +740,6 @@ class _GenerateVoucherViewState extends State<GenerateVoucherView>
           setState(() {
             _countType = type;
             if (type == 'ONLINE_ONLY') {
-              // Clear profile selection when switching to online-only
               _selectedProfileId = null;
               _selectedPlanName = null;
             }
@@ -776,19 +770,67 @@ class _GenerateVoucherViewState extends State<GenerateVoucherView>
                   color: isSelected ? Colors.white : AppColors.textPrimary,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                 ),
+                textAlign: TextAlign.center,
               ),
               const SizedBox(height: 4),
               Text(
-                type == 'ONLINE_ONLY' ? 'RADIUS tracking' : 'MikroTik profile',
+                subtitle,
                 style: AppTextStyles.labelSmall.copyWith(
                   color: isSelected ? Colors.white70 : AppColors.textTertiary,
                   fontSize: 10,
                 ),
+                textAlign: TextAlign.center,
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildWallClockTimeField() {
+    final units = ['Minutes', 'Hours', 'Days'];
+    return Row(
+      children: [
+        Expanded(
+          flex: 2,
+          child: TextFormField(
+            controller: _wallClockValueController,
+            keyboardType: TextInputType.number,
+            style: AppTextStyles.bodyLarge,
+            decoration: const InputDecoration(
+              hintText: 'Time',
+            ),
+            validator: (v) => v!.isEmpty ? 'Required' : null,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              color: AppColors.cardElevated,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+            ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: _wallClockUnit,
+                isExpanded: true,
+                icon: const Icon(Icons.expand_more_rounded),
+                style: AppTextStyles.bodyMedium,
+                items: units.map((u) => DropdownMenuItem(
+                  value: u,
+                  child: Text(u),
+                )).toList(),
+                onChanged: (value) {
+                  setState(() => _wallClockUnit = value!);
+                },
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -1251,21 +1293,37 @@ class _GenerateVoucherViewState extends State<GenerateVoucherView>
     final limitVal = int.parse(_limitValueController.text);
 
     if (_limitType == 'Time') {
-      if (_timeUnit == 'Minutes') duration = limitVal;
-      else if (_timeUnit == 'Hours') duration = limitVal * 60;
-      else if (_timeUnit == 'Days') duration = limitVal * 60 * 24;
+      if (_countType == 'WALL_CLOCK') {
+        // Total Time: use the Validity Duration field
+        final wallClockVal = int.tryParse(_wallClockValueController.text) ?? 1;
+        if (_wallClockUnit == 'Minutes') duration = wallClockVal;
+        else if (_wallClockUnit == 'Hours') duration = wallClockVal * 60;
+        else if (_wallClockUnit == 'Days') duration = wallClockVal * 60 * 24;
+      } else {
+        // Total Online Time: use the limit value field
+        if (_timeUnit == 'Minutes') duration = limitVal;
+        else if (_timeUnit == 'Hours') duration = limitVal * 60;
+        else if (_timeUnit == 'Days') duration = limitVal * 60 * 24;
+      }
     } else {
       if (_dataUnit == 'MB') dataLimit = limitVal * 1024 * 1024;
       else if (_dataUnit == 'GB') dataLimit = limitVal * 1024 * 1024 * 1024;
+
+      // If Total Time selected with data limit, also set a duration
+      if (_countType == 'WALL_CLOCK') {
+        final wallClockVal = int.tryParse(_wallClockValueController.text) ?? 1;
+        if (_wallClockUnit == 'Minutes') duration = wallClockVal;
+        else if (_wallClockUnit == 'Hours') duration = wallClockVal * 60;
+        else if (_wallClockUnit == 'Days') duration = wallClockVal * 60 * 24;
+      }
     }
 
-    // For data-based vouchers, always use ONLINE_ONLY (RADIUS tracking)
-    final effectiveCountType = _limitType == 'Data' ? 'ONLINE_ONLY' : _countType;
+    final effectiveCountType = _countType;
 
     context.read<VoucherBloc>().add(GenerateVoucherEvent(
       routerId: formData.selectedRouterId!,
       profileId: null,
-      mikrotikProfile: _needsProfile ? _selectedPlanName : null,
+      mikrotikProfile: null,
       planName: _selectedPlanName ?? 'Standard',
       price: double.parse(_priceController.text),
       quantity: int.parse(_quantityController.text),

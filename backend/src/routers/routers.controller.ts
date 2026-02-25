@@ -130,6 +130,11 @@ export class RoutersController {
         return this.routersService.setupRadius(id, user.id);
     }
 
+    @Get(':id/debug/connectivity')
+    debugConnectivity(@Param('id') id: string, @CurrentUser() user: any) {
+        return this.routersService.debugConnectivity(id, user.id);
+    }
+
     @Post('wireguard-setup')
     generateWireguardSetup(@CurrentUser() user: any) {
         return this.routersService.generateWireguardSetup(user.id);
