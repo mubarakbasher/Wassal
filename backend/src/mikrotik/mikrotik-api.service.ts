@@ -70,6 +70,7 @@ export class MikroTikApiService {
             await api.close();
             return true;
         } catch (error) {
+            this.logger.debug(`[quickTestConnection] Failed to connect to ${connection.host}:${connection.port} - ${error.message}`);
             try {
                 await api.close();
             } catch (e) {

@@ -484,13 +484,16 @@ export class RoutersService {
 
         let isOnline = false;
         try {
+            this.logger.log(`Starting health check for router ${router.name} at ${this.getRouterHost(router)}:${router.apiPort}`);
             isOnline = await this.mikrotikApi.quickTestConnection({
                 host: this.getRouterHost(router),
                 port: router.apiPort,
                 username: router.username,
                 password: decryptedPassword,
             });
-        } catch {
+            this.logger.log(`Health check result for ${router.name}: ${isOnline ? 'ONLINE' : 'OFFLINE'}`);
+        } catch (error) {
+            this.logger.error(`Health check exception for router ${router.name}: ${error.message}`, error.stack);
             isOnline = false;
         }
 
