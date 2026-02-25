@@ -27,17 +27,15 @@ services:
       context: ./freeradius
       dockerfile: Dockerfile
     container_name: wassal-freeradius
+    network_mode: host
     depends_on:
       postgres:
         condition: service_healthy
     environment:
-      ENV_RADIUS_DB_HOST: postgres
+      ENV_RADIUS_DB_HOST: 127.0.0.1
       ENV_RADIUS_DB_USER: ${DB_USER:-postgres}
       ENV_RADIUS_DB_PASS: ${DB_PASSWORD}
       ENV_RADIUS_DB_NAME: ${DB_NAME:-mikrotik_hotspot}
-    ports:
-      - "1812:1812/udp"
-      - "1813:1813/udp"
     restart: unless-stopped
 
   backend:

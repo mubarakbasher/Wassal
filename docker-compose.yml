@@ -34,8 +34,8 @@ services:
       ENV_RADIUS_DB_PASS: ${DB_PASSWORD:-postgres}
       ENV_RADIUS_DB_NAME: ${DB_NAME:-mikrotik_hotspot}
     ports:
-      - "127.0.0.1:1812:1812/udp"
-      - "127.0.0.1:1813:1813/udp"
+      - "1812:1812/udp"
+      - "1813:1813/udp"
     restart: unless-stopped
 
   # NestJS Backend

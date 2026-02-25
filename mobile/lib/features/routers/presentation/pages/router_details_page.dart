@@ -128,6 +128,36 @@ class _RouterDetailsPageState extends State<RouterDetailsPage> {
     }
   }
 
+  Future<void> _syncRouter() async {
+    setState(() => _isRefreshing = true);
+    _showSnackBar('🔄 Syncing RADIUS & refreshing...', Colors.blue);
+    
+    // Step 1: Re-setup RADIUS on the router
+    try {
+      final radiusResponse = await _apiClient.post('/routers/${widget.router.id}/setup-radius');
+      if (mounted) {
+        final data = radiusResponse.data;
+        final radiusEnabled = data?['radiusEnabled'] == true;
+        final warnings = data?['warnings'] as List?;
+        
+        if (radiusEnabled) {
+          _showSnackBar('✅ RADIUS configured successfully', Colors.green);
+        } else if (warnings != null && warnings.isNotEmpty) {
+          _showSnackBar('⚠️ RADIUS: ${warnings.first}', Colors.orange);
+        } else {
+          _showSnackBar('⚠️ RADIUS setup had issues', Colors.orange);
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        _showSnackBar('❌ RADIUS setup failed: $e', Colors.red);
+      }
+    }
+    
+    // Step 2: Refresh all data
+    await _loadAllData();
+  }
+
   Future<void> _disconnectUser(String sessionId) async {
     try {
       await _apiClient.post('/routers/${widget.router.id}/disconnect-user', data: {'sessionId': sessionId});
@@ -511,7 +541,7 @@ class _RouterDetailsPageState extends State<RouterDetailsPage> {
             const SizedBox(height: 12),
             Row(
               children: [
-                Expanded(child: _buildActionButton('Sync', Icons.sync, Colors.blue, _refresh)),
+                Expanded(child: _buildActionButton('Sync', Icons.sync, Colors.blue, _syncRouter)),
                 const SizedBox(width: 12),
                 Expanded(child: _buildActionButton('Logs', Icons.article, Colors.purple, _viewLogs)),
               ],
