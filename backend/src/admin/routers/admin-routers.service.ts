@@ -133,12 +133,14 @@ export class AdminRoutersService {
 
         try {
             const decryptedPassword = this.decryptPassword(router.password);
+            this.logger.log(`Starting admin health check for router ${router.name} at ${this.getRouterHost(router)}:${router.apiPort}`);
             const isOnline = await this.mikrotikApi.quickTestConnection({
                 host: this.getRouterHost(router),
                 port: router.apiPort,
                 username: router.username,
                 password: decryptedPassword,
             });
+            this.logger.log(`Admin health check result for ${router.name}: ${isOnline ? 'ONLINE' : 'OFFLINE'}`);
 
             const newStatus = isOnline
                 ? RouterStatus.ONLINE
@@ -160,7 +162,7 @@ export class AdminRoutersService {
                 lastSeen: isOnline ? new Date() : router.lastSeen,
             };
         } catch (error) {
-            this.logger.error(`Failed to check status for router ${router.id}: ${error.message}`);
+            this.logger.error(`Admin health check exception for router ${router.name}: ${error.message}`, error.stack);
             return {
                 id: router.id,
                 status: router.status,
