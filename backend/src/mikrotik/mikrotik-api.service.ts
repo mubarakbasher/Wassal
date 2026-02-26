@@ -551,7 +551,7 @@ export class MikroTikApiService {
      * Enable RADIUS authentication on the hotspot server profile
      * Sets use-radius=yes so MikroTik forwards auth requests to RADIUS
      */
-    async enableHotspotRadius(connection: MikroTikConnection): Promise<MikroTikCommandResult> {
+    async enableHotspotRadius(connection: MikroTikConnection, routerId?: string): Promise<MikroTikCommandResult> {
         this.logger.log(`Enabling RADIUS on hotspot for ${connection.host}`);
 
         // Get the hotspot server profile(s)
@@ -563,14 +563,23 @@ export class MikroTikApiService {
         }
 
         // Enable RADIUS on all hotspot server profiles
+        // Set location-name to routerId so MikroTik sends it as Called-Station-Id
+        // in RADIUS requests — this enables per-router voucher isolation
         let lastResult: MikroTikCommandResult = { success: true };
         for (const profile of profiles.data) {
             const id = profile['.id'];
-            lastResult = await this.executeCommand(connection, '/ip/hotspot/profile/set', [
+            const args = [
                 `=.id=${id}`,
                 `=use-radius=yes`,
                 `=radius-interim-update=00:05:00`,
-            ]);
+            ];
+
+            // Set location-name for SaaS voucher isolation
+            if (routerId) {
+                args.push(`=location-name=${routerId}`);
+            }
+
+            lastResult = await this.executeCommand(connection, '/ip/hotspot/profile/set', args);
 
             if (!lastResult.success) {
                 this.logger.error(`Failed to enable RADIUS on profile ${profile.name}: ${lastResult.error}`);

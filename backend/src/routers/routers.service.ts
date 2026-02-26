@@ -92,6 +92,21 @@ export class RoutersService {
                 description || undefined,
             );
             this.logger.log(`NAS client registered for ${routerName} (${ipAddress})`);
+
+            // Reload FreeRADIUS so it picks up the new NAS entry immediately
+            // FreeRADIUS only reads the nas table at startup/reload
+            try {
+                const { exec } = require('child_process');
+                exec('docker exec wassal-freeradius kill -HUP 1', (err) => {
+                    if (err) {
+                        this.logger.warn(`FreeRADIUS reload failed: ${err.message}`);
+                    } else {
+                        this.logger.log('FreeRADIUS reloaded to pick up new NAS client');
+                    }
+                });
+            } catch (reloadErr) {
+                this.logger.warn(`Could not reload FreeRADIUS: ${reloadErr.message}`);
+            }
         } catch (error) {
             warnings.push(`Failed to register NAS: ${error.message}`);
             this.logger.warn(`Failed to register NAS for ${routerName}: ${error.message}`);
@@ -124,7 +139,7 @@ export class RoutersService {
             }
 
             // Step 2: Enable RADIUS on hotspot server profiles
-            const enableResult = await this.mikrotikApi.enableHotspotRadius(conn);
+            const enableResult = await this.mikrotikApi.enableHotspotRadius(conn, routerId);
             if (enableResult.success) {
                 this.logger.log(`RADIUS enabled on hotspot for router ${routerName} with location-name=${routerId}`);
                 radiusConfigured = true;
@@ -396,7 +411,7 @@ export class RoutersService {
                 username: router.username,
                 password: passwordToUse,
             };
-            const enableResult = await this.mikrotikApi.enableHotspotRadius(conn);
+            const enableResult = await this.mikrotikApi.enableHotspotRadius(conn, router.id);
             if (enableResult.success) {
                 this.logger.log(`RADIUS config updated on hotspot for ${router.name}`);
             } else {

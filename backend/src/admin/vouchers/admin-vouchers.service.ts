@@ -121,7 +121,7 @@ export class AdminVouchersService {
             const password = username; // username-only: MikroTik sends username as password
 
             // Create RADIUS user
-            await this.radiusService.createRadiusUser(username, password, groupName);
+            await this.radiusService.createRadiusUser(username, password, groupName, routerId);
 
             // Only set Max-All-Session for ONLINE_ONLY count type
             if (planType === 'TIME_BASED' && duration && countType === 'ONLINE_ONLY') {

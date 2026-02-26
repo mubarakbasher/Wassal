@@ -27,6 +27,7 @@ export class RadiusService {
         username: string,
         password: string,
         groupName: string,
+        routerId?: string,
     ): Promise<void> {
         // Insert password into radcheck
         await this.prisma.radCheck.create({
@@ -38,6 +39,20 @@ export class RadiusService {
             },
         });
 
+        // Tie this user to a specific router via Called-Station-Id check
+        // MikroTik sends location-name as Called-Station-Id in RADIUS requests
+        // FreeRADIUS compares check attributes against incoming request attributes
+        if (routerId) {
+            await this.prisma.radCheck.create({
+                data: {
+                    username,
+                    attribute: 'Called-Station-Id',
+                    op: '==',
+                    value: routerId,
+                },
+            });
+        }
+
         // Assign user to group (for group-level attributes like speed)
         await this.prisma.radUserGroup.create({
             data: {
@@ -47,7 +62,7 @@ export class RadiusService {
             },
         });
 
-        this.logger.log(`Created RADIUS user: ${username} in group: ${groupName}`);
+        this.logger.log(`Created RADIUS user: ${username} in group: ${groupName} (router: ${routerId || 'any'})`);
     }
 
     /**
