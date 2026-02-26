@@ -465,12 +465,12 @@ model RadUserGroup {
 /// Accounting data — session tracking (auto-populated by FreeRADIUS)
 model RadAcct {
   radacctid           BigInt    @id @default(autoincrement())
-  acctsessionid       String?   @default("") @db.VarChar(64)
-  acctuniqueid        String?   @default("") @unique @db.VarChar(32)
+  acctsessionid       String?   @default("") @db.VarChar(128)
+  acctuniqueid        String?   @default("") @unique @db.VarChar(64)
   username            String?   @default("") @db.VarChar(64)
   realm               String?   @db.VarChar(64)
   nasipaddress        String?   @default("") @db.VarChar(15)
-  nasportid           String?   @db.VarChar(32)
+  nasportid           String?   @db.VarChar(64)
   nasporttype         String?   @db.VarChar(32)
   acctstarttime       DateTime?
   acctupdatetime      DateTime?
@@ -482,9 +482,9 @@ model RadAcct {
   connectinfo_stop    String?   @db.VarChar(128)
   acctinputoctets     BigInt?   // Bytes received
   acctoutputoctets    BigInt?   // Bytes sent
-  calledstationid     String?   @default("") @db.VarChar(50)
-  callingstationid    String?   @default("") @db.VarChar(50) // MAC address
-  acctterminatecause  String?   @db.VarChar(32)
+  calledstationid     String?   @default("") @db.VarChar(64)
+  callingstationid    String?   @default("") @db.VarChar(64) // MAC address
+  acctterminatecause  String?   @db.VarChar(64)
   servicetype         String?   @db.VarChar(32)
   framedprotocol      String?   @db.VarChar(32)
   framedipaddress     String?   @db.VarChar(15)
@@ -509,8 +509,8 @@ model RadPostAuth {
   pass        String   @default("")
   reply       String   @default("")
   authdate    DateTime @default(now())
-  calledstationid  String @default("") @db.VarChar(50)
-  callingstationid String @default("") @db.VarChar(50)
+  calledstationid  String @default("") @db.VarChar(64)
+  callingstationid String @default("") @db.VarChar(64)
 
   @@index([username])
   @@map("radpostauth")
