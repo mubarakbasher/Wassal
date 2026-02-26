@@ -471,28 +471,28 @@ model RadAcct {
   realm               String?   @db.VarChar(64)
   nasipaddress        String?   @default("") @db.VarChar(15)
   nasportid           String?   @db.VarChar(64)
-  nasporttype         String?   @db.VarChar(32)
+  nasporttype         String?   @db.VarChar(64)
   acctstarttime       DateTime?
   acctupdatetime      DateTime?
   acctstoptime        DateTime?
   acctinterval        Int?
   acctsessiontime     Int?      // Total session time in seconds
-  acctauthentic       String?   @db.VarChar(32)
-  connectinfo_start   String?   @db.VarChar(128)
-  connectinfo_stop    String?   @db.VarChar(128)
+  acctauthentic       String?   @db.VarChar(64)
+  connectinfo_start   String?   @db.VarChar(253)
+  connectinfo_stop    String?   @db.VarChar(253)
   acctinputoctets     BigInt?   // Bytes received
   acctoutputoctets    BigInt?   // Bytes sent
   calledstationid     String?   @default("") @db.VarChar(64)
   callingstationid    String?   @default("") @db.VarChar(64) // MAC address
   acctterminatecause  String?   @db.VarChar(64)
-  servicetype         String?   @db.VarChar(32)
-  framedprotocol      String?   @db.VarChar(32)
-  framedipaddress     String?   @db.VarChar(15)
+  servicetype         String?   @db.VarChar(64)
+  framedprotocol      String?   @db.VarChar(64)
+  framedipaddress     String?   @db.VarChar(45)
   framedipv6address   String?   @db.VarChar(45)
   framedipv6prefix    String?   @db.VarChar(45)
   framedinterfaceid   String?   @db.VarChar(44)
   delegatedipv6prefix String?   @db.VarChar(45)
-  class               String?   @db.VarChar(64)
+  class               String?   @db.VarChar(253)
 
   @@index([username])
   @@index([acctsessionid])
