@@ -193,7 +193,12 @@ export class VouchersService {
                 // Set Max-All-Session so FreeRADIUS sqlcounter tracks total
                 // uptime across all sessions. Time only counts while connected.
                 if (planType === PlanType.TIME_BASED && duration) {
-                    await this.radiusService.setMaxAllSession(username, duration * 60);
+                    const seconds = duration * 60;
+                    await this.radiusService.setMaxAllSession(username, seconds);
+                    // Also set Session-Timeout reply directly so MikroTik disconnects
+                    // the user after the allotted time. The sqlcounter will override
+                    // this with the dynamic remaining time on subsequent logins.
+                    await this.radiusService.setSessionTimeout(username, seconds);
                 }
 
                 // Set data limit if applicable
@@ -407,7 +412,9 @@ export class VouchersService {
 
         // Set Max-All-Session for uptime-based time tracking
         if (voucher.planType === PlanType.TIME_BASED && voucher.duration) {
-            await this.radiusService.setMaxAllSession(voucher.username, voucher.duration * 60);
+            const seconds = voucher.duration * 60;
+            await this.radiusService.setMaxAllSession(voucher.username, seconds);
+            await this.radiusService.setSessionTimeout(voucher.username, seconds);
         }
 
         // Update voucher status — no absolute expiresAt, time is tracked via radacct

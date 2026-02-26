@@ -125,7 +125,9 @@ export class AdminVouchersService {
 
             // Only set Max-All-Session for ONLINE_ONLY count type
             if (planType === 'TIME_BASED' && duration && countType === 'ONLINE_ONLY') {
-                await this.radiusService.setMaxAllSession(username, duration * 60);
+                const seconds = duration * 60;
+                await this.radiusService.setMaxAllSession(username, seconds);
+                await this.radiusService.setSessionTimeout(username, seconds);
             }
 
             if (dataLimit) {

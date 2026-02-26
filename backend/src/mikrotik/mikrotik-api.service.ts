@@ -571,6 +571,7 @@ export class MikroTikApiService {
             const args = [
                 `=.id=${id}`,
                 `=use-radius=yes`,
+                `=radius-accounting=yes`,
                 `=radius-interim-update=00:05:00`,
             ];
 
