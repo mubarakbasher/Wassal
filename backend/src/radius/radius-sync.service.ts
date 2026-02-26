@@ -74,9 +74,14 @@ export class RadiusSyncService {
             for (const acct of activeSessions) {
                 if (!acct.nasipaddress || !acct.username) continue;
 
-                // Find the router by NAS IP
+                // Find the router by NAS IP (could be ipAddress or vpnIp)
                 const router = await this.prisma.router.findFirst({
-                    where: { ipAddress: acct.nasipaddress },
+                    where: {
+                        OR: [
+                            { ipAddress: acct.nasipaddress },
+                            { vpnIp: acct.nasipaddress },
+                        ],
+                    },
                     select: { id: true },
                 });
 
@@ -150,7 +155,12 @@ export class RadiusSyncService {
                 if (!acct.nasipaddress || !acct.username) continue;
 
                 const router = await this.prisma.router.findFirst({
-                    where: { ipAddress: acct.nasipaddress },
+                    where: {
+                        OR: [
+                            { ipAddress: acct.nasipaddress },
+                            { vpnIp: acct.nasipaddress },
+                        ],
+                    },
                     select: { id: true },
                 });
 
@@ -262,6 +272,7 @@ export class RadiusSyncService {
                         select: {
                             id: true,
                             ipAddress: true,
+                            vpnIp: true,
                             apiPort: true,
                             username: true,
                             password: true,
@@ -297,7 +308,7 @@ export class RadiusSyncService {
                 try {
                     const decryptedPassword = this.decryptPassword(voucher.router.password);
                     const connection = {
-                        host: voucher.router.ipAddress,
+                        host: voucher.router.vpnIp || voucher.router.ipAddress,
                         port: voucher.router.apiPort,
                         username: voucher.router.username,
                         password: decryptedPassword,
