@@ -66,6 +66,22 @@ export class RadiusService {
     }
 
     /**
+     * Set Auth-Type := Accept so FreeRADIUS skips password verification.
+     * Used for USERNAME_ONLY vouchers where users enter only the voucher code.
+     */
+    async setAuthTypeAccept(username: string): Promise<void> {
+        await this.prisma.radCheck.create({
+            data: {
+                username,
+                attribute: 'Auth-Type',
+                op: ':=',
+                value: 'Accept',
+            },
+        });
+        this.logger.debug(`Set Auth-Type Accept for ${username}`);
+    }
+
+    /**
      * Remove a RADIUS user and all associated data.
      */
     async removeRadiusUser(username: string): Promise<void> {
