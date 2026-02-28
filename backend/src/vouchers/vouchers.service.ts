@@ -190,10 +190,6 @@ export class VouchersService {
                 // Create RADIUS user in database (replaces MikroTik hotspot user)
                 await this.radiusService.createRadiusUser(username, password, groupName, routerId);
 
-                if (authType === VoucherAuthType.USERNAME_ONLY) {
-                    await this.radiusService.setAuthTypeAccept(username);
-                }
-
                 // Set Max-All-Session so FreeRADIUS sqlcounter tracks total
                 // uptime across all sessions. Time only counts while connected.
                 if (planType === PlanType.TIME_BASED && duration) {
@@ -413,10 +409,6 @@ export class VouchersService {
         const profileName = voucher.profile?.name ?? 'default';
         const groupName = `${profileName}_${voucher.routerId.substring(0, 8)}`;
         await this.radiusService.createRadiusUser(voucher.username, voucher.password, groupName, voucher.routerId);
-
-        if (voucher.password === voucher.username) {
-            await this.radiusService.setAuthTypeAccept(voucher.username);
-        }
 
         // Set Max-All-Session for uptime-based time tracking
         if (voucher.planType === PlanType.TIME_BASED && voucher.duration) {

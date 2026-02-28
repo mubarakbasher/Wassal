@@ -122,7 +122,6 @@ export class AdminVouchersService {
 
             // Create RADIUS user
             await this.radiusService.createRadiusUser(username, password, groupName, routerId);
-            await this.radiusService.setAuthTypeAccept(username);
 
             // Only set Max-All-Session for ONLINE_ONLY count type
             if (planType === 'TIME_BASED' && duration && countType === 'ONLINE_ONLY') {
