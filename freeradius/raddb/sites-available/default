@@ -35,6 +35,13 @@ authorize {
     # Returns remaining time as Session-Timeout
     totaltimelimit
 
+    # Accept empty password for username-only voucher login
+    if (&User-Password == "") {
+        update control {
+            Auth-Type := Accept
+        }
+    }
+
     # Enable PAP for Cleartext-Password
     if (!control:Auth-Type) {
         update control {
