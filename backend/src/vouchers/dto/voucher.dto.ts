@@ -62,7 +62,7 @@ export class CreateVoucherDto {
 
     @IsEnum(VoucherAuthType)
     @IsOptional()
-    authType?: VoucherAuthType = VoucherAuthType.USER_SAME_PASS;
+    authType?: VoucherAuthType = VoucherAuthType.USERNAME_ONLY;
 }
 
 export class UpdateVoucherStatusDto {

@@ -92,7 +92,7 @@ class VoucherRemoteDataSourceImpl implements VoucherRemoteDataSource {
         'dataLimit': dataLimit,
         'quantity': quantity ?? 1,
         'charset': charset ?? 'ALPHANUMERIC',
-        'authType': authType ?? 'USER_SAME_PASS',
+        'authType': authType ?? 'USERNAME_ONLY',
       };
 
       if (profileId != null) data['profileId'] = profileId;

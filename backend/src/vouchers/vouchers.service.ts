@@ -84,7 +84,7 @@ export class VouchersService {
             price,
             quantity,
             charset = VoucherCharset.NUMERIC,
-            authType = VoucherAuthType.USER_SAME_PASS
+            authType = VoucherAuthType.USERNAME_ONLY
         } = createVoucherDto;
 
         // Verify router exists and belongs to user
@@ -181,7 +181,7 @@ export class VouchersService {
             if (authType === VoucherAuthType.USER_SAME_PASS) {
                 password = username;
             } else if (authType === VoucherAuthType.USERNAME_ONLY) {
-                password = "";
+                password = username;
             } else {
                 password = this.generateRandomString(8, charset);
             }

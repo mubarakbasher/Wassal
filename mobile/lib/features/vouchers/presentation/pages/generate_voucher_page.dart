@@ -46,7 +46,7 @@ class _GenerateVoucherViewState extends State<GenerateVoucherView>
   String? _selectedProfileId;
   String? _selectedPlanName;
   String _charset = "NUMERIC";
-  String _authType = "USER_SAME_PASS";
+  String _authType = "USERNAME_ONLY";
   String _countType = "ONLINE_ONLY"; // ONLINE_ONLY = total online time, WALL_CLOCK = total time (even offline)
   String _wallClockUnit = "Hours";
 
@@ -957,17 +957,6 @@ class _GenerateVoucherViewState extends State<GenerateVoucherView>
             'ALPHA': 'Letters Only (e.g., ABCDEFGH)',
           },
           (v) => setState(() => _charset = v!),
-        ),
-        const SizedBox(height: 16),
-        _buildDropdownField(
-          'Voucher Mode',
-          _authType,
-          {
-            'USER_SAME_PASS': 'Code Only (User = Password)',
-            'USERNAME_ONLY': 'Username Only',
-            'USER_PASS': 'Username & Password',
-          },
-          (v) => setState(() => _authType = v!),
         ),
       ],
     );
