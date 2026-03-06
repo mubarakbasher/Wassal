@@ -604,8 +604,8 @@ export class RoutersService {
 
         // Run DB queries in parallel (fast, no connection limits)
         const now = new Date();
-        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
 
         const [totalVouchersCount, bandwidthAgg, revenueAgg] = await Promise.all([
             this.prisma.voucher.count({ where: { routerId: id } }),
@@ -615,7 +615,7 @@ export class RoutersService {
             }),
             this.prisma.sale.aggregate({
                 _sum: { amount: true },
-                where: { soldAt: { gte: startOfMonth, lte: endOfMonth } }
+                where: { soldAt: { gte: startOfDay, lt: endOfDay } }
             }),
         ]);
 

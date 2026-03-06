@@ -689,11 +689,11 @@ class _GenerateVoucherViewState extends State<GenerateVoucherView>
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           style: AppTextStyles.bodyLarge,
           decoration: InputDecoration(
-            prefixText: '\$ ',
-            prefixStyle: AppTextStyles.bodyLarge.copyWith(
+            suffixText: ' SDG',
+            suffixStyle: AppTextStyles.bodyLarge.copyWith(
               fontWeight: FontWeight.bold,
             ),
-            hintText: '0.00',
+            hintText: '0',
           ),
           validator: (v) => v!.isEmpty ? 'Required' : null,
         ),
@@ -1060,7 +1060,7 @@ class _GenerateVoucherViewState extends State<GenerateVoucherView>
                 ),
               ),
               Text(
-                '\$${_priceController.text}',
+                '${_priceController.text} SDG',
                 style: AppTextStyles.titleLarge.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
@@ -1144,10 +1144,10 @@ class _GenerateVoucherViewState extends State<GenerateVoucherView>
           _buildSummaryRow('Router', selectedRouter['name'] ?? 'Unknown'),
           _buildSummaryRow('Profile', _selectedPlanName ?? '-'),
           _buildSummaryRow('Quantity', '${_quantityController.text} voucher(s)'),
-          _buildSummaryRow('Price Each', '\$${_priceController.text}'),
+          _buildSummaryRow('Price Each', '${_priceController.text} SDG'),
           _buildSummaryRow(
             'Total',
-            '\$${(double.tryParse(_priceController.text) ?? 0) * (int.tryParse(_quantityController.text) ?? 1)}',
+            '${(double.tryParse(_priceController.text) ?? 0) * (int.tryParse(_quantityController.text) ?? 1)} SDG',
             isTotal: true,
           ),
         ],

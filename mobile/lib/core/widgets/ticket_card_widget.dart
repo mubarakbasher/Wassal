@@ -179,7 +179,7 @@ class _TicketCardWidgetState extends State<TicketCardWidget>
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
-                              '\$${widget.price.toStringAsFixed(2)}',
+                              '${widget.price.toStringAsFixed(0)} SDG',
                               style: AppTextStyles.buttonSmall,
                             ),
                           ),

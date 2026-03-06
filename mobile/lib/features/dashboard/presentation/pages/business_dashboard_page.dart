@@ -78,7 +78,7 @@ class _DashboardViewState extends State<_DashboardView> {
             String totalRouters = "0";
             String activeUsers = "0";
             String totalUsers = "0";
-            String totalRevenue = "\$0.00";
+            String totalRevenue = "0 SDG";
             bool isActiveUsersHighlight = true;
 
             if (state is DashboardLoaded) {
@@ -86,7 +86,7 @@ class _DashboardViewState extends State<_DashboardView> {
               totalRouters = state.totalRouters.toString();
               totalUsers = state.totalUsers.toString();
               totalRevenue =
-                  "\$${state.totalRevenue.toStringAsFixed(2)}";
+                  "${state.totalRevenue.toStringAsFixed(0)} SDG";
             }
 
             return RefreshIndicator(
@@ -160,7 +160,7 @@ class _DashboardViewState extends State<_DashboardView> {
                         title: 'Revenue',
                         value: totalRevenue,
                         subtitle: '',
-                        icon: Icons.attach_money,
+                        icon: Icons.payments_outlined,
                         isActive: false,
                       ),
                     ],

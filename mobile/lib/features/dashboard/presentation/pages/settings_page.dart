@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
+import 'bills_page.dart';
 import 'monitoring_page.dart';
 import 'reports_page.dart';
-import 'hotspot_profiles_page.dart';
 import 'subscription_page.dart';
 import '../../../../features/profiles/presentation/pages/profile_page.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -60,18 +60,6 @@ class _SettingsPageState extends State<SettingsPage> {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const ReportsPage()),
-              );
-            },
-          ),
-          _buildSettingsTile(
-            context,
-            icon: Icons.person_pin,
-            title: 'Hotspot Profiles',
-            subtitle: 'Manage hotspot user profiles',
-             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const HotspotProfilesPage()),
               );
             },
           ),
@@ -139,6 +127,19 @@ class _SettingsPageState extends State<SettingsPage> {
                     context.read<AuthBloc>().add(const GetProfileEvent());
                   });
                 },
+              );
+            },
+          ),
+
+          _buildSettingsTile(
+            context,
+            icon: Icons.receipt_long_outlined,
+            title: 'Bills & Payments',
+            subtitle: 'View your payment history',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const BillsPage()),
               );
             },
           ),

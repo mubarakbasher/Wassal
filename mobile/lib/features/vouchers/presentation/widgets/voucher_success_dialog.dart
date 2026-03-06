@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:pdf/pdf.dart';
-import 'package:printing/printing.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../domain/entities/voucher.dart';
-import '../utils/voucher_pdf_generator.dart';
+import '../pages/print_voucher_page.dart';
 
 class VoucherSuccessDialog extends StatefulWidget {
   final List<Voucher> vouchers;
@@ -184,7 +182,7 @@ class _VoucherSuccessDialogState extends State<VoucherSuccessDialog>
                 ),
               ),
               Text(
-                '\$${voucher.price.toStringAsFixed(2)}',
+                '${voucher.price.toStringAsFixed(0)} SDG',
                 style: AppTextStyles.titleMedium.copyWith(color: Colors.white),
               ),
             ],
@@ -262,7 +260,7 @@ class _VoucherSuccessDialogState extends State<VoucherSuccessDialog>
               ),
             ),
             Text(
-              '\$${v.price.toStringAsFixed(2)}',
+              '${v.price.toStringAsFixed(0)} SDG',
               style: AppTextStyles.labelLarge.copyWith(color: AppColors.primary),
             ),
           ],
@@ -320,7 +318,12 @@ class _VoucherSuccessDialogState extends State<VoucherSuccessDialog>
           child: InkWell(
             onTap: () {
               HapticFeedback.mediumImpact();
-              _showPrintOptions();
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => PrintVoucherPage(vouchers: widget.vouchers),
+                ),
+              );
             },
             borderRadius: BorderRadius.circular(12),
             child: Padding(
@@ -356,114 +359,6 @@ class _VoucherSuccessDialogState extends State<VoucherSuccessDialog>
     Share.share(_getShareText());
   }
 
-  void _showPrintOptions() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.divider,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            Text('Select Print Format', style: AppTextStyles.titleLarge),
-            const SizedBox(height: 8),
-            Text(
-              'Choose the paper size for your printer',
-              style: AppTextStyles.bodySmall,
-            ),
-            const SizedBox(height: 20),
-            _buildPrintOption(
-              'A4 Paper',
-              'Standard printer, 10 vouchers per page',
-              Icons.description_outlined,
-              PrinterFormat.a4,
-            ),
-            _buildPrintOption(
-              '80mm Thermal',
-              'Receipt printer, detailed layout',
-              Icons.receipt_long_outlined,
-              PrinterFormat.thermal80,
-            ),
-            _buildPrintOption(
-              '58mm Thermal',
-              'Small receipt printer, compact',
-              Icons.receipt_outlined,
-              PrinterFormat.thermal58,
-            ),
-            const SizedBox(height: 16),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPrintOption(
-    String title,
-    String subtitle,
-    IconData icon,
-    PrinterFormat format,
-  ) {
-    return ListTile(
-      leading: Container(
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: AppColors.cardElevated,
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Icon(icon, color: AppColors.primary),
-      ),
-      title: Text(title, style: AppTextStyles.titleMedium),
-      subtitle: Text(subtitle, style: AppTextStyles.bodySmall),
-      onTap: () {
-        Navigator.pop(context);
-        _printWithFormat(format);
-      },
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-    );
-  }
-
-  Future<void> _printWithFormat(PrinterFormat format) async {
-    try {
-      final pdfBytes = await VoucherPdfGenerator.generate(
-        widget.vouchers,
-        format: format,
-        businessName: widget.networkName,
-      );
-      
-      await Printing.layoutPdf(
-        onLayout: (PdfPageFormat format) async => pdfBytes,
-        name: 'vouchers_${DateTime.now().millisecondsSinceEpoch}.pdf',
-      );
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Print error: $e'),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          ),
-        );
-      }
-    }
-  }
-
   String _getShareText() {
     final buffer = StringBuffer();
     final networkDisplayName = widget.networkName ?? 'WASSAL HOTSPOT';
@@ -479,7 +374,7 @@ class _VoucherSuccessDialogState extends State<VoucherSuccessDialog>
       }
       if (widget.vouchers.length == 1) {
         buffer.writeln('Plan: ${v.planName}');
-        buffer.writeln('Price: \$${v.price}');
+        buffer.writeln('Price: ${v.price.toStringAsFixed(0)} SDG');
       }
       buffer.writeln('───────────────────────');
     }

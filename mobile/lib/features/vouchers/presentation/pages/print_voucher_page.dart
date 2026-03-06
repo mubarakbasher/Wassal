@@ -21,10 +21,7 @@ class _PrintVoucherPageState extends State<PrintVoucherPage> {
   PrinterFormat _format = PrinterFormat.a4;
   VoucherDesignTheme _theme = VoucherDesignTheme.classic;
   int _columns = 2;
-  int _rows = 5;
   String _businessName = "Wassal Hotspot";
-
-  final GlobalKey<State<StatefulWidget>> _previewKey = GlobalKey();
 
   @override
   void initState() {
@@ -56,7 +53,7 @@ class _PrintVoucherPageState extends State<PrintVoucherPage> {
       ),
       body: PdfPreview(
         maxPageWidth: 700,
-        key: _previewKey,
+        key: ValueKey('$_format-$_theme-$_columns-$_businessName'),
         canChangeOrientation: false,
         canChangePageFormat: false,
         canDebug: false,
@@ -65,25 +62,8 @@ class _PrintVoucherPageState extends State<PrintVoucherPage> {
           format: _format,
           theme: _theme,
           columns: _columns,
-          rows: _rows,
           businessName: _businessName,
         ),
-        actions: [
-          PdfPreviewAction(
-            icon: const Icon(Icons.save_alt),
-            onPressed: (context, build, pageFormat) async {
-               // The default PdfPreview already has a save button in the toolbar on some platforms,
-               // but adding a custom action is requested.
-               // Actually, `PdfPreview` built-in interactions handle saving/sharing well.
-               // We can leave this empty or perform a specific save action if needed.
-               // For now, reliance on built-in save/share is standard.
-               // Let's rely on standard actions provided by PdfPreview (Print, Share).
-               // The user requested "Save PDF", which Share usually covers.
-               // But we can add a specific direct save if needed. 
-               // Default behavior: The "Share" button allows saving to files.
-            },
-          ),
-        ],
       ),
     );
   }
@@ -96,9 +76,9 @@ class _PrintVoucherPageState extends State<PrintVoucherPage> {
       builder: (context) => StatefulBuilder(
         builder: (context, setModalState) => Container(
           padding: const EdgeInsets.all(24),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -164,53 +144,17 @@ class _PrintVoucherPageState extends State<PrintVoucherPage> {
 
               // Grid Settings (A4 Only)
               if (_format == PrinterFormat.a4) ...[
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Columns: $_columns', style: AppTextStyles.labelMedium),
-                          Slider(
-                            value: _columns.toDouble(),
-                            min: 1,
-                            max: 10,
-                            divisions: 9,
-                            activeColor: AppColors.primary,
-                            onChanged: (val) {
-                              setModalState(() => _columns = val.toInt());
-                              setState(() => _columns = val.toInt());
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Rows: $_rows', style: AppTextStyles.labelMedium),
-                          Slider(
-                            value: _rows.toDouble(),
-                            min: 1,
-                            max: 10,
-                            divisions: 9,
-                            activeColor: AppColors.primary,
-                            onChanged: (val) {
-                              setModalState(() => _rows = val.toInt());
-                              setState(() => _rows = val.toInt());
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  'Total per page: ${_columns * _rows}', 
-                  style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+                Text('Columns: $_columns', style: AppTextStyles.labelMedium),
+                Slider(
+                  value: _columns.toDouble(),
+                  min: 1,
+                  max: 6,
+                  divisions: 5,
+                  activeColor: AppColors.primary,
+                  onChanged: (val) {
+                    setModalState(() => _columns = val.toInt());
+                    setState(() => _columns = val.toInt());
+                  },
                 ),
               ],
 

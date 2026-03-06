@@ -26,22 +26,60 @@ enum VoucherDesignTheme {
 }
 
 class VoucherPdfGenerator {
+  static String _formatDuration(int minutes) {
+    if (minutes < 60) return '${minutes}m';
+    final hours = minutes ~/ 60;
+    final mins = minutes % 60;
+    if (hours < 24) return mins > 0 ? '${hours}h ${mins}m' : '${hours}h';
+    final days = hours ~/ 24;
+    final remHours = hours % 24;
+    if (remHours > 0) return '${days}d ${remHours}h';
+    return '${days}d';
+  }
+
+  static String _formatDataLimit(int bytes) {
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(0)} KB';
+    if (bytes < 1024 * 1024 * 1024) return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+    return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
+  }
+
+  static String _formatPrice(double price) {
+    final formatted = price == price.roundToDouble()
+        ? price.toStringAsFixed(0)
+        : price.toStringAsFixed(1);
+    return '$formatted SDG';
+  }
+
+  static String? _limitLabel(Voucher voucher) {
+    final parts = <String>[];
+    if (voucher.duration != null && voucher.duration! > 0) {
+      parts.add(_formatDuration(voucher.duration!));
+    }
+    if (voucher.dataLimit != null && voucher.dataLimit! > 0) {
+      parts.add(_formatDataLimit(voucher.dataLimit!));
+    }
+    return parts.isEmpty ? null : parts.join(' / ');
+  }
+
   /// Generate PDF with customizable layout and design
   static Future<Uint8List> generate(
     List<Voucher> vouchers, {
     PrinterFormat format = PrinterFormat.a4,
     VoucherDesignTheme theme = VoucherDesignTheme.classic,
     int columns = 2,
-    int rows = 5,
     String? businessName,
     String? loginUrl,
   }) async {
+    if (vouchers.isEmpty) {
+      final doc = pw.Document();
+      doc.addPage(pw.Page(build: (_) => pw.Center(child: pw.Text('No vouchers to print'))));
+      return doc.save();
+    }
     switch (format) {
       case PrinterFormat.a4:
         return _generateA4(
           vouchers, 
           columns: columns, 
-          rows: rows, 
           theme: theme,
           businessName: businessName, 
           loginUrl: loginUrl
@@ -69,7 +107,6 @@ class VoucherPdfGenerator {
   static Future<Uint8List> _generateA4(
     List<Voucher> vouchers, {
     required int columns,
-    required int rows,
     required VoucherDesignTheme theme,
     String? businessName,
     String? loginUrl,
@@ -84,18 +121,26 @@ class VoucherPdfGenerator {
     // Calculate dimensions
     const pageFormat = PdfPageFormat.a4;
     const margin = 15.0; // mm
-    const spacing = 10.0; // mm
+    const spacing = 5.0; // mm
     
-    // Available width/height for vouchers in points
-    final contentWidth = pageFormat.availableWidth - (margin * PdfPageFormat.mm * 2);
-    final contentHeight = pageFormat.availableHeight - (margin * PdfPageFormat.mm * 2);
+    // Available width/height for vouchers in points (use full page dimensions since
+    // the pw.Page margin already constrains the rendering area)
+    final contentWidth = pageFormat.width - (margin * PdfPageFormat.mm * 2);
+    final contentHeight = pageFormat.height - (margin * PdfPageFormat.mm * 2);
     
-    // Calculate voucher card size
-    // Width: (Total Width - ((cols-1) * spacing)) / cols
+    // Calculate card width from columns
     final cardWidth = (contentWidth - ((columns - 1) * spacing * PdfPageFormat.mm)) / columns;
-    
-    // Height: (Total Height - ((rows-1) * spacing)) / rows
-    final cardHeight = (contentHeight - ((rows - 1) * spacing * PdfPageFormat.mm)) / rows;
+    // Card height from aspect ratio (~1.8:1)
+    final cardHeight = cardWidth * 0.55;
+    // Auto-calculate how many rows fit on the page
+    final rows = ((contentHeight + spacing * PdfPageFormat.mm) / (cardHeight + spacing * PdfPageFormat.mm)).floor().clamp(1, 20);
+
+    // Scale factor: compare current card size to default (2 cols x 5 rows) baseline
+    const baseCardWidth = 220.0;
+    const baseCardHeight = 120.0;
+    final scaleX = cardWidth / baseCardWidth;
+    final scaleY = cardHeight / baseCardHeight;
+    final scale = (scaleX < scaleY ? scaleX : scaleY).clamp(0.3, 1.5);
 
     final vouchersPerPage = columns * rows;
     
@@ -122,6 +167,7 @@ class VoucherPdfGenerator {
                     fontTitle, 
                     fontBody, 
                     fontMono,
+                    scale: scale,
                     businessName: businessName,
                     loginUrl: loginUrl,
                   ),
@@ -156,7 +202,7 @@ class VoucherPdfGenerator {
     for (final voucher in vouchers) {
       doc.addPage(
         pw.Page(
-          pageFormat: PdfPageFormat(pageWidth, double.infinity),
+          pageFormat: PdfPageFormat(pageWidth, pageWidth * 3),
           margin: const pw.EdgeInsets.symmetric(horizontal: 4 * PdfPageFormat.mm, vertical: 4 * PdfPageFormat.mm),
           build: (context) {
             return _buildThermalCard(
@@ -185,17 +231,17 @@ class VoucherPdfGenerator {
     pw.Font fontTitle,
     pw.Font fontBody,
     pw.Font fontMono, {
+    double scale = 1.0,
     String? businessName,
     String? loginUrl,
   }) {
     switch (theme) {
       case VoucherDesignTheme.modern:
-        return _buildModernCard(voucher, fontTitle, fontBody, fontMono, businessName, loginUrl);
+        return _buildModernCard(voucher, fontTitle, fontBody, fontMono, businessName, loginUrl, scale);
       case VoucherDesignTheme.minimal:
-        return _buildMinimalCard(voucher, fontTitle, fontBody, fontMono, businessName, loginUrl);
+        return _buildMinimalCard(voucher, fontTitle, fontBody, fontMono, businessName, loginUrl, scale);
       case VoucherDesignTheme.classic:
-      default:
-        return _buildClassicCard(voucher, fontTitle, fontBody, fontMono, businessName, loginUrl);
+        return _buildClassicCard(voucher, fontTitle, fontBody, fontMono, businessName, loginUrl, scale);
     }
   }
 
@@ -207,12 +253,16 @@ class VoucherPdfGenerator {
     pw.Font fontMono,
     String? businessName,
     String? loginUrl,
+    double scale,
   ) {
+    final s = scale;
+    final priceStr = _formatPrice(voucher.price);
+    final limit = _limitLabel(voucher);
     return pw.Container(
-      padding: const pw.EdgeInsets.all(8),
+      padding: pw.EdgeInsets.all(8 * s),
       decoration: pw.BoxDecoration(
-        border: pw.Border.all(color: PdfColors.grey400),
-        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
+        border: pw.Border.all(color: PdfColors.grey400, width: 0.5 * s),
+        borderRadius: pw.BorderRadius.all(pw.Radius.circular(6 * s)),
       ),
       child: pw.Column(
         crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -220,36 +270,39 @@ class VoucherPdfGenerator {
           pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
-                pw.Text(businessName ?? 'WASSAL WiFi', style: pw.TextStyle(font: fontTitle, fontSize: 10)),
+                pw.Text(businessName ?? 'WASSAL WiFi', style: pw.TextStyle(font: fontTitle, fontSize: 10 * s)),
                 pw.Container(
-                  padding: const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                  padding: pw.EdgeInsets.symmetric(horizontal: 4 * s, vertical: 1 * s),
                   color: PdfColors.grey200,
-                  child: pw.Text('${voucher.price} SDG', style: pw.TextStyle(font: fontTitle, fontSize: 9)),
+                  child: pw.Text(priceStr, style: pw.TextStyle(font: fontTitle, fontSize: 9 * s)),
                 ),
               ],
           ),
-          pw.Divider(height: 6, thickness: 0.5, color: PdfColors.grey300),
+          pw.Divider(height: 6 * s, thickness: 0.5, color: PdfColors.grey300),
           pw.Expanded(
             child: pw.Column(
               mainAxisAlignment: pw.MainAxisAlignment.center,
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
-                pw.Text('Username:', style: pw.TextStyle(font: fontBody, fontSize: 8, color: PdfColors.grey700)),
-                pw.Text(voucher.username, style: pw.TextStyle(font: fontMono, fontSize: 14, fontWeight: pw.FontWeight.bold)),
+                pw.Text('Username:', style: pw.TextStyle(font: fontBody, fontSize: 8 * s, color: PdfColors.grey700)),
+                pw.Text(voucher.username, style: pw.TextStyle(font: fontMono, fontSize: 14 * s, fontWeight: pw.FontWeight.bold)),
                 if (voucher.password.isNotEmpty && voucher.password != voucher.username) ...[
-                  pw.SizedBox(height: 4),
-                  pw.Text('Password:', style: pw.TextStyle(font: fontBody, fontSize: 8, color: PdfColors.grey700)),
-                  pw.Text(voucher.password, style: pw.TextStyle(font: fontMono, fontSize: 14, fontWeight: pw.FontWeight.bold)),
+                  pw.SizedBox(height: 4 * s),
+                  pw.Text('Password:', style: pw.TextStyle(font: fontBody, fontSize: 8 * s, color: PdfColors.grey700)),
+                  pw.Text(voucher.password, style: pw.TextStyle(font: fontMono, fontSize: 14 * s, fontWeight: pw.FontWeight.bold)),
                 ],
               ],
             ),
           ),
-          pw.Divider(height: 6, thickness: 0.5, color: PdfColors.grey300),
+          pw.Divider(height: 6 * s, thickness: 0.5, color: PdfColors.grey300),
           pw.Row(
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
             children: [
-              pw.Text(voucher.planName, style: pw.TextStyle(font: fontTitle, fontSize: 8)),
-              pw.Text(loginUrl ?? 'http://mikrotik', style: pw.TextStyle(font: fontBody, fontSize: 6, color: PdfColors.grey600)),
+              pw.Text(voucher.planName, style: pw.TextStyle(font: fontTitle, fontSize: 8 * s)),
+              if (limit != null)
+                pw.Text(limit, style: pw.TextStyle(font: fontTitle, fontSize: 10 * s, color: PdfAppColors.primary))
+              else
+                pw.Text(loginUrl ?? '', style: pw.TextStyle(font: fontBody, fontSize: 6 * s, color: PdfColors.grey600)),
             ],
           ),
         ],
@@ -265,58 +318,70 @@ class VoucherPdfGenerator {
     pw.Font fontMono,
     String? businessName,
     String? loginUrl,
+    double scale,
   ) {
+    final s = scale;
+    final radius = 10.0 * s;
+    final priceStr = _formatPrice(voucher.price);
+    final limit = _limitLabel(voucher);
     return pw.Container(
       decoration: pw.BoxDecoration(
-        // color: PdfColors.grey100,
-        border: pw.Border.all(color: PdfColors.grey300),
-        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(10)),
+        border: pw.Border.all(color: PdfColors.grey300, width: 0.5 * s),
+        borderRadius: pw.BorderRadius.all(pw.Radius.circular(radius)),
       ),
       child: pw.Column(
         children: [
-          // Header
           pw.Container(
-            padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: const pw.BoxDecoration(
+            padding: pw.EdgeInsets.symmetric(horizontal: 8 * s, vertical: 4 * s),
+            decoration: pw.BoxDecoration(
               color: PdfAppColors.primary,
-              borderRadius: pw.BorderRadius.only(topLeft: pw.Radius.circular(9), topRight: pw.Radius.circular(9)),
+              borderRadius: pw.BorderRadius.only(topLeft: pw.Radius.circular(radius - 0.5), topRight: pw.Radius.circular(radius - 0.5)),
             ),
             child: pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
                 pw.Text(
                    businessName?.toUpperCase() ?? 'WIFI VOUCHER',
-                   style: pw.TextStyle(font: fontTitle, fontSize: 9, color: PdfColors.white)
+                   style: pw.TextStyle(font: fontTitle, fontSize: 9 * s, color: PdfColors.white)
                 ),
                 pw.Text(
-                   '${voucher.price.toStringAsFixed(0)}',
-                   style: pw.TextStyle(font: fontTitle, fontSize: 11, color: PdfAppColors.accent)
+                   priceStr,
+                   style: pw.TextStyle(font: fontTitle, fontSize: 11 * s, color: PdfAppColors.accent)
                 ),
               ],
             ),
           ),
-          
-          // Body
           pw.Expanded(
             child: pw.Padding(
-              padding: const pw.EdgeInsets.all(6),
+              padding: pw.EdgeInsets.all(6 * s),
               child: pw.Column(
                 mainAxisAlignment: pw.MainAxisAlignment.center,
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
                   pw.Text(
                     voucher.username,
-                    style: pw.TextStyle(font: fontMono, fontSize: 13, fontWeight: pw.FontWeight.bold, color: PdfAppColors.primary),
+                    style: pw.TextStyle(font: fontMono, fontSize: 13 * s, fontWeight: pw.FontWeight.bold, color: PdfAppColors.primary),
                   ),
                   if (voucher.password.isNotEmpty && voucher.password != voucher.username)
                     pw.Text(
                       voucher.password,
-                      style: pw.TextStyle(font: fontMono, fontSize: 13, fontWeight: pw.FontWeight.bold, color: PdfAppColors.primaryLight),
+                      style: pw.TextStyle(font: fontMono, fontSize: 13 * s, fontWeight: pw.FontWeight.bold, color: PdfAppColors.primaryLight),
                     ),
-                  pw.SizedBox(height: 2),
-                  pw.Text(
-                    voucher.planName,
-                    style: pw.TextStyle(font: fontBody, fontSize: 8, color: PdfColors.grey600),
+                  pw.SizedBox(height: 2 * s),
+                  pw.Row(
+                    children: [
+                      pw.Text(
+                        voucher.planName,
+                        style: pw.TextStyle(font: fontBody, fontSize: 8 * s, color: PdfColors.grey600),
+                      ),
+                      if (limit != null) ...[
+                        pw.SizedBox(width: 6 * s),
+                        pw.Text(
+                          limit,
+                          style: pw.TextStyle(font: fontTitle, fontSize: 10 * s, color: PdfAppColors.accent),
+                        ),
+                      ],
+                    ],
                   ),
                 ],
               ),
@@ -335,9 +400,13 @@ class VoucherPdfGenerator {
     pw.Font fontMono,
     String? businessName,
     String? loginUrl,
+    double scale,
   ) {
+    final s = scale;
+    final priceStr = _formatPrice(voucher.price);
+    final limit = _limitLabel(voucher);
     return pw.Container(
-      padding: const pw.EdgeInsets.all(4),
+      padding: pw.EdgeInsets.all(4 * s),
       decoration: const pw.BoxDecoration(
         border: pw.Border(bottom: pw.BorderSide(color: PdfColors.grey300, style: pw.BorderStyle.dashed)),
       ),
@@ -348,18 +417,20 @@ class VoucherPdfGenerator {
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               mainAxisAlignment: pw.MainAxisAlignment.center,
               children: [
-                pw.Text("${businessName ?? 'WiFi'} - ${voucher.planName}", style: pw.TextStyle(font: fontBody, fontSize: 8)),
-                pw.SizedBox(height: 2),
-                pw.Text(voucher.username, style: pw.TextStyle(font: fontMono, fontSize: 16, fontWeight: pw.FontWeight.bold)),
+                pw.Text("${businessName ?? 'WiFi'} - ${voucher.planName}", style: pw.TextStyle(font: fontBody, fontSize: 8 * s)),
+                pw.SizedBox(height: 2 * s),
+                pw.Text(voucher.username, style: pw.TextStyle(font: fontMono, fontSize: 16 * s, fontWeight: pw.FontWeight.bold)),
                 if (voucher.password.isNotEmpty && voucher.password != voucher.username)
-                  pw.Text(voucher.password, style: pw.TextStyle(font: fontMono, fontSize: 12)),
+                  pw.Text(voucher.password, style: pw.TextStyle(font: fontMono, fontSize: 12 * s)),
               ],
             ),
             pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.end,
               mainAxisAlignment: pw.MainAxisAlignment.center,
               children: [
-                 pw.Text('${voucher.price} SDG', style: pw.TextStyle(font: fontTitle, fontSize: 10)),
+                 pw.Text(priceStr, style: pw.TextStyle(font: fontTitle, fontSize: 10 * s)),
+                 if (limit != null)
+                   pw.Text(limit, style: pw.TextStyle(font: fontTitle, fontSize: 10 * s)),
               ],
             ),
         ],
@@ -377,20 +448,25 @@ class VoucherPdfGenerator {
     String? businessName,
     String? loginUrl,
   }) {
-    // Simplified thermal layout logic, can be expanded to themes too
+    final base = loginUrl ?? 'http://hotspot/login';
+    final qrData = '$base?username=${Uri.encodeComponent(voucher.username)}&password=${Uri.encodeComponent(voucher.password)}';
+    final qrSize = (widthMm - 8) * PdfPageFormat.mm * 0.6;
+    final priceStr = _formatPrice(voucher.price);
+    final limit = _limitLabel(voucher);
+
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.center,
       mainAxisSize: pw.MainAxisSize.min,
       children: [
         pw.Text(businessName ?? 'WIFI VOUCHER', style: pw.TextStyle(font: fontTitle, fontSize: 14)),
         pw.SizedBox(height: 5),
-        pw.Text('${voucher.price} SDG', style: pw.TextStyle(font: fontTitle, fontSize: 16, fontWeight: pw.FontWeight.bold)),
+        pw.Text(priceStr, style: pw.TextStyle(font: fontTitle, fontSize: 16, fontWeight: pw.FontWeight.bold)),
         pw.SizedBox(height: 8),
         pw.BarcodeWidget(
           barcode: pw.Barcode.qrCode(),
-          data: 'http://hotspot/login?username=${voucher.username}&password=${voucher.password}',
-          width: widthMm * 1.5,
-          height: widthMm * 1.5,
+          data: qrData,
+          width: qrSize,
+          height: qrSize,
         ),
         pw.SizedBox(height: 8),
         pw.Text('CODE:', style: pw.TextStyle(font: fontBody, fontSize: 8)),
@@ -401,16 +477,16 @@ class VoucherPdfGenerator {
         ],
         pw.SizedBox(height: 8),
         pw.Text(voucher.planName, style: pw.TextStyle(font: fontBody, fontSize: 10)),
+        if (limit != null) ...[
+          pw.SizedBox(height: 2),
+          pw.Text(limit, style: pw.TextStyle(font: fontTitle, fontSize: 14, fontWeight: pw.FontWeight.bold)),
+        ],
         pw.SizedBox(height: 4),
-        pw.Text(loginUrl ?? 'http://mikrotik', style: pw.TextStyle(font: fontBody, fontSize: 8, color: PdfColors.grey700)),
+        pw.Text(base, style: pw.TextStyle(font: fontBody, fontSize: 8, color: PdfColors.grey700)),
         pw.SizedBox(height: 10),
         pw.Divider(borderStyle: pw.BorderStyle.dashed),
       ],
     );
   }
 }
-
-
-
-
 

@@ -172,7 +172,7 @@ class VoucherImageGenerator {
     
     final pricePainter = TextPainter(
       text: TextSpan(
-        text: '\$${voucher.price.toStringAsFixed(2)}',
+        text: '${voucher.price.toStringAsFixed(0)} SDG',
         style: const TextStyle(
           color: Colors.white,
           fontSize: 20,
@@ -467,7 +467,7 @@ class VoucherImageGenerator {
     
     final pricePainter = TextPainter(
       text: TextSpan(
-        text: '\$${voucher.price.toStringAsFixed(0)}',
+        text: '${voucher.price.toStringAsFixed(0)} SDG',
         style: const TextStyle(
           color: Colors.white,
           fontSize: 14,

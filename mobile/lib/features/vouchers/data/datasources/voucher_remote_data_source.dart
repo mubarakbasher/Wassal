@@ -161,12 +161,7 @@ class VoucherRemoteDataSourceImpl implements VoucherRemoteDataSource {
   @override
   Future<void> deleteVouchers(List<String> ids) async {
     try {
-      // Assuming backend supports bulk delete via body on DELETE
-      // Or POST /vouchers/delete. Let's try standard DELETE with data
-      await apiClient.delete(
-        '/vouchers',
-        data: {'ids': ids},
-      );
+      await Future.wait(ids.map((id) => apiClient.delete('/vouchers/$id')));
     } on DioException catch (e) {
       throw ServerException(ErrorHandler.mapDioErrorToMessage(e));
     } catch (e) {

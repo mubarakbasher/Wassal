@@ -32,6 +32,8 @@ class VoucherManagementPageState extends State<VoucherManagementPage> {
   Timer? _statsTimer;
   Timer? _debounceTimer;
 
+  Map<String, int>? _cachedStats;
+
   // Selection Mode State
   final Set<String> _selectedVouchers = {};
   bool get _isSelectionMode => _selectedVouchers.isNotEmpty;
@@ -52,7 +54,9 @@ class VoucherManagementPageState extends State<VoucherManagementPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<VoucherBloc>().add(const LoadVouchersEvent());
+      final bloc = context.read<VoucherBloc>();
+      bloc.add(const LoadVoucherStats());
+      bloc.add(const LoadVouchersEvent());
       _startStatsPolling();
     });
   }
@@ -100,6 +104,15 @@ class VoucherManagementPageState extends State<VoucherManagementPage> {
               Expanded(
                 child: BlocConsumer<VoucherBloc, VoucherState>(
                   listener: (context, state) {
+                    if (state is VoucherStatsLoaded) {
+                      final safeStats = state.stats.map(
+                        (key, value) => MapEntry(key, value is int ? value : (int.tryParse(value.toString()) ?? 0)),
+                      );
+                      setState(() => _cachedStats = safeStats);
+                    }
+                    if (state is VouchersListLoaded && state.stats.isNotEmpty) {
+                      setState(() => _cachedStats = state.stats);
+                    }
                     if (state is VoucherError && !SubscriptionRequiredWidget.isSubscriptionError(state.message)) {
                       SnackBarUtils.showError(
                         context,
@@ -112,6 +125,14 @@ class VoucherManagementPageState extends State<VoucherManagementPage> {
                   },
                   builder: (context, state) {
                     if (state is VoucherLoading) {
+                      if (_cachedStats != null) {
+                        return Column(
+                          children: [
+                            _buildStatsRow(_cachedStats!),
+                            const Expanded(child: VoucherListShimmer(itemCount: 5)),
+                          ],
+                        );
+                      }
                       return const VoucherListShimmer(itemCount: 5);
                     }
 
@@ -133,6 +154,15 @@ class VoucherManagementPageState extends State<VoucherManagementPage> {
                         onRetry: () {
                           context.read<VoucherBloc>().add(const LoadVouchersEvent());
                         },
+                      );
+                    }
+
+                    if (_cachedStats != null) {
+                      return Column(
+                        children: [
+                          _buildStatsRow(_cachedStats!),
+                          const Expanded(child: VoucherListShimmer(itemCount: 5)),
+                        ],
                       );
                     }
 
@@ -388,8 +418,8 @@ class VoucherManagementPageState extends State<VoucherManagementPage> {
           const SizedBox(width: 12),
           _buildGradientStatCard(
             "Revenue",
-            "\$${stats['totalRevenue'] ?? 0}",
-            Icons.attach_money_rounded,
+            "${stats['totalRevenue'] ?? 0} SDG",
+            Icons.payments_outlined,
             AppColors.orangeGradient,
           ),
         ],
@@ -423,13 +453,18 @@ class VoucherManagementPageState extends State<VoucherManagementPage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  value,
-                  style: AppTextStyles.titleLarge.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
+                Flexible(
+                  child: Text(
+                    value,
+                    style: AppTextStyles.titleLarge.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
+                const SizedBox(width: 4),
                 Icon(icon, color: Colors.white70, size: 18),
               ],
             ),
@@ -647,7 +682,7 @@ class VoucherManagementPageState extends State<VoucherManagementPage> {
            buffer.writeln('Password: ${voucher.password}');
          }
          buffer.writeln('Plan: ${voucher.planName}');
-         buffer.writeln('Price: \$${voucher.price.toStringAsFixed(2)}');
+         buffer.writeln('Price: ${voucher.price.toStringAsFixed(0)} SDG');
          buffer.writeln('-----------------------');
        }
        
@@ -782,7 +817,7 @@ class VoucherManagementPageState extends State<VoucherManagementPage> {
 
 Username: ${voucher.username}
 ${voucher.password.isNotEmpty && voucher.password != voucher.username ? 'Password: ${voucher.password}\n' : ''}Plan: ${voucher.planName}
-Price: \$${voucher.price.toStringAsFixed(2)}
+Price: ${voucher.price.toStringAsFixed(0)} SDG
 
 ───────────────────────
 Connect to WiFi and login at:
@@ -801,7 +836,7 @@ http://mikrotik
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
+      builder: (_) => Container(
         padding: const EdgeInsets.all(24),
         decoration: const BoxDecoration(
           color: Colors.white,
@@ -860,7 +895,26 @@ http://mikrotik
               'Delete Voucher',
               () {
                 Navigator.pop(context);
-                // TODO: Implement delete
+                showDialog(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: const Text('Delete Voucher'),
+                    content: const Text('Are you sure you want to delete this voucher? This action cannot be undone.'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        child: const Text('Cancel'),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pop(ctx);
+                          context.read<VoucherBloc>().add(DeleteVouchersEvent([voucher.id]));
+                        },
+                        child: const Text('Delete', style: TextStyle(color: AppColors.error)),
+                      ),
+                    ],
+                  ),
+                );
               },
               isDestructive: true,
             ),

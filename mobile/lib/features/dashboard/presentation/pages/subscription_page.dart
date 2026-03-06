@@ -1,5 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../../core/api/api_client.dart';
 import '../../../../core/api/api_endpoints.dart';
 import '../../../../core/constants/app_colors.dart';
@@ -7,6 +10,7 @@ import '../../../../core/constants/app_text_styles.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_event.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
+import '../../../subscriptions/data/models/payment_model.dart';
 
 class SubscriptionPage extends StatefulWidget {
   const SubscriptionPage({super.key});
@@ -41,7 +45,6 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     try {
       final apiClient = context.read<ApiClient>();
       final response = await apiClient.get(ApiEndpoints.subscriptionPlans);
-      debugPrint('Plans response: ${response.statusCode} - ${response.data}');
       if (mounted && response.statusCode == 200) {
         setState(() {
           _plans = response.data is List ? response.data : [];
@@ -49,7 +52,6 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
         });
       }
     } catch (e) {
-      debugPrint('Failed to load plans: $e');
       if (mounted) {
         setState(() {
           _loadingPlans = false;
@@ -76,70 +78,26 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     }
   }
 
-  Future<void> _requestSubscription(String planId, String planName) async {
-    final confirmed = await showDialog<bool>(
+  Future<void> _requestSubscription(String planId, String planName, double price) async {
+    _showPaymentFlowSheet(planId, planName, price);
+  }
+
+  void _showPaymentFlowSheet(String planId, String planName, double price) {
+    showModalBottomSheet(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Request Subscription'),
-        content: Text(
-          'Request the "$planName" plan? An admin will review and approve your subscription.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            ),
-            child: const Text('Request'),
-          ),
-        ],
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _PaymentFlowSheet(
+        planId: planId,
+        planName: planName,
+        price: price,
+        apiClient: context.read<ApiClient>(),
+        onComplete: () {
+          context.read<AuthBloc>().add(const GetProfileEvent());
+          _loadMySubscription();
+        },
       ),
     );
-
-    if (confirmed != true) return;
-
-    setState(() => _requesting = true);
-    try {
-      final apiClient = context.read<ApiClient>();
-      final response = await apiClient.post(
-        ApiEndpoints.requestSubscription,
-        data: {'planId': planId},
-      );
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(response.data['message'] ?? 'Request submitted!'),
-            backgroundColor: AppColors.success,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          ),
-        );
-        // Refresh profile to update subscription status
-        context.read<AuthBloc>().add(const GetProfileEvent());
-        await _loadMySubscription();
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed: $e'),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          ),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _requesting = false);
-    }
   }
 
   @override
@@ -157,11 +115,8 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                 child: ListView(
                   padding: const EdgeInsets.all(20),
                   children: [
-                    // Current Subscription Status
                     _buildCurrentStatus(),
                     const SizedBox(height: 24),
-
-                    // Available Plans
                     Text('Available Plans', style: AppTextStyles.titleLarge),
                     const SizedBox(height: 4),
                     Text(
@@ -393,7 +348,6 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
               ],
             ),
           ],
-          // Show plan features if available
           if (sub['plan'] != null) ...[
             const SizedBox(height: 16),
             const Divider(height: 1),
@@ -580,7 +534,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      '\$${price.toStringAsFixed(2)}',
+                      '${price.toStringAsFixed(0)} SDG',
                       style: AppTextStyles.headlineMedium.copyWith(
                         color: AppColors.primary,
                       ),
@@ -597,7 +551,6 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
             const Divider(height: 1),
             const SizedBox(height: 16),
 
-            // Features
             _buildPlanFeature(Icons.router_outlined, 'Up to ${plan['maxRouters'] ?? 1} router(s)'),
             const SizedBox(height: 8),
             _buildPlanFeature(
@@ -621,13 +574,12 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
 
             const SizedBox(height: 20),
 
-            // Action Button
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: (isCurrentPlan && isActiveSub) || _requesting
                     ? null
-                    : () => _requestSubscription(plan['id'], plan['name']),
+                    : () => _requestSubscription(plan['id'], plan['name'], price),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: isCurrentPlan && isActiveSub
                       ? Colors.grey[300]
@@ -682,6 +634,552 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
             style: AppTextStyles.bodyMedium.copyWith(
               color: available ? AppColors.textPrimary : AppColors.textTertiary,
               decoration: available ? null : TextDecoration.lineThrough,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Payment Flow Bottom Sheet
+// ---------------------------------------------------------------------------
+
+class _PaymentFlowSheet extends StatefulWidget {
+  final String planId;
+  final String planName;
+  final double price;
+  final ApiClient apiClient;
+  final VoidCallback onComplete;
+
+  const _PaymentFlowSheet({
+    required this.planId,
+    required this.planName,
+    required this.price,
+    required this.apiClient,
+    required this.onComplete,
+  });
+
+  @override
+  State<_PaymentFlowSheet> createState() => _PaymentFlowSheetState();
+}
+
+class _PaymentFlowSheetState extends State<_PaymentFlowSheet> {
+  int _step = 0; // 0=instructions, 1=upload proof, 2=submitting, 3=done
+  BankInfo? _bankInfo;
+  bool _loadingBank = true;
+  String? _paymentId;
+  File? _proofImage;
+  bool _submitting = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBankInfo();
+  }
+
+  Future<void> _loadBankInfo() async {
+    try {
+      final response = await widget.apiClient.get(ApiEndpoints.bankInfo);
+      if (mounted && response.statusCode == 200) {
+        setState(() {
+          _bankInfo = BankInfo.fromJson(response.data as Map<String, dynamic>);
+          _loadingBank = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _loadingBank = false;
+          _error = 'Failed to load bank info';
+        });
+      }
+    }
+  }
+
+  Future<void> _createPaymentRequest() async {
+    setState(() {
+      _submitting = true;
+      _error = null;
+    });
+    try {
+      final response = await widget.apiClient.post(
+        ApiEndpoints.requestSubscription,
+        data: {'planId': widget.planId},
+      );
+      if (mounted) {
+        final data = response.data;
+        _paymentId = data['payment']?['id'];
+        setState(() {
+          _step = 1;
+          _submitting = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = 'Failed to create request: $e';
+          _submitting = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1920,
+      maxHeight: 1920,
+      imageQuality: 85,
+    );
+    if (picked != null && mounted) {
+      setState(() => _proofImage = File(picked.path));
+    }
+  }
+
+  Future<void> _submitProof() async {
+    if (_proofImage == null || _paymentId == null) return;
+
+    setState(() {
+      _submitting = true;
+      _error = null;
+    });
+
+    try {
+      await widget.apiClient.uploadFile(
+        ApiEndpoints.uploadProof(_paymentId!),
+        _proofImage!,
+        fieldName: 'proof',
+      );
+      if (mounted) {
+        setState(() {
+          _step = 3;
+          _submitting = false;
+        });
+        widget.onComplete();
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = 'Failed to upload proof: $e';
+          _submitting = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.85,
+      ),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 12),
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Text(
+              _step == 3 ? 'Request Submitted' : 'Payment for ${widget.planName}',
+              style: AppTextStyles.headlineSmall,
+            ),
+          ),
+          const SizedBox(height: 4),
+          if (_step < 3)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Text(
+                '${widget.price.toStringAsFixed(0)} SDG',
+                style: AppTextStyles.headlineMedium.copyWith(color: AppColors.primary),
+              ),
+            ),
+          const SizedBox(height: 16),
+          if (_step < 2) _buildStepIndicator(),
+          const SizedBox(height: 8),
+          Flexible(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+              child: _buildCurrentStep(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStepIndicator() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 40),
+      child: Row(
+        children: [
+          _buildStepDot(0, 'Bank Info'),
+          Expanded(child: Container(height: 2, color: _step >= 1 ? AppColors.primary : Colors.grey[300])),
+          _buildStepDot(1, 'Upload Proof'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStepDot(int step, String label) {
+    final isActive = _step >= step;
+    return Column(
+      children: [
+        Container(
+          width: 28,
+          height: 28,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: isActive ? AppColors.primary : Colors.grey[300],
+          ),
+          child: Center(
+            child: isActive && _step > step
+                ? const Icon(Icons.check, color: Colors.white, size: 16)
+                : Text(
+                    '${step + 1}',
+                    style: TextStyle(
+                      color: isActive ? Colors.white : Colors.grey[600],
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
+                  ),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: AppTextStyles.labelSmall.copyWith(
+            color: isActive ? AppColors.primary : AppColors.textTertiary,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCurrentStep() {
+    switch (_step) {
+      case 0:
+        return _buildBankInfoStep();
+      case 1:
+        return _buildUploadStep();
+      case 3:
+        return _buildSuccessStep();
+      default:
+        return const SizedBox.shrink();
+    }
+  }
+
+  Widget _buildBankInfoStep() {
+    if (_loadingBank) {
+      return const Padding(
+        padding: EdgeInsets.all(40),
+        child: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.info.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.info.withValues(alpha: 0.2)),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.info_outline, color: AppColors.info, size: 20),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Transfer the amount below to the bank account, then upload your payment confirmation.',
+                  style: AppTextStyles.bodyMedium.copyWith(color: AppColors.info),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+        _buildBankDetailRow('Bank', _bankInfo?.bankName ?? '-'),
+        _buildBankDetailRow('Account Name', _bankInfo?.accountName ?? '-'),
+        _buildBankDetailRow(
+          'Account Number',
+          _bankInfo?.accountNumber ?? '-',
+          copyable: true,
+        ),
+        _buildBankDetailRow('Amount', '${widget.price.toStringAsFixed(0)} SDG'),
+        if (_error != null) ...[
+          const SizedBox(height: 12),
+          Text(_error!, style: TextStyle(color: AppColors.error, fontSize: 13)),
+        ],
+        const SizedBox(height: 24),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: _submitting ? null : _createPaymentRequest,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              elevation: 0,
+            ),
+            child: _submitting
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                  )
+                : const Text(
+                    'I\'ve Sent the Money',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBankDetailRow(String label, String value, {bool copyable = false}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: Colors.grey[50],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey[200]!),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(label, style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary)),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  value,
+                  style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold),
+                ),
+                if (copyable) ...[
+                  const SizedBox(width: 8),
+                  InkWell(
+                    onTap: () {
+                      Clipboard.setData(ClipboardData(text: value));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: const Text('Copied to clipboard'),
+                          backgroundColor: AppColors.success,
+                          behavior: SnackBarBehavior.floating,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          duration: const Duration(seconds: 1),
+                        ),
+                      );
+                    },
+                    borderRadius: BorderRadius.circular(6),
+                    child: const Icon(Icons.copy, size: 18, color: AppColors.primary),
+                  ),
+                ],
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUploadStep() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.warning.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.warning.withValues(alpha: 0.2)),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.camera_alt_outlined, color: AppColors.warning, size: 20),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Upload a screenshot or photo of your payment confirmation.',
+                  style: AppTextStyles.bodyMedium.copyWith(color: AppColors.warning),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+        GestureDetector(
+          onTap: _pickImage,
+          child: Container(
+            width: double.infinity,
+            height: 200,
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: _proofImage != null ? AppColors.success : Colors.grey[300]!,
+                width: _proofImage != null ? 2 : 1,
+              ),
+            ),
+            child: _proofImage != null
+                ? ClipRRect(
+                    borderRadius: BorderRadius.circular(15),
+                    child: Image.file(_proofImage!, fit: BoxFit.cover),
+                  )
+                : Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.cloud_upload_outlined, size: 48, color: Colors.grey[400]),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Tap to select image',
+                        style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'PNG, JPG up to 5MB',
+                        style: AppTextStyles.bodySmall,
+                      ),
+                    ],
+                  ),
+          ),
+        ),
+        if (_proofImage != null) ...[
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton.icon(
+              onPressed: _pickImage,
+              icon: const Icon(Icons.refresh, size: 18),
+              label: const Text('Change Image'),
+              style: TextButton.styleFrom(foregroundColor: AppColors.primary),
+            ),
+          ),
+        ],
+        if (_error != null) ...[
+          const SizedBox(height: 12),
+          Text(_error!, style: TextStyle(color: AppColors.error, fontSize: 13)),
+        ],
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton(
+                onPressed: _submitting
+                    ? null
+                    : () {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: const Text('Request saved. You can upload proof from Bills later.'),
+                            backgroundColor: AppColors.info,
+                            behavior: SnackBarBehavior.floating,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                        );
+                        widget.onComplete();
+                      },
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.textSecondary,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  side: BorderSide(color: Colors.grey[300]!),
+                ),
+                child: const Text('Skip for Now', style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              flex: 2,
+              child: ElevatedButton(
+                onPressed: (_proofImage != null && !_submitting) ? _submitProof : null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  disabledBackgroundColor: Colors.grey[300],
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  elevation: 0,
+                ),
+                child: _submitting
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : const Text(
+                        'Submit Proof',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSuccessStep() {
+    return Column(
+      children: [
+        const SizedBox(height: 20),
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: AppColors.success.withValues(alpha: 0.1),
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(Icons.check_circle, color: AppColors.success, size: 56),
+        ),
+        const SizedBox(height: 24),
+        Text(
+          'Payment Proof Submitted',
+          style: AppTextStyles.titleLarge,
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Your subscription request has been submitted.\nAn admin will review your payment and activate your plan.',
+          style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 32),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: () => Navigator.pop(context),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              elevation: 0,
+            ),
+            child: const Text(
+              'Done',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
           ),
         ),

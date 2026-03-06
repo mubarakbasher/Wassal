@@ -35,4 +35,7 @@ class ApiEndpoints {
   static const String subscriptionPlans = '/subscriptions/plans';
   static const String mySubscription = '/subscriptions/my';
   static const String requestSubscription = '/subscriptions/request';
+  static const String myPayments = '/subscriptions/payments';
+  static const String bankInfo = '/subscriptions/bank-info';
+  static String uploadProof(String id) => '/subscriptions/payments/$id/proof';
 }

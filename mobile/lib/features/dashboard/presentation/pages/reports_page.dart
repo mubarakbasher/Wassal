@@ -215,7 +215,7 @@ class _ReportsPageState extends State<ReportsPage> {
                     getTooltipItem: (group, groupIndex, rod, rodIndex) {
                       final sale = sales[group.x.toInt()];
                       return BarTooltipItem(
-                        '${_formatDate(sale.date)}\n\$${rod.toY.toStringAsFixed(0)}',
+                        '${_formatDate(sale.date)}\n${rod.toY.toStringAsFixed(0)} SDG',
                         const TextStyle(color: Colors.white),
                       );
                     },
@@ -262,7 +262,7 @@ class _ReportsPageState extends State<ReportsPage> {
                       getTitlesWidget: (value, meta) {
                         if (value == 0) return const SizedBox.shrink();
                         return Text(
-                          '\$${value.toInt()}',
+                          '${value.toInt()} SDG',
                           style: const TextStyle(
                             fontSize: 10,
                             color: Colors.grey,
@@ -430,9 +430,9 @@ class _ReportsPageState extends State<ReportsPage> {
             ...state.history.take(5).map((item) => ListTile(
               leading: const CircleAvatar(
                 backgroundColor: Colors.green,
-                child: Icon(Icons.attach_money, color: Colors.white),
+                child: Icon(Icons.payments_outlined, color: Colors.white),
               ),
-              title: Text('\$${item.amount} - ${item.planName}'),
+              title: Text('${item.amount} SDG - ${item.planName}'),
               subtitle: Text(item.soldAt),
             )),
           ],

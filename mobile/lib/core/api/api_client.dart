@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../constants/app_constants.dart';
@@ -109,6 +110,31 @@ class ApiClient {
         data: data,
         queryParameters: queryParameters,
         options: options,
+      );
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // Multipart file upload
+  Future<Response> uploadFile(
+    String path,
+    File file, {
+    String fieldName = 'proof',
+    Map<String, dynamic>? extraFields,
+  }) async {
+    try {
+      final formData = FormData.fromMap({
+        fieldName: await MultipartFile.fromFile(
+          file.path,
+          filename: file.path.split(Platform.pathSeparator).last,
+        ),
+        if (extraFields != null) ...extraFields,
+      });
+      return await _dio.post(
+        path,
+        data: formData,
+        options: Options(contentType: 'multipart/form-data'),
       );
     } catch (e) {
       rethrow;

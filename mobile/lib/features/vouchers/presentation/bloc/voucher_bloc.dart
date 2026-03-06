@@ -21,22 +21,33 @@ class VoucherBloc extends Bloc<VoucherEvent, VoucherState> {
     DeleteVouchersEvent event,
     Emitter<VoucherState> emit,
   ) async {
-    // Optimistic Update: Immediately remove from list
     final currentState = state;
     if (currentState is VouchersListLoaded) {
       final updatedVouchers = currentState.vouchers
         .where((v) => !event.voucherIds.contains(v.id))
         .toList();
-      
+
+      final totalRevenue = updatedVouchers.fold<double>(0, (sum, v) => sum + v.price);
+      final activeCount = updatedVouchers.where((v) => v.status == 'active').length;
+
       emit(currentState.copyWith(
         vouchers: updatedVouchers,
-        // Reset selection in UI will happen via listener or UI state
+        stats: {
+          ...currentState.stats,
+          'total': updatedVouchers.length,
+          'active': activeCount,
+          'totalRevenue': totalRevenue.toInt(),
+        },
+        totalCount: updatedVouchers.length,
       ));
-      
-      // Call repository to actually delete
-      // TODO: Implement deleteVouchers in repository
-      // For now we assume success or handle error silently/via snackbar in UI
-      // await repository.deleteVouchers(event.voucherIds); 
+
+      final result = await repository.deleteVouchers(event.voucherIds);
+      result.fold(
+        (failure) {
+          emit(currentState);
+        },
+        (_) {},
+      );
     }
   }
 
@@ -58,13 +69,15 @@ class VoucherBloc extends Bloc<VoucherEvent, VoucherState> {
         (stats) {
             final currentState = state;
             if (currentState is VouchersListLoaded) {
-                 // Convert map to int map for safety
                  final safeStats = stats.map((key, value) => MapEntry(key, value is int ? value : (int.tryParse(value.toString()) ?? 0)));
-                 
-                 emit(VouchersListLoaded(
-                   vouchers: currentState.vouchers,
-                   stats: safeStats,
-                 ));
+                 // Preserve client-side totalRevenue (sum of voucher prices);
+                 // the API totalRevenue comes from the Sale table which may be empty.
+                 final mergedStats = <String, int>{
+                   ...safeStats,
+                   if (currentState.stats.containsKey('totalRevenue'))
+                     'totalRevenue': currentState.stats['totalRevenue']!,
+                 };
+                 emit(currentState.copyWith(stats: mergedStats));
             } else {
                  emit(VoucherStatsLoaded(stats));
             }
