@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Activity, Settings, FileText, Save, AlertTriangle } from 'lucide-react';
+import { Activity, Settings, FileText, Save, AlertTriangle, Landmark, CheckCircle } from 'lucide-react';
 import api from '../lib/axios';
 
 const Tabs = ({ active, onChange, items }: any) => (
@@ -26,10 +26,16 @@ export function SystemPage() {
     const [activeTab, setActiveTab] = useState('status');
     const [logs, setLogs] = useState<any[]>([]);
     const [_config, setConfig] = useState<any[]>([]);
+    const [bank, setBank] = useState({ bank_name: '', bank_account_name: '', bank_account_number: '' });
+    const [bankLoading, setBankLoading] = useState(false);
+    const [bankMsg, setBankMsg] = useState('');
 
     useEffect(() => {
         if (activeTab === 'logs') fetchLogs();
-        if (activeTab === 'config') fetchConfig();
+        if (activeTab === 'config') {
+            fetchConfig();
+            fetchBankInfo();
+        }
     }, [activeTab]);
 
     const fetchLogs = async () => {
@@ -47,6 +53,41 @@ export function SystemPage() {
             setConfig(data);
         } catch (e) {
             console.error(e);
+        }
+    };
+
+    const fetchBankInfo = async () => {
+        try {
+            const { data } = await api.get('/admin/system/config');
+            const configMap: Record<string, string> = {};
+            for (const item of data) {
+                configMap[item.key] = item.value;
+            }
+            setBank({
+                bank_name: configMap['bank_name'] || '',
+                bank_account_name: configMap['bank_account_name'] || '',
+                bank_account_number: configMap['bank_account_number'] || '',
+            });
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
+    const handleBankSave = async () => {
+        setBankLoading(true);
+        setBankMsg('');
+        try {
+            await Promise.all(
+                Object.entries(bank).map(([key, value]) =>
+                    api.post('/admin/system/config', { key, value })
+                )
+            );
+            setBankMsg('Bank details saved successfully');
+            setTimeout(() => setBankMsg(''), 3000);
+        } catch (e) {
+            setBankMsg('Failed to save bank details');
+        } finally {
+            setBankLoading(false);
         }
     };
 
@@ -90,29 +131,95 @@ export function SystemPage() {
             )}
 
             {activeTab === 'config' && (
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-4">Global Feature Flags</h3>
-                    <div className="space-y-4">
-                        <div className="flex items-center justify-between p-4 border rounded-lg">
-                            <div>
-                                <p className="font-medium text-gray-900">Allow User Registration</p>
-                                <p className="text-sm text-gray-500">Enable or disable new user signups globally</p>
+                <div className="space-y-6">
+                    {/* Bank Account Details */}
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                        <div className="flex items-center mb-6">
+                            <div className="p-2 bg-indigo-50 rounded-lg mr-3">
+                                <Landmark className="w-5 h-5 text-indigo-600" />
                             </div>
-                            <input type="checkbox" defaultChecked className="toggle" />
+                            <div>
+                                <h3 className="text-lg font-semibold text-gray-800">Bank Account Details</h3>
+                                <p className="text-sm text-gray-500">Shown to users when they request a subscription payment</p>
+                            </div>
                         </div>
-                        <div className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
-                                <p className="font-medium text-gray-900">Emergency Read-Only Mode</p>
-                                <p className="text-sm text-gray-500">Disable all write operations during maintenance</p>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Bank Name</label>
+                                <input
+                                    type="text"
+                                    value={bank.bank_name}
+                                    onChange={(e) => setBank({ ...bank, bank_name: e.target.value })}
+                                    placeholder="e.g. Bankak"
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                                />
                             </div>
-                            <input type="checkbox" className="toggle" />
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Account Name</label>
+                                <input
+                                    type="text"
+                                    value={bank.bank_account_name}
+                                    onChange={(e) => setBank({ ...bank, bank_account_name: e.target.value })}
+                                    placeholder="e.g. Wassal Company"
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Account Number</label>
+                                <input
+                                    type="text"
+                                    value={bank.bank_account_number}
+                                    onChange={(e) => setBank({ ...bank, bank_account_number: e.target.value })}
+                                    placeholder="e.g. 1234567890"
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                                />
+                            </div>
+                        </div>
+
+                        {bankMsg && (
+                            <div className={`flex items-center text-sm mt-4 p-3 rounded-lg ${bankMsg.includes('Failed') ? 'text-red-600 bg-red-50' : 'text-green-600 bg-green-50'}`}>
+                                <CheckCircle className="w-4 h-4 mr-2" />
+                                {bankMsg}
+                            </div>
+                        )}
+
+                        <div className="mt-4 flex justify-end">
+                            <button
+                                onClick={handleBankSave}
+                                disabled={bankLoading}
+                                className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+                            >
+                                <Save className="w-4 h-4 mr-2" />
+                                {bankLoading ? 'Saving...' : 'Save Bank Details'}
+                            </button>
                         </div>
                     </div>
-                    <div className="mt-6 flex justify-end">
-                        <button className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
-                            <Save className="w-4 h-4 mr-2" />
-                            Save Changes
-                        </button>
+
+                    {/* Feature Flags */}
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                        <h3 className="text-lg font-semibold text-gray-800 mb-4">Global Feature Flags</h3>
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between p-4 border rounded-lg">
+                                <div>
+                                    <p className="font-medium text-gray-900">Allow User Registration</p>
+                                    <p className="text-sm text-gray-500">Enable or disable new user signups globally</p>
+                                </div>
+                                <input type="checkbox" defaultChecked className="toggle" />
+                            </div>
+                            <div className="flex items-center justify-between p-4 border rounded-lg">
+                                <div>
+                                    <p className="font-medium text-gray-900">Emergency Read-Only Mode</p>
+                                    <p className="text-sm text-gray-500">Disable all write operations during maintenance</p>
+                                </div>
+                                <input type="checkbox" className="toggle" />
+                            </div>
+                        </div>
+                        <div className="mt-6 flex justify-end">
+                            <button className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+                                <Save className="w-4 h-4 mr-2" />
+                                Save Changes
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
