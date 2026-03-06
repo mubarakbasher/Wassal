@@ -3,6 +3,8 @@ import { CheckCircle, XCircle, Eye, Download } from 'lucide-react';
 import api from '../lib/axios';
 import { Badge } from '../components/ui/Badge';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:3001';
+
 export function PaymentsPage() {
     const [payments, setPayments] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -103,7 +105,7 @@ export function PaymentsPage() {
                                         <div className="text-sm text-gray-500">{payment.user?.email}</div>
                                     </td>
                                     <td className="px-6 py-4 font-bold text-gray-900">
-                                        ${payment.amount}
+                                        {payment.amount} SDG
                                     </td>
                                     <td className="px-6 py-4 text-sm text-gray-600">
                                         {payment.method}
@@ -139,7 +141,7 @@ export function PaymentsPage() {
                                             </>
                                         )}
                                         {payment.proofUrl && (
-                                            <a href={payment.proofUrl} target="_blank" rel="noreferrer" className="inline-block p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded" title="View Proof">
+                                            <a href={`${API_URL}${payment.proofUrl}`} target="_blank" rel="noreferrer" className="inline-block p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded" title="View Proof">
                                                 <Eye className="w-5 h-5" />
                                             </a>
                                         )}
