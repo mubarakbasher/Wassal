@@ -155,10 +155,16 @@ export class AuthService {
     }
 
     async forgotPassword(email: string) {
+        // #region agent log
+        this.logger.warn(`[DEBUG-e14aa1] H1: forgotPassword called for email=${email}`);
+        // #endregion
         const user = await this.prisma.user.findUnique({ where: { email } });
 
         // Always return success to prevent email enumeration
         if (!user) {
+            // #region agent log
+            this.logger.warn(`[DEBUG-e14aa1] H1: user NOT found for email=${email}`);
+            // #endregion
             return { message: 'If the email exists, a reset code has been sent' };
         }
 

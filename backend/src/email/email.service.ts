@@ -11,12 +11,18 @@ export class EmailService {
     constructor(private configService: ConfigService) {
         const apiKey = this.configService.get<string>('RESEND_API_KEY');
         this.fromEmail = this.configService.get<string>('RESEND_FROM_EMAIL') || 'noreply@example.com';
+        // #region agent log
+        this.logger.warn(`[DEBUG-e14aa1] H1/H3: EmailService init, apiKey=${apiKey ? 'SET(' + apiKey.substring(0, 6) + '...)' : 'MISSING'}, fromEmail=${this.fromEmail}`);
+        // #endregion
         this.resend = new Resend(apiKey);
     }
 
     async sendResetCode(to: string, code: string): Promise<void> {
+        // #region agent log
+        this.logger.warn(`[DEBUG-e14aa1] H3: sendResetCode called, to=${to}, from=${this.fromEmail}`);
+        // #endregion
         try {
-            await this.resend.emails.send({
+            const result = await this.resend.emails.send({
                 from: this.fromEmail,
                 to,
                 subject: 'Password Reset Code',
@@ -36,8 +42,14 @@ export class EmailService {
                     </div>
                 `,
             });
+            // #region agent log
+            this.logger.warn(`[DEBUG-e14aa1] H3: Resend API success, result=${JSON.stringify(result)}`);
+            // #endregion
             this.logger.log(`Reset code email sent to ${to}`);
         } catch (error) {
+            // #region agent log
+            this.logger.warn(`[DEBUG-e14aa1] H3: Resend API FAILED, error=${JSON.stringify(error, Object.getOwnPropertyNames(error))}`);
+            // #endregion
             this.logger.error(`Failed to send reset code email to ${to}`, error);
             throw error;
         }
