@@ -55,6 +55,8 @@ services:
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-wassal-refresh-secret-change-in-production}
       RADIUS_SERVER_IP: ${RADIUS_SERVER_IP:-freeradius}
       ENCRYPTION_KEY: ${ENCRYPTION_KEY:-default-encryption-key-change-me!}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      RESEND_FROM_EMAIL: ${RESEND_FROM_EMAIL:-}
       PORT: 3001
     ports:
       - "3001:3001"

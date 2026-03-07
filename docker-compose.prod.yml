@@ -59,6 +59,8 @@ services:
       WG_SERVER_PUBLIC_KEY: ${WG_SERVER_PUBLIC_KEY:-}
       WG_SERVER_ENDPOINT: ${WG_SERVER_ENDPOINT:-}
       WG_PEERS_DIR: /opt/wassal/wireguard/peers
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      RESEND_FROM_EMAIL: ${RESEND_FROM_EMAIL:-}
       NODE_ENV: production
       PORT: 3001
     volumes:

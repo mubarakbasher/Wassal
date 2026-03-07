@@ -168,7 +168,11 @@ export class AuthService {
 
         this.resetCodes.set(email, { code, expiresAt });
 
-        await this.emailService.sendResetCode(email, code);
+        try {
+            await this.emailService.sendResetCode(email, code);
+        } catch (error) {
+            this.logger.error(`Failed to send reset email to ${email}`, error);
+        }
 
         return {
             message: 'If the email exists, a reset code has been sent',
