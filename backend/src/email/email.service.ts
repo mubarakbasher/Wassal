@@ -22,7 +22,7 @@ export class EmailService {
         this.logger.warn(`[DEBUG-e14aa1] H3: sendResetCode called, to=${to}, from=${this.fromEmail}`);
         // #endregion
         try {
-            const result = await this.resend.emails.send({
+            const { data, error } = await this.resend.emails.send({
                 from: this.fromEmail,
                 to,
                 subject: 'Password Reset Code',
@@ -42,13 +42,21 @@ export class EmailService {
                     </div>
                 `,
             });
+
+            if (error) {
+                // #region agent log
+                this.logger.warn(`[DEBUG-e14aa1] H3: Resend API returned error=${JSON.stringify(error)}`);
+                // #endregion
+                throw new Error(`Resend error: ${error.message}`);
+            }
+
             // #region agent log
-            this.logger.warn(`[DEBUG-e14aa1] H3: Resend API success, result=${JSON.stringify(result)}`);
+            this.logger.warn(`[DEBUG-e14aa1] H3: Resend API success, emailId=${data?.id}`);
             // #endregion
             this.logger.log(`Reset code email sent to ${to}`);
         } catch (error) {
             // #region agent log
-            this.logger.warn(`[DEBUG-e14aa1] H3: Resend API FAILED, error=${JSON.stringify(error, Object.getOwnPropertyNames(error))}`);
+            this.logger.warn(`[DEBUG-e14aa1] H3: Resend send FAILED, error=${error?.message || error}`);
             // #endregion
             this.logger.error(`Failed to send reset code email to ${to}`, error);
             throw error;
