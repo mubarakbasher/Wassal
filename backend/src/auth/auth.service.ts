@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
+import { EmailService } from '../email/email.service';
 import { RegisterDto, LoginDto } from './dto/auth.dto';
 import { UserRole } from '@prisma/client';
 
@@ -16,6 +17,7 @@ export class AuthService {
         private prisma: PrismaService,
         private jwtService: JwtService,
         private configService: ConfigService,
+        private emailService: EmailService,
     ) { }
 
     async register(registerDto: RegisterDto) {
@@ -166,13 +168,10 @@ export class AuthService {
 
         this.resetCodes.set(email, { code, expiresAt });
 
-        // Log the code (in production, send via email/SMS)
-        this.logger.log(`Password reset code for ${email}: ${code}`);
+        await this.emailService.sendResetCode(email, code);
 
         return {
             message: 'If the email exists, a reset code has been sent',
-            // Only include code in development for testing convenience
-            ...(process.env.NODE_ENV !== 'production' && { code }),
         };
     }
 

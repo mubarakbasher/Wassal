@@ -1,0 +1,45 @@
+import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { Resend } from 'resend';
+
+@Injectable()
+export class EmailService {
+    private readonly logger = new Logger(EmailService.name);
+    private readonly resend: Resend;
+    private readonly fromEmail: string;
+
+    constructor(private configService: ConfigService) {
+        const apiKey = this.configService.get<string>('RESEND_API_KEY');
+        this.fromEmail = this.configService.get<string>('RESEND_FROM_EMAIL') || 'noreply@example.com';
+        this.resend = new Resend(apiKey);
+    }
+
+    async sendResetCode(to: string, code: string): Promise<void> {
+        try {
+            await this.resend.emails.send({
+                from: this.fromEmail,
+                to,
+                subject: 'Password Reset Code',
+                html: `
+                    <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px;">
+                        <h2 style="color: #1a1a2e; margin-bottom: 16px;">Password Reset</h2>
+                        <p style="color: #555; font-size: 15px; line-height: 1.6;">
+                            You requested a password reset. Use the code below to reset your password.
+                            This code expires in <strong>15 minutes</strong>.
+                        </p>
+                        <div style="background: #f4f4f8; border-radius: 12px; padding: 24px; text-align: center; margin: 24px 0;">
+                            <span style="font-size: 36px; font-weight: bold; letter-spacing: 8px; color: #1a1a2e;">${code}</span>
+                        </div>
+                        <p style="color: #999; font-size: 13px;">
+                            If you did not request this, you can safely ignore this email.
+                        </p>
+                    </div>
+                `,
+            });
+            this.logger.log(`Reset code email sent to ${to}`);
+        } catch (error) {
+            this.logger.error(`Failed to send reset code email to ${to}`, error);
+            throw error;
+        }
+    }
+}
