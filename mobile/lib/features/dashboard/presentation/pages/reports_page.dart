@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/l10n/generated/app_localizations.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -70,7 +71,7 @@ class _ReportsPageState extends State<ReportsPage> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Text('Sales & Reports', style: AppTextStyles.headlineMedium),
+        title: Text(AppLocalizations.of(context)!.salesReports, style: AppTextStyles.headlineMedium),
         backgroundColor: Colors.white,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
@@ -131,9 +132,9 @@ class _ReportsPageState extends State<ReportsPage> {
         mainAxisAlignment: MainAxisAlignment.center,
         mainAxisSize: MainAxisSize.min,
         children: [
-          _buildRangeButton('Daily', 'DAILY'),
+          _buildRangeButton(AppLocalizations.of(context)!.daily, 'DAILY'),
           const SizedBox(width: 4),
-          _buildRangeButton('Monthly', 'MONTHLY'),
+          _buildRangeButton(AppLocalizations.of(context)!.monthly, 'MONTHLY'),
         ],
       ),
     );
@@ -194,12 +195,12 @@ class _ReportsPageState extends State<ReportsPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            _range == 'DAILY' ? 'Daily Sales' : 'Monthly Sales',
+            _range == 'DAILY' ? AppLocalizations.of(context)!.dailySales : AppLocalizations.of(context)!.monthlySales,
             style: AppTextStyles.titleLarge,
           ),
           const SizedBox(height: 8),
           Text(
-            '${sales.length} data points',
+            AppLocalizations.of(context)!.dataPoints(sales.length),
             style: AppTextStyles.bodySmall,
           ),
           const SizedBox(height: 20),
@@ -344,12 +345,12 @@ class _ReportsPageState extends State<ReportsPage> {
           ),
           const SizedBox(height: 16),
           Text(
-            'No Sales Data',
+            AppLocalizations.of(context)!.noSalesData,
             style: AppTextStyles.titleLarge.copyWith(color: AppColors.textSecondary),
           ),
           const SizedBox(height: 8),
           Text(
-            'Sales will appear here when you make your first sale',
+            AppLocalizations.of(context)!.salesWillAppear,
             style: AppTextStyles.bodySmall,
             textAlign: TextAlign.center,
           ),
@@ -370,7 +371,7 @@ class _ReportsPageState extends State<ReportsPage> {
         children: [
           Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
           const SizedBox(height: 16),
-          Text('Error', style: AppTextStyles.headlineMedium),
+          Text(AppLocalizations.of(context)!.error, style: AppTextStyles.headlineMedium),
           const SizedBox(height: 8),
           Text(message, style: AppTextStyles.bodyMedium),
           const SizedBox(height: 24),
@@ -378,7 +379,7 @@ class _ReportsPageState extends State<ReportsPage> {
             onPressed: () {
               context.read<SalesBloc>().add(LoadSalesChartEvent(range: _range));
             },
-            child: const Text('Retry'),
+            child: Text(AppLocalizations.of(context)!.retry),
           ),
         ],
       ),
@@ -403,7 +404,7 @@ class _ReportsPageState extends State<ReportsPage> {
         children: [
           Padding(
             padding: const EdgeInsets.all(16),
-            child: Text('Recent Sales', style: AppTextStyles.titleLarge),
+            child: Text(AppLocalizations.of(context)!.recentSales, style: AppTextStyles.titleLarge),
           ),
           const Divider(height: 1),
           ListTile(
@@ -415,12 +416,12 @@ class _ReportsPageState extends State<ReportsPage> {
               ),
               child: Icon(Icons.history, color: AppColors.primary),
             ),
-            title: const Text('View Sales History'),
+            title: Text(AppLocalizations.of(context)!.viewSalesHistory),
             trailing: const Icon(Icons.arrow_forward_ios, size: 16),
             onTap: () {
               context.read<SalesBloc>().add(LoadSalesHistoryEvent());
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Loading sales history...')),
+                SnackBar(content: Text(AppLocalizations.of(context)!.loadingSalesHistory)),
               );
             },
           ),

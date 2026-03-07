@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/services.dart';
+import 'package:mobile/l10n/generated/app_localizations.dart';
 import 'package:mobile/core/constants/app_colors.dart';
 import 'package:mobile/core/constants/app_constants.dart';
 import '../../../../core/api/api_client.dart';
@@ -34,7 +35,7 @@ class AddRouterPage extends StatelessWidget {
         if (!_hasActiveSubscription(authState)) {
           return Scaffold(
             appBar: AppBar(
-              title: const Text('Add Router', style: TextStyle(color: Colors.black)),
+              title: Text(AppLocalizations.of(context)!.addRouter, style: const TextStyle(color: Colors.black)),
               backgroundColor: Colors.white,
               elevation: 0,
               leading: IconButton(
@@ -42,8 +43,8 @@ class AddRouterPage extends StatelessWidget {
                 onPressed: () => Navigator.pop(context),
               ),
             ),
-            body: const SubscriptionRequiredWidget(
-              message: 'You need an active subscription to add routers. Please subscribe to a plan to continue.',
+            body: SubscriptionRequiredWidget(
+              message: AppLocalizations.of(context)!.needSubscriptionAddRouters,
             ),
           );
         }
@@ -56,20 +57,20 @@ class AddRouterPage extends StatelessWidget {
             length: 2,
             child: Scaffold(
               appBar: AppBar(
-                title: const Text('Add Router', style: TextStyle(color: Colors.black)),
+                title: Text(AppLocalizations.of(context)!.addRouter, style: const TextStyle(color: Colors.black)),
                 backgroundColor: Colors.white,
                 elevation: 0,
                 leading: IconButton(
                   icon: const Icon(Icons.arrow_back, color: Colors.black),
                   onPressed: () => Navigator.pop(context),
                 ),
-                bottom: const TabBar(
+                bottom: TabBar(
                   labelColor: AppColors.primary,
                   unselectedLabelColor: Colors.grey,
                   indicatorColor: AppColors.primary,
                   tabs: [
-                    Tab(text: "Manual"),
-                    Tab(text: "By Script"),
+                    Tab(text: AppLocalizations.of(context)!.manual),
+                    Tab(text: AppLocalizations.of(context)!.byScript),
                   ],
                 ),
               ),
@@ -147,7 +148,7 @@ class _ScriptAddRouterViewState extends State<ScriptAddRouterView> {
               const SizedBox(height: 16),
               Text(_error!, textAlign: TextAlign.center, style: const TextStyle(fontSize: 16)),
               const SizedBox(height: 24),
-              ElevatedButton(onPressed: _fetchWireguardSetup, child: const Text("Retry")),
+              ElevatedButton(onPressed: _fetchWireguardSetup, child: Text(AppLocalizations.of(context)!.retry)),
             ],
           ),
         ),
@@ -155,7 +156,7 @@ class _ScriptAddRouterViewState extends State<ScriptAddRouterView> {
     }
 
     if (_steps == null || _steps!.isEmpty) {
-      return const Center(child: Text("No setup steps available."));
+      return Center(child: Text(AppLocalizations.of(context)!.noSetupSteps));
     }
 
     return _buildStepsList();
@@ -184,16 +185,16 @@ class _ScriptAddRouterViewState extends State<ScriptAddRouterView> {
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      "VPN IP assigned: $_vpnIp",
+                      AppLocalizations.of(context)!.vpnIpAssigned(_vpnIp!),
                       style: TextStyle(fontWeight: FontWeight.w600, color: Colors.green[800]),
                     ),
                   ),
                 ],
               ),
             ),
-          const Text(
-            "Run these commands on your MikroTik Terminal (RouterOS v7):",
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+          Text(
+            AppLocalizations.of(context)!.runCommandsOnMikroTik,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
           ),
           const SizedBox(height: 20),
           ...List.generate(_steps!.length, (i) {
@@ -216,20 +217,18 @@ class _ScriptAddRouterViewState extends State<ScriptAddRouterView> {
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: Colors.orange[200]!),
             ),
-            child: const Column(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(children: [
-                  Icon(Icons.warning_amber, color: Colors.orange, size: 20),
-                  SizedBox(width: 8),
-                  Text("Important Notes:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                  const Icon(Icons.warning_amber, color: Colors.orange, size: 20),
+                  const SizedBox(width: 8),
+                  Text(AppLocalizations.of(context)!.importantNotes, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                 ]),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 Text(
-                  "• Requires RouterOS v7 or later (WireGuard support)\n"
-                  "• Run each command in order in the MikroTik terminal\n"
-                  "• The VPN tunnel connects your router to Wassal securely",
-                  style: TextStyle(fontSize: 13),
+                  AppLocalizations.of(context)!.importantNotesBody,
+                  style: const TextStyle(fontSize: 13),
                 ),
               ],
             ),
@@ -239,11 +238,11 @@ class _ScriptAddRouterViewState extends State<ScriptAddRouterView> {
             onPressed: () {
               Clipboard.setData(ClipboardData(text: allCommands));
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("All commands copied!")),
+                SnackBar(content: Text(AppLocalizations.of(context)!.allCommandsCopied)),
               );
             },
             icon: const Icon(Icons.copy_all),
-            label: const Text("Copy All Commands"),
+            label: Text(AppLocalizations.of(context)!.copyAllCommands),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
@@ -313,7 +312,7 @@ class _ScriptAddRouterViewState extends State<ScriptAddRouterView> {
                 onPressed: () {
                   Clipboard.setData(ClipboardData(text: command));
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("Step $number copied!")),
+                    SnackBar(content: Text(AppLocalizations.of(context)!.stepCopied(number))),
                   );
                 },
                 tooltip: "Copy",
@@ -396,7 +395,7 @@ class _AddRouterFormState extends State<AddRouterForm> {
       listener: (context, state) {
         if (state is AddRouterSuccess) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Router added successfully!')),
+            SnackBar(content: Text(AppLocalizations.of(context)!.routerAddedSuccess)),
           );
           Navigator.pop(context, true); // Go back to dashboard with success result
         } else if (state is AddRouterFailure) {
@@ -413,44 +412,44 @@ class _AddRouterFormState extends State<AddRouterForm> {
             children: [
               _buildTextField(
                 controller: _nameController,
-                label: 'Router Name',
+                label: AppLocalizations.of(context)!.routerName,
                 icon: Icons.router,
-                validator: (v) => v!.isEmpty ? 'Required' : null,
+                validator: (v) => v!.isEmpty ? AppLocalizations.of(context)!.required : null,
               ),
               const SizedBox(height: 16),
               _buildTextField(
                 controller: _ipController,
-                label: 'IP Address',
+                label: AppLocalizations.of(context)!.ipAddress,
                 icon: Icons.wifi,
-                validator: (v) => v!.isEmpty ? 'Required' : null,
+                validator: (v) => v!.isEmpty ? AppLocalizations.of(context)!.required : null,
               ),
               const SizedBox(height: 16),
               _buildTextField(
                 controller: _apiPortController,
-                label: 'API Port',
+                label: AppLocalizations.of(context)!.apiPort,
                 icon: Icons.settings_ethernet,
                 keyboardType: TextInputType.number,
-                validator: (v) => v!.isEmpty ? 'Required' : null,
+                validator: (v) => v!.isEmpty ? AppLocalizations.of(context)!.required : null,
               ),
               const SizedBox(height: 16),
               _buildTextField(
                 controller: _usernameController,
                 label: 'Username',
                 icon: Icons.person,
-                validator: (v) => v!.isEmpty ? 'Required' : null,
+                validator: (v) => v!.isEmpty ? AppLocalizations.of(context)!.required : null,
               ),
               const SizedBox(height: 16),
               _buildTextField(
                 controller: _passwordController,
-                label: 'Password',
+                label: AppLocalizations.of(context)!.password,
                 icon: Icons.lock,
                 isPassword: true,
-                validator: (v) => v!.isEmpty ? 'Required' : null,
+                validator: (v) => v!.isEmpty ? AppLocalizations.of(context)!.required : null,
               ),
               const SizedBox(height: 16),
               _buildTextField(
                 controller: _locationController,
-                label: 'Location (Optional)',
+                label: AppLocalizations.of(context)!.locationOptional,
                 icon: Icons.map,
               ),
               const SizedBox(height: 32),
@@ -472,7 +471,7 @@ class _AddRouterFormState extends State<AddRouterForm> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: const Text('Add Router', style: TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold)),
+                      child: Text(AppLocalizations.of(context)!.addRouter, style: const TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold)),
                     ),
                   );
                 },

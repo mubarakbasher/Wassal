@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:mobile/l10n/generated/app_localizations.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
@@ -75,14 +76,14 @@ class _VoucherSuccessDialogState extends State<VoucherSuccessDialog>
               const SizedBox(height: 20),
               Text(
                 widget.vouchers.length > 1
-                    ? "${widget.vouchers.length} Vouchers Generated!"
-                    : "Voucher Generated!",
+                    ? AppLocalizations.of(context)!.vouchersGenerated(widget.vouchers.length)
+                    : AppLocalizations.of(context)!.voucherGenerated,
                 style: AppTextStyles.headlineSmall,
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
               Text(
-                'Your vouchers are ready to use',
+                AppLocalizations.of(context)!.vouchersReadyToUse,
                 style: AppTextStyles.bodyMedium.copyWith(
                   color: AppColors.textSecondary,
                 ),
@@ -106,7 +107,7 @@ class _VoucherSuccessDialogState extends State<VoucherSuccessDialog>
                   Expanded(
                     child: _buildActionButton(
                       icon: Icons.copy_rounded,
-                      label: 'Copy',
+                      label: AppLocalizations.of(context)!.copy,
                       onPressed: _copyToClipboard,
                     ),
                   ),
@@ -114,7 +115,7 @@ class _VoucherSuccessDialogState extends State<VoucherSuccessDialog>
                   Expanded(
                     child: _buildActionButton(
                       icon: Icons.share_rounded,
-                      label: 'Share',
+                      label: AppLocalizations.of(context)!.share,
                       onPressed: _shareVouchers,
                     ),
                   ),
@@ -126,7 +127,7 @@ class _VoucherSuccessDialogState extends State<VoucherSuccessDialog>
               TextButton(
                 onPressed: widget.onDismiss,
                 child: Text(
-                  'Done',
+                  AppLocalizations.of(context)!.done,
                   style: AppTextStyles.labelLarge.copyWith(
                     color: AppColors.textSecondary,
                   ),
@@ -198,7 +199,7 @@ class _VoucherSuccessDialogState extends State<VoucherSuccessDialog>
             child: Column(
               children: [
                 Text(
-                  'USERNAME',
+                  AppLocalizations.of(context)!.username,
                   style: AppTextStyles.labelSmall.copyWith(color: Colors.white60),
                 ),
                 const SizedBox(height: 4),
@@ -209,7 +210,7 @@ class _VoucherSuccessDialogState extends State<VoucherSuccessDialog>
                 if (voucher.password.isNotEmpty && voucher.password != voucher.username) ...[
                   const SizedBox(height: 12),
                   Text(
-                    'PASSWORD',
+                    AppLocalizations.of(context)!.passwordLabel,
                     style: AppTextStyles.labelSmall.copyWith(color: Colors.white60),
                   ),
                   const SizedBox(height: 4),
@@ -333,7 +334,7 @@ class _VoucherSuccessDialogState extends State<VoucherSuccessDialog>
                 children: [
                   const Icon(Icons.print_rounded, color: Colors.white, size: 20),
                   const SizedBox(width: 8),
-                  Text('Print Vouchers', style: AppTextStyles.button),
+                  Text(AppLocalizations.of(context)!.printVouchers, style: AppTextStyles.button),
                 ],
               ),
             ),
@@ -347,7 +348,7 @@ class _VoucherSuccessDialogState extends State<VoucherSuccessDialog>
     Clipboard.setData(ClipboardData(text: _getShareText()));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text('Copied to clipboard'),
+        content: Text(AppLocalizations.of(context)!.copiedToClipboard),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         backgroundColor: AppColors.success,

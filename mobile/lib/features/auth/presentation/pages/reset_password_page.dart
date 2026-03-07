@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
+import 'package:mobile/l10n/generated/app_localizations.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/custom_button.dart';
@@ -38,7 +39,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
       if (_passwordController.text != _confirmPasswordController.text) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Passwords do not match'),
+            content: Text(AppLocalizations.of(context)!.passwordsDoNotMatch),
             backgroundColor: AppColors.error,
           ),
         );
@@ -63,7 +64,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text('Password reset successfully! Please log in.'),
+              content: Text(AppLocalizations.of(context)!.passwordResetSuccess),
               backgroundColor: AppColors.success,
             ),
           );
@@ -86,7 +87,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text('Something went wrong. Please try again.'),
+              content: Text(AppLocalizations.of(context)!.somethingWentWrong),
               backgroundColor: AppColors.error,
             ),
           );
@@ -122,12 +123,12 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Reset Password',
+                  AppLocalizations.of(context)!.resetPassword,
                   style: AppTextStyles.headlineLarge,
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Enter the 6-digit code sent to ${widget.email} and your new password.',
+                  AppLocalizations.of(context)!.resetPasswordSubtitle(widget.email),
                   style: AppTextStyles.bodyMedium.copyWith(
                     color: AppColors.textSecondary,
                   ),
@@ -137,16 +138,16 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                 // Code Field
                 CustomTextField(
                   controller: _codeController,
-                  label: 'Reset Code',
-                  hint: 'Enter 6-digit code',
+                  label: AppLocalizations.of(context)!.resetCode,
+                  hint: AppLocalizations.of(context)!.enterResetCode,
                   keyboardType: TextInputType.number,
                   prefixIcon: const Icon(Icons.pin_outlined),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Please enter the reset code';
+                      return AppLocalizations.of(context)!.pleaseEnterResetCode;
                     }
                     if (value.length != 6) {
-                      return 'Code must be 6 digits';
+                      return AppLocalizations.of(context)!.codeMustBe6Digits;
                     }
                     return null;
                   },
@@ -156,8 +157,8 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                 // New Password
                 CustomTextField(
                   controller: _passwordController,
-                  label: 'New Password',
-                  hint: 'Enter new password',
+                  label: AppLocalizations.of(context)!.newPassword,
+                  hint: AppLocalizations.of(context)!.enterNewPassword,
                   obscureText: _obscurePassword,
                   prefixIcon: const Icon(Icons.lock_outline),
                   suffixIcon: IconButton(
@@ -174,10 +175,10 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Please enter a new password';
+                      return AppLocalizations.of(context)!.pleaseEnterNewPassword;
                     }
                     if (value.length < 8) {
-                      return 'Password must be at least 8 characters';
+                      return AppLocalizations.of(context)!.passwordMin8Chars;
                     }
                     return null;
                   },
@@ -187,8 +188,8 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                 // Confirm Password
                 CustomTextField(
                   controller: _confirmPasswordController,
-                  label: 'Confirm Password',
-                  hint: 'Re-enter new password',
+                  label: AppLocalizations.of(context)!.confirmPassword,
+                  hint: AppLocalizations.of(context)!.reenterNewPassword,
                   obscureText: _obscureConfirm,
                   prefixIcon: const Icon(Icons.lock_outline),
                   suffixIcon: IconButton(
@@ -205,7 +206,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Please confirm your password';
+                      return AppLocalizations.of(context)!.pleaseConfirmPassword;
                     }
                     return null;
                   },
@@ -213,7 +214,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                 const SizedBox(height: 32),
 
                 CustomButton(
-                  text: 'Reset Password',
+                  text: AppLocalizations.of(context)!.resetPassword,
                   onPressed: _isLoading ? null : _onSubmit,
                   isLoading: _isLoading,
                 ),

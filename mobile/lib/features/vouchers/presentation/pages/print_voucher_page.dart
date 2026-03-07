@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/l10n/generated/app_localizations.dart';
 import 'package:printing/printing.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/app_colors.dart';
@@ -41,7 +42,7 @@ class _PrintVoucherPageState extends State<PrintVoucherPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Print Vouchers'),
+        title: Text(AppLocalizations.of(context)!.printVouchers),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings),
@@ -95,17 +96,17 @@ class _PrintVoucherPageState extends State<PrintVoucherPage> {
                 ),
               ),
               const SizedBox(height: 20),
-              Text('Print Settings', style: AppTextStyles.titleLarge),
+              Text(AppLocalizations.of(context)!.printSettings, style: AppTextStyles.titleLarge),
               const SizedBox(height: 20),
               
               // Format Selector
-              Text('Paper Format', style: AppTextStyles.labelLarge),
+              Text(AppLocalizations.of(context)!.paperFormat, style: AppTextStyles.labelLarge),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 12,
                 children: PrinterFormat.values.map((f) {
                   return FilterChip(
-                    label: Text(_formatName(f)),
+                    label: Text(_formatName(context, f)),
                     selected: _format == f,
                     onSelected: (selected) {
                       if (selected) {
@@ -121,13 +122,13 @@ class _PrintVoucherPageState extends State<PrintVoucherPage> {
               const SizedBox(height: 20),
 
               // Design Theme Selector
-              Text('Card Design', style: AppTextStyles.labelLarge),
+              Text(AppLocalizations.of(context)!.cardDesign, style: AppTextStyles.labelLarge),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 12,
                 children: VoucherDesignTheme.values.map((t) {
                   return FilterChip(
-                    label: Text(_themeName(t)),
+                    label: Text(_themeName(context, t)),
                     selected: _theme == t,
                     onSelected: (selected) {
                       if (selected) {
@@ -144,7 +145,7 @@ class _PrintVoucherPageState extends State<PrintVoucherPage> {
 
               // Grid Settings (A4 Only)
               if (_format == PrinterFormat.a4) ...[
-                Text('Columns: $_columns', style: AppTextStyles.labelMedium),
+                Text(AppLocalizations.of(context)!.columns(_columns), style: AppTextStyles.labelMedium),
                 Slider(
                   value: _columns.toDouble(),
                   min: 1,
@@ -168,7 +169,7 @@ class _PrintVoucherPageState extends State<PrintVoucherPage> {
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
-                  child: const Text('Apply Changes'),
+                  child: Text(AppLocalizations.of(context)!.applyChanges),
                 ),
               ),
             ],
@@ -178,19 +179,19 @@ class _PrintVoucherPageState extends State<PrintVoucherPage> {
     );
   }
 
-  String _formatName(PrinterFormat f) {
+  String _formatName(BuildContext context, PrinterFormat f) {
     switch (f) {
-      case PrinterFormat.a4: return 'A4 Paper';
-      case PrinterFormat.thermal58: return 'Thermal 58mm';
-      case PrinterFormat.thermal80: return 'Thermal 80mm';
+      case PrinterFormat.a4: return AppLocalizations.of(context)!.a4Paper;
+      case PrinterFormat.thermal58: return AppLocalizations.of(context)!.thermal58mm;
+      case PrinterFormat.thermal80: return AppLocalizations.of(context)!.thermal80mm;
     }
   }
 
-  String _themeName(VoucherDesignTheme t) {
+  String _themeName(BuildContext context, VoucherDesignTheme t) {
     switch (t) {
-      case VoucherDesignTheme.classic: return 'Classic';
-      case VoucherDesignTheme.modern: return 'Modern';
-      case VoucherDesignTheme.minimal: return 'Minimal';
+      case VoucherDesignTheme.classic: return AppLocalizations.of(context)!.classic;
+      case VoucherDesignTheme.modern: return AppLocalizations.of(context)!.modern;
+      case VoucherDesignTheme.minimal: return AppLocalizations.of(context)!.minimal;
     }
   }
 }

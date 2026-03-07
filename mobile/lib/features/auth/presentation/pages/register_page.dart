@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/l10n/generated/app_localizations.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/custom_button.dart';
@@ -104,14 +105,14 @@ class _RegisterPageState extends State<RegisterPage> {
                   children: [
                     // Title
                     Text(
-                      'Create Account',
+                      AppLocalizations.of(context)!.createAccount,
                       style: AppTextStyles.headlineLarge,
                     ),
                     
                     const SizedBox(height: 8),
                     
                     Text(
-                      'Sign up to get started with MikroTik management',
+                      AppLocalizations.of(context)!.signUpSubtitle,
                       style: AppTextStyles.bodyMedium.copyWith(
                         color: AppColors.textSecondary,
                       ),
@@ -122,16 +123,16 @@ class _RegisterPageState extends State<RegisterPage> {
                     // Name Field
                     CustomTextField(
                       controller: _nameController,
-                      label: 'Full Name',
-                      hint: 'Enter your full name',
+                      label: AppLocalizations.of(context)!.fullName,
+                      hint: AppLocalizations.of(context)!.enterFullName,
                       enabled: !isLoading,
                       prefixIcon: const Icon(Icons.person_outline),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Please enter your name';
+                          return AppLocalizations.of(context)!.pleaseEnterName;
                         }
                         if (value.length < 3) {
-                          return 'Name must be at least 3 characters';
+                          return AppLocalizations.of(context)!.nameMinLength;
                         }
                         return null;
                       },
@@ -142,17 +143,17 @@ class _RegisterPageState extends State<RegisterPage> {
                     // Email Field
                     CustomTextField(
                       controller: _emailController,
-                      label: 'Email Address',
-                      hint: 'Enter your email',
+                      label: AppLocalizations.of(context)!.emailAddress,
+                      hint: AppLocalizations.of(context)!.enterYourEmail,
                       keyboardType: TextInputType.emailAddress,
                       enabled: !isLoading,
                       prefixIcon: const Icon(Icons.email_outlined),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Please enter your email';
+                          return AppLocalizations.of(context)!.pleaseEnterEmail;
                         }
                         if (!value.contains('@')) {
-                          return 'Please enter a valid email';
+                          return AppLocalizations.of(context)!.pleaseEnterValidEmail;
                         }
                         return null;
                       },
@@ -163,8 +164,8 @@ class _RegisterPageState extends State<RegisterPage> {
                     // Password Field
                     CustomTextField(
                       controller: _passwordController,
-                      label: 'Password',
-                      hint: 'Create a password',
+                      label: AppLocalizations.of(context)!.password,
+                      hint: AppLocalizations.of(context)!.createPassword,
                       obscureText: _obscurePassword,
                       enabled: !isLoading,
                       prefixIcon: const Icon(Icons.lock_outline),
@@ -182,10 +183,10 @@ class _RegisterPageState extends State<RegisterPage> {
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Please enter a password';
+                          return AppLocalizations.of(context)!.pleaseEnterAPassword;
                         }
                         if (value.length < 6) {
-                          return 'Password must be at least 6 characters';
+                          return AppLocalizations.of(context)!.passwordMinLength;
                         }
                         return null;
                       },
@@ -196,8 +197,8 @@ class _RegisterPageState extends State<RegisterPage> {
                     // Confirm Password Field
                     CustomTextField(
                       controller: _confirmPasswordController,
-                      label: 'Confirm Password',
-                      hint: 'Re-enter your password',
+                      label: AppLocalizations.of(context)!.confirmPassword,
+                      hint: AppLocalizations.of(context)!.reenterPassword,
                       obscureText: _obscureConfirmPassword,
                       enabled: !isLoading,
                       prefixIcon: const Icon(Icons.lock_outline),
@@ -215,10 +216,10 @@ class _RegisterPageState extends State<RegisterPage> {
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Please confirm your password';
+                          return AppLocalizations.of(context)!.pleaseConfirmPassword;
                         }
                         if (value != _passwordController.text) {
-                          return 'Passwords do not match';
+                          return AppLocalizations.of(context)!.passwordsDoNotMatch;
                         }
                         return null;
                       },
@@ -228,7 +229,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     
                     // Register Button
                     CustomButton(
-                      text: 'Create Account',
+                      text: AppLocalizations.of(context)!.createAccount,
                       onPressed: isLoading ? null : _onRegister,
                       isLoading: isLoading,
                     ),
@@ -240,7 +241,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          'Already have an account? ',
+                          AppLocalizations.of(context)!.alreadyHaveAccount,
                           style: AppTextStyles.bodyMedium,
                         ),
                         TextButton(
@@ -248,7 +249,7 @@ class _RegisterPageState extends State<RegisterPage> {
                               ? null
                               : () => Navigator.of(context).pop(),
                           child: Text(
-                            'Sign In',
+                            AppLocalizations.of(context)!.signIn,
                             style: AppTextStyles.labelLarge.copyWith(
                               color: AppColors.primary,
                             ),

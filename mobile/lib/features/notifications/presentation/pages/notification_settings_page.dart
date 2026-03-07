@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/l10n/generated/app_localizations.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
@@ -45,8 +46,8 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
       SnackBar(
         content: Text(
           value 
-            ? 'Router status notifications enabled'
-            : 'Router status notifications disabled',
+            ? AppLocalizations.of(context)!.routerStatusEnabled
+            : AppLocalizations.of(context)!.routerStatusDisabled,
         ),
         backgroundColor: AppColors.primary,
         behavior: SnackBarBehavior.floating,
@@ -59,7 +60,7 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Notification Settings'),
+        title: Text(AppLocalizations.of(context)!.notificationSettings),
         backgroundColor: Colors.transparent,
         elevation: 0,
         foregroundColor: AppColors.textPrimary,
@@ -88,7 +89,7 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          'Configure what notifications you receive from the app.',
+                          AppLocalizations.of(context)!.configureNotifications,
                           style: TextStyle(
                             color: AppColors.textSecondary,
                             fontSize: 14,
@@ -102,14 +103,14 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
                 const SizedBox(height: 24),
                 
                 // Router Status Section
-                _buildSectionHeader('Router Alerts'),
+                _buildSectionHeader(AppLocalizations.of(context)!.routerAlerts),
                 
                 const SizedBox(height: 12),
                 
                 _buildNotificationTile(
                   icon: Icons.router,
-                  title: 'Router Status',
-                  subtitle: 'Get notified when your routers go online or offline',
+                  title: AppLocalizations.of(context)!.routerStatus,
+                  subtitle: AppLocalizations.of(context)!.routerStatusSubtitle,
                   value: _routerStatusEnabled,
                   onChanged: _updateRouterStatusNotification,
                 ),
@@ -117,22 +118,22 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
                 const SizedBox(height: 32),
                 
                 // Future notification types placeholder
-                _buildSectionHeader('Coming Soon'),
+                _buildSectionHeader(AppLocalizations.of(context)!.comingSoon),
                 
                 const SizedBox(height: 12),
                 
                 _buildDisabledTile(
                   icon: Icons.warning_amber,
-                  title: 'Low Balance Alert',
-                  subtitle: 'Get notified when voucher balance is low',
+                  title: AppLocalizations.of(context)!.lowBalanceAlert,
+                  subtitle: AppLocalizations.of(context)!.lowBalanceSubtitle,
                 ),
                 
                 const SizedBox(height: 12),
                 
                 _buildDisabledTile(
                   icon: Icons.trending_up,
-                  title: 'Daily Sales Report',
-                  subtitle: 'Receive daily sales summary',
+                  title: AppLocalizations.of(context)!.dailySalesReport,
+                  subtitle: AppLocalizations.of(context)!.dailySalesSubtitle,
                 ),
               ],
             ),
@@ -261,7 +262,7 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
-              'Soon',
+              AppLocalizations.of(context)!.soon,
               style: TextStyle(
                 color: AppColors.textSecondary,
                 fontSize: 11,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
+import 'package:mobile/l10n/generated/app_localizations.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/custom_button.dart';
@@ -42,7 +43,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text('Reset code sent! Check your email or server logs.'),
+              content: Text(AppLocalizations.of(context)!.resetCodeSent),
               backgroundColor: AppColors.success,
             ),
           );
@@ -71,7 +72,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text('Something went wrong. Please try again.'),
+              content: Text(AppLocalizations.of(context)!.somethingWentWrong),
               backgroundColor: AppColors.error,
             ),
           );
@@ -107,12 +108,12 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Forgot Password?',
+                  AppLocalizations.of(context)!.forgotPasswordTitle,
                   style: AppTextStyles.headlineLarge,
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Enter your email address and we will send you a reset code.',
+                  AppLocalizations.of(context)!.forgotPasswordSubtitle,
                   style: AppTextStyles.bodyMedium.copyWith(
                     color: AppColors.textSecondary,
                   ),
@@ -120,23 +121,23 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                 const SizedBox(height: 32),
                 CustomTextField(
                   controller: _emailController,
-                  label: 'Email Address',
-                  hint: 'Enter your email',
+                  label: AppLocalizations.of(context)!.emailAddress,
+                  hint: AppLocalizations.of(context)!.enterYourEmail,
                   keyboardType: TextInputType.emailAddress,
                   prefixIcon: const Icon(Icons.email_outlined),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Please enter your email';
+                      return AppLocalizations.of(context)!.pleaseEnterEmail;
                     }
                     if (!value.contains('@')) {
-                      return 'Please enter a valid email';
+                      return AppLocalizations.of(context)!.pleaseEnterValidEmail;
                     }
                     return null;
                   },
                 ),
                 const SizedBox(height: 32),
                 CustomButton(
-                  text: 'Send Reset Code',
+                  text: AppLocalizations.of(context)!.sendResetCode,
                   onPressed: _isLoading ? null : _onSubmit,
                   isLoading: _isLoading,
                 ),

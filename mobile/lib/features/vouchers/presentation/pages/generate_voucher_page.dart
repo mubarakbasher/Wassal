@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/l10n/generated/app_localizations.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/empty_state.dart';
@@ -212,7 +213,7 @@ class _GenerateVoucherViewState extends State<GenerateVoucherView>
         ),
       ),
       title: Text(
-        'Generate Voucher',
+        AppLocalizations.of(context)!.generateVoucher,
         style: AppTextStyles.titleLarge,
       ),
       centerTitle: true,
@@ -220,7 +221,7 @@ class _GenerateVoucherViewState extends State<GenerateVoucherView>
   }
 
   Widget _buildProgressIndicator() {
-    final steps = ['Select Router', 'Configure', 'Confirm'];
+    final steps = [AppLocalizations.of(context)!.selectRouter, AppLocalizations.of(context)!.configure, AppLocalizations.of(context)!.confirm];
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
       color: Colors.white,
@@ -311,7 +312,7 @@ class _GenerateVoucherViewState extends State<GenerateVoucherView>
           ),
           const SizedBox(height: 16),
           Text(
-            'Loading routers...',
+            AppLocalizations.of(context)!.loadingRouters,
             style: AppTextStyles.bodyMedium.copyWith(
               color: AppColors.textSecondary,
             ),
@@ -328,8 +329,8 @@ class _GenerateVoucherViewState extends State<GenerateVoucherView>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildSectionHeader(
-            'Select Router',
-            'Choose the router for generating vouchers',
+            AppLocalizations.of(context)!.selectRouter,
+            AppLocalizations.of(context)!.chooseRouterForVouchers,
             Icons.router_rounded,
           ),
           const SizedBox(height: 24),
@@ -399,12 +400,12 @@ class _GenerateVoucherViewState extends State<GenerateVoucherView>
           ),
           const SizedBox(height: 16),
           Text(
-            'No routers found',
+            AppLocalizations.of(context)!.noRoutersFoundAdd,
             style: AppTextStyles.titleMedium,
           ),
           const SizedBox(height: 8),
           Text(
-            'Add a router first to generate vouchers',
+            AppLocalizations.of(context)!.addRouterFirst,
             style: AppTextStyles.bodySmall,
             textAlign: TextAlign.center,
           ),
@@ -467,14 +468,14 @@ class _GenerateVoucherViewState extends State<GenerateVoucherView>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    router['name'] ?? 'Unknown Router',
+                    router['name'] ?? AppLocalizations.of(context)!.unknownRouter,
                     style: AppTextStyles.titleMedium.copyWith(
                       color: isSelected ? AppColors.primary : AppColors.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    router['ipAddress'] ?? 'No IP',
+                    router['ipAddress'] ?? AppLocalizations.of(context)!.noIP,
                     style: AppTextStyles.bodySmall,
                   ),
                 ],
@@ -511,14 +512,14 @@ class _GenerateVoucherViewState extends State<GenerateVoucherView>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildSectionHeader(
-              'Configure Plan',
-              'Set up the voucher details',
+              AppLocalizations.of(context)!.configurePlan,
+              AppLocalizations.of(context)!.setupVoucherDetails,
               Icons.tune_rounded,
             ),
             const SizedBox(height: 24),
 
             // Limit Type (moved up — determines whether count type is relevant)
-            Text('Limit Type', style: AppTextStyles.labelLarge),
+            Text(AppLocalizations.of(context)!.limitType, style: AppTextStyles.labelLarge),
             const SizedBox(height: 12),
             _buildLimitTypeSelector(),
 
@@ -528,14 +529,14 @@ class _GenerateVoucherViewState extends State<GenerateVoucherView>
             const SizedBox(height: 24),
 
             // Total Use selector
-            Text('Total Use', style: AppTextStyles.labelLarge),
+            Text(AppLocalizations.of(context)!.totalUse, style: AppTextStyles.labelLarge),
             const SizedBox(height: 12),
             _buildTotalUseSelector(),
             const SizedBox(height: 24),
 
             // Wall clock time input — when Total Time is selected with Data Limit
             if (_countType == 'WALL_CLOCK') ...[
-              Text('Validity Duration', style: AppTextStyles.labelLarge),
+              Text(AppLocalizations.of(context)!.validityDuration, style: AppTextStyles.labelLarge),
               const SizedBox(height: 8),
               _buildWallClockTimeField(),
               const SizedBox(height: 24),
@@ -590,7 +591,7 @@ class _GenerateVoucherViewState extends State<GenerateVoucherView>
               ),
             ),
             const SizedBox(height: 12),
-            Text('Loading profiles...', style: AppTextStyles.bodySmall),
+            Text(AppLocalizations.of(context)!.loadingProfiles, style: AppTextStyles.bodySmall),
           ],
         ),
       ),
@@ -611,7 +612,7 @@ class _GenerateVoucherViewState extends State<GenerateVoucherView>
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              'No profiles found on this router',
+              AppLocalizations.of(context)!.noProfilesOnRouter,
               style: AppTextStyles.bodyMedium.copyWith(color: AppColors.warning),
             ),
           ),
@@ -682,7 +683,7 @@ class _GenerateVoucherViewState extends State<GenerateVoucherView>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Price', style: AppTextStyles.labelLarge),
+        Text(AppLocalizations.of(context)!.price, style: AppTextStyles.labelLarge),
         const SizedBox(height: 8),
         TextFormField(
           controller: _priceController,
@@ -695,7 +696,7 @@ class _GenerateVoucherViewState extends State<GenerateVoucherView>
             ),
             hintText: '0',
           ),
-          validator: (v) => v!.isEmpty ? 'Required' : null,
+          validator: (v) => v!.isEmpty ? AppLocalizations.of(context)!.required : null,
         ),
       ],
     );
@@ -705,7 +706,7 @@ class _GenerateVoucherViewState extends State<GenerateVoucherView>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Quantity', style: AppTextStyles.labelLarge),
+        Text(AppLocalizations.of(context)!.quantity, style: AppTextStyles.labelLarge),
         const SizedBox(height: 8),
         TextFormField(
           controller: _quantityController,
@@ -714,7 +715,7 @@ class _GenerateVoucherViewState extends State<GenerateVoucherView>
           decoration: const InputDecoration(
             hintText: '1',
           ),
-          validator: (v) => v!.isEmpty ? 'Required' : null,
+          validator: (v) => v!.isEmpty ? AppLocalizations.of(context)!.required : null,
         ),
       ],
     );
@@ -724,9 +725,9 @@ class _GenerateVoucherViewState extends State<GenerateVoucherView>
   Widget _buildTotalUseSelector() {
     return Row(
       children: [
-        _buildTotalUseChip('ONLINE_ONLY', 'Total Online Time', Icons.wifi_rounded, 'Counts only when connected'),
+        _buildTotalUseChip('ONLINE_ONLY', AppLocalizations.of(context)!.totalOnlineTime, Icons.wifi_rounded, AppLocalizations.of(context)!.countsOnlyConnected),
         const SizedBox(width: 12),
-        _buildTotalUseChip('WALL_CLOCK', 'Total Time', Icons.schedule_rounded, 'Counts even when offline'),
+        _buildTotalUseChip('WALL_CLOCK', AppLocalizations.of(context)!.totalTime, Icons.schedule_rounded, AppLocalizations.of(context)!.countsEvenOffline),
       ],
     );
   }
@@ -801,7 +802,7 @@ class _GenerateVoucherViewState extends State<GenerateVoucherView>
             decoration: const InputDecoration(
               hintText: 'Time',
             ),
-            validator: (v) => v!.isEmpty ? 'Required' : null,
+            validator: (v) => v!.isEmpty ? AppLocalizations.of(context)!.required : null,
           ),
         ),
         const SizedBox(width: 12),
@@ -873,7 +874,7 @@ class _GenerateVoucherViewState extends State<GenerateVoucherView>
               ),
               const SizedBox(width: 8),
               Text(
-                '$type Limit',
+                type == 'Time' ? AppLocalizations.of(context)!.timeLimit : AppLocalizations.of(context)!.dataLimit,
                 style: AppTextStyles.labelMedium.copyWith(
                   color: isSelected ? Colors.white : AppColors.textPrimary,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
@@ -903,7 +904,7 @@ class _GenerateVoucherViewState extends State<GenerateVoucherView>
             decoration: const InputDecoration(
               hintText: 'Value',
             ),
-            validator: (v) => v!.isEmpty ? 'Required' : null,
+            validator: (v) => v!.isEmpty ? AppLocalizations.of(context)!.required : null,
           ),
         ),
         const SizedBox(width: 12),
@@ -944,12 +945,12 @@ class _GenerateVoucherViewState extends State<GenerateVoucherView>
 
   Widget _buildAdvancedOptions() {
     return ExpansionTile(
-      title: Text('Advanced Options', style: AppTextStyles.labelLarge),
+      title: Text(AppLocalizations.of(context)!.advancedOptions, style: AppTextStyles.labelLarge),
       tilePadding: EdgeInsets.zero,
       childrenPadding: const EdgeInsets.only(top: 8),
       children: [
         _buildDropdownField(
-          'Code Format',
+          AppLocalizations.of(context)!.codeFormat,
           _charset,
           {
             'NUMERIC': 'Numbers Only (e.g., 12345678)',
@@ -1010,8 +1011,8 @@ class _GenerateVoucherViewState extends State<GenerateVoucherView>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildSectionHeader(
-            'Confirm & Generate',
-            'Review your voucher settings',
+            AppLocalizations.of(context)!.confirmGenerate,
+            AppLocalizations.of(context)!.reviewVoucherSettings,
             Icons.check_circle_outline_rounded,
           ),
           const SizedBox(height: 24),
@@ -1096,7 +1097,7 @@ class _GenerateVoucherViewState extends State<GenerateVoucherView>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Plan',
+                    AppLocalizations.of(context)!.plan,
                     style: AppTextStyles.labelSmall.copyWith(color: Colors.white60),
                   ),
                   Text(
@@ -1112,7 +1113,7 @@ class _GenerateVoucherViewState extends State<GenerateVoucherView>
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    'Duration',
+                    AppLocalizations.of(context)!.duration,
                     style: AppTextStyles.labelSmall.copyWith(color: Colors.white60),
                   ),
                   Text(
@@ -1141,12 +1142,12 @@ class _GenerateVoucherViewState extends State<GenerateVoucherView>
       ),
       child: Column(
         children: [
-          _buildSummaryRow('Router', selectedRouter['name'] ?? 'Unknown'),
-          _buildSummaryRow('Profile', _selectedPlanName ?? '-'),
-          _buildSummaryRow('Quantity', '${_quantityController.text} voucher(s)'),
-          _buildSummaryRow('Price Each', '${_priceController.text} SDG'),
+          _buildSummaryRow(AppLocalizations.of(context)!.router, selectedRouter['name'] ?? 'Unknown'),
+          _buildSummaryRow(AppLocalizations.of(context)!.profile, _selectedPlanName ?? '-'),
+          _buildSummaryRow(AppLocalizations.of(context)!.quantity, AppLocalizations.of(context)!.vouchersCount(int.tryParse(_quantityController.text) ?? 1)),
+          _buildSummaryRow(AppLocalizations.of(context)!.priceEach, '${_priceController.text} SDG'),
           _buildSummaryRow(
-            'Total',
+            AppLocalizations.of(context)!.total,
             '${(double.tryParse(_priceController.text) ?? 0) * (int.tryParse(_quantityController.text) ?? 1)} SDG',
             isTotal: true,
           ),
@@ -1208,7 +1209,7 @@ class _GenerateVoucherViewState extends State<GenerateVoucherView>
             borderRadius: BorderRadius.circular(16),
             child: Center(
               child: Text(
-                'Continue',
+                AppLocalizations.of(context)!.continueBtn,
                 style: AppTextStyles.button.copyWith(
                   color: enabled ? Colors.white : AppColors.textTertiary,
                 ),
@@ -1260,7 +1261,7 @@ class _GenerateVoucherViewState extends State<GenerateVoucherView>
                             const Icon(Icons.bolt_rounded, color: Colors.white),
                             const SizedBox(width: 8),
                             Text(
-                              'Generate ${_quantityController.text} Voucher(s)',
+                              AppLocalizations.of(context)!.generateVouchersBtn(int.tryParse(_quantityController.text) ?? 1),
                               style: AppTextStyles.button,
                             ),
                           ],

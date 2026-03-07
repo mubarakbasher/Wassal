@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/l10n/generated/app_localizations.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../core/api/api_client.dart';
 import '../../../../core/api/api_endpoints.dart';
@@ -117,10 +118,10 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                   children: [
                     _buildCurrentStatus(),
                     const SizedBox(height: 24),
-                    Text('Available Plans', style: AppTextStyles.titleLarge),
+                    Text(AppLocalizations.of(context)!.availablePlans, style: AppTextStyles.titleLarge),
                     const SizedBox(height: 4),
                     Text(
-                      'Select a plan that fits your needs',
+                      AppLocalizations.of(context)!.selectPlanFits,
                       style: AppTextStyles.bodySmall,
                     ),
                     const SizedBox(height: 16),
@@ -170,7 +171,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
           ),
           const SizedBox(width: 16),
           Expanded(
-            child: Text('Subscription', style: AppTextStyles.headlineMedium),
+            child: Text(AppLocalizations.of(context)!.subscription, style: AppTextStyles.headlineMedium),
           ),
         ],
       ),
@@ -221,9 +222,9 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
               ),
             ),
             const SizedBox(height: 16),
-            const Text(
-              'No Active Subscription',
-              style: TextStyle(
+            Text(
+              AppLocalizations.of(context)!.noActiveSubscription,
+              style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
@@ -231,7 +232,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Choose a plan below to get started',
+              AppLocalizations.of(context)!.choosePlanBelow,
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.white.withValues(alpha: 0.8),
@@ -250,9 +251,9 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
             ? AppColors.error
             : AppColors.warning;
     final statusLabel = isActive
-        ? 'Active'
+        ? AppLocalizations.of(context)!.active
         : isExpired
-            ? 'Expired'
+            ? AppLocalizations.of(context)!.expired
             : status;
 
     final expiresAt = sub['expiresAt'] != null
@@ -300,9 +301,9 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                     const SizedBox(height: 2),
                     Text(
                       isActive && daysLeft > 0
-                          ? '$daysLeft days remaining'
+                          ? AppLocalizations.of(context)!.daysRemaining(daysLeft)
                           : isExpired
-                              ? 'Subscription expired'
+                              ? AppLocalizations.of(context)!.subscriptionExpired
                               : status,
                       style: AppTextStyles.bodySmall.copyWith(color: statusColor),
                     ),
@@ -333,7 +334,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
             Row(
               children: [
                 _buildSubInfoItem(
-                  'Start Date',
+                  AppLocalizations.of(context)!.startDate,
                   sub['startDate'] != null
                       ? sub['startDate'].toString().split('T')[0]
                       : '-',
@@ -341,7 +342,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                 ),
                 const SizedBox(width: 16),
                 _buildSubInfoItem(
-                  'Expires',
+                  AppLocalizations.of(context)!.expires,
                   expiresAt.toString().split(' ')[0],
                   Icons.event_outlined,
                 ),
@@ -352,9 +353,9 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
             const SizedBox(height: 16),
             const Divider(height: 1),
             const SizedBox(height: 12),
-            _buildFeatureRow(Icons.router_outlined, 'Max Routers', '${sub['plan']['maxRouters'] ?? 1}'),
+            _buildFeatureRow(Icons.router_outlined, AppLocalizations.of(context)!.maxRouters, '${sub['plan']['maxRouters'] ?? 1}'),
             const SizedBox(height: 8),
-            _buildFeatureRow(Icons.people_outline, 'Max Hotspot Users', '${sub['plan']['maxHotspotUsers'] == 0 ? 'Unlimited' : sub['plan']['maxHotspotUsers'] ?? 50}'),
+            _buildFeatureRow(Icons.people_outline, AppLocalizations.of(context)!.maxHotspotUsers, '${sub['plan']['maxHotspotUsers'] == 0 ? AppLocalizations.of(context)!.unlimited : sub['plan']['maxHotspotUsers'] ?? 50}'),
           ],
         ],
       ),
@@ -404,12 +405,12 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
           Icon(Icons.cloud_off_outlined, size: 48, color: AppColors.error.withValues(alpha: 0.6)),
           const SizedBox(height: 16),
           Text(
-            'Failed to load plans',
+            AppLocalizations.of(context)!.failedLoadPlans,
             style: AppTextStyles.titleMedium.copyWith(color: AppColors.error),
           ),
           const SizedBox(height: 8),
           Text(
-            'Please check your connection and try again',
+            AppLocalizations.of(context)!.checkConnectionTryAgain,
             style: AppTextStyles.bodySmall,
             textAlign: TextAlign.center,
           ),
@@ -417,7 +418,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
           ElevatedButton.icon(
             onPressed: _loadPlans,
             icon: const Icon(Icons.refresh, size: 18),
-            label: const Text('Retry'),
+            label: Text(AppLocalizations.of(context)!.retry),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
@@ -441,12 +442,12 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
           Icon(Icons.inventory_2_outlined, size: 48, color: Colors.grey[400]),
           const SizedBox(height: 16),
           Text(
-            'No plans available',
+            AppLocalizations.of(context)!.noPlansAvailable,
             style: AppTextStyles.titleMedium.copyWith(color: AppColors.textSecondary),
           ),
           const SizedBox(height: 8),
           Text(
-            'Contact your administrator to set up subscription plans',
+            AppLocalizations.of(context)!.contactAdminPlans,
             style: AppTextStyles.bodySmall,
             textAlign: TextAlign.center,
           ),
@@ -507,9 +508,9 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                                 color: AppColors.primary,
                                 borderRadius: BorderRadius.circular(10),
                               ),
-                              child: const Text(
-                                'CURRENT',
-                                style: TextStyle(
+                              child: Text(
+                                AppLocalizations.of(context)!.current,
+                                style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 10,
                                   fontWeight: FontWeight.bold,
@@ -556,19 +557,19 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
             _buildPlanFeature(
               Icons.people_outline,
               plan['maxHotspotUsers'] == 0
-                  ? 'Unlimited hotspot users'
+                  ? AppLocalizations.of(context)!.unlimitedHotspotUsers
                   : 'Up to ${plan['maxHotspotUsers'] ?? 50} hotspot users',
             ),
             const SizedBox(height: 8),
             _buildPlanFeature(
               Icons.confirmation_number_outlined,
-              plan['allowVouchers'] == true ? 'Voucher system included' : 'No voucher system',
+              plan['allowVouchers'] == true ? AppLocalizations.of(context)!.voucherSystemIncluded : AppLocalizations.of(context)!.noVoucherSystem,
               available: plan['allowVouchers'] == true,
             ),
             const SizedBox(height: 8),
             _buildPlanFeature(
               Icons.bar_chart_rounded,
-              plan['allowReports'] == true ? 'Reports & analytics' : 'No reports',
+              plan['allowReports'] == true ? AppLocalizations.of(context)!.reportsAnalytics : AppLocalizations.of(context)!.noReports,
               available: plan['allowReports'] == true,
             ),
 
@@ -604,8 +605,8 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                       )
                     : Text(
                         isCurrentPlan && isActiveSub
-                            ? 'Current Plan'
-                            : 'Select Plan',
+                            ? AppLocalizations.of(context)!.currentPlan
+                            : AppLocalizations.of(context)!.selectPlan,
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
@@ -797,7 +798,7 @@ class _PaymentFlowSheetState extends State<_PaymentFlowSheet> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Text(
-              _step == 3 ? 'Request Submitted' : 'Payment for ${widget.planName}',
+              _step == 3 ? AppLocalizations.of(context)!.requestSubmitted : AppLocalizations.of(context)!.paymentFor(widget.planName),
               style: AppTextStyles.headlineSmall,
             ),
           ),
@@ -829,9 +830,9 @@ class _PaymentFlowSheetState extends State<_PaymentFlowSheet> {
       padding: const EdgeInsets.symmetric(horizontal: 40),
       child: Row(
         children: [
-          _buildStepDot(0, 'Bank Info'),
+          _buildStepDot(0, AppLocalizations.of(context)!.bankInfo),
           Expanded(child: Container(height: 2, color: _step >= 1 ? AppColors.primary : Colors.grey[300])),
-          _buildStepDot(1, 'Upload Proof'),
+          _buildStepDot(1, AppLocalizations.of(context)!.uploadProof),
         ],
       ),
     );
@@ -909,7 +910,7 @@ class _PaymentFlowSheetState extends State<_PaymentFlowSheet> {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  'Transfer the amount below to the bank account, then upload your payment confirmation.',
+                  AppLocalizations.of(context)!.transferInstructions,
                   style: AppTextStyles.bodyMedium.copyWith(color: AppColors.info),
                 ),
               ),
@@ -917,14 +918,14 @@ class _PaymentFlowSheetState extends State<_PaymentFlowSheet> {
           ),
         ),
         const SizedBox(height: 20),
-        _buildBankDetailRow('Bank', _bankInfo?.bankName ?? '-'),
-        _buildBankDetailRow('Account Name', _bankInfo?.accountName ?? '-'),
+        _buildBankDetailRow(AppLocalizations.of(context)!.bank, _bankInfo?.bankName ?? '-'),
+        _buildBankDetailRow(AppLocalizations.of(context)!.accountName, _bankInfo?.accountName ?? '-'),
         _buildBankDetailRow(
-          'Account Number',
+          AppLocalizations.of(context)!.accountNumber,
           _bankInfo?.accountNumber ?? '-',
           copyable: true,
         ),
-        _buildBankDetailRow('Amount', '${widget.price.toStringAsFixed(0)} SDG'),
+        _buildBankDetailRow(AppLocalizations.of(context)!.amount, '${widget.price.toStringAsFixed(0)} SDG'),
         if (_error != null) ...[
           const SizedBox(height: 12),
           Text(_error!, style: TextStyle(color: AppColors.error, fontSize: 13)),
@@ -947,9 +948,9 @@ class _PaymentFlowSheetState extends State<_PaymentFlowSheet> {
                     width: 20,
                     child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                   )
-                : const Text(
-                    'I\'ve Sent the Money',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                : Text(
+                    AppLocalizations.of(context)!.iveSentMoney,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
           ),
         ),
@@ -985,7 +986,7 @@ class _PaymentFlowSheetState extends State<_PaymentFlowSheet> {
                       Clipboard.setData(ClipboardData(text: value));
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: const Text('Copied to clipboard'),
+                          content: Text(AppLocalizations.of(context)!.copiedToClipboard),
                           backgroundColor: AppColors.success,
                           behavior: SnackBarBehavior.floating,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -1022,7 +1023,7 @@ class _PaymentFlowSheetState extends State<_PaymentFlowSheet> {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  'Upload a screenshot or photo of your payment confirmation.',
+                  AppLocalizations.of(context)!.uploadPaymentProof,
                   style: AppTextStyles.bodyMedium.copyWith(color: AppColors.warning),
                 ),
               ),
@@ -1054,12 +1055,12 @@ class _PaymentFlowSheetState extends State<_PaymentFlowSheet> {
                       Icon(Icons.cloud_upload_outlined, size: 48, color: Colors.grey[400]),
                       const SizedBox(height: 12),
                       Text(
-                        'Tap to select image',
+                        AppLocalizations.of(context)!.tapToSelectImage,
                         style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'PNG, JPG up to 5MB',
+                        AppLocalizations.of(context)!.pngJpgUpTo5mb,
                         style: AppTextStyles.bodySmall,
                       ),
                     ],
@@ -1073,7 +1074,7 @@ class _PaymentFlowSheetState extends State<_PaymentFlowSheet> {
             child: TextButton.icon(
               onPressed: _pickImage,
               icon: const Icon(Icons.refresh, size: 18),
-              label: const Text('Change Image'),
+              label: Text(AppLocalizations.of(context)!.changeImage),
               style: TextButton.styleFrom(foregroundColor: AppColors.primary),
             ),
           ),
@@ -1093,7 +1094,7 @@ class _PaymentFlowSheetState extends State<_PaymentFlowSheet> {
                         Navigator.pop(context);
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: const Text('Request saved. You can upload proof from Bills later.'),
+                            content: Text(AppLocalizations.of(context)!.requestSavedUploadLater),
                             backgroundColor: AppColors.info,
                             behavior: SnackBarBehavior.floating,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -1107,7 +1108,7 @@ class _PaymentFlowSheetState extends State<_PaymentFlowSheet> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   side: BorderSide(color: Colors.grey[300]!),
                 ),
-                child: const Text('Skip for Now', style: TextStyle(fontWeight: FontWeight.bold)),
+                child: Text(AppLocalizations.of(context)!.skipForNow, style: const TextStyle(fontWeight: FontWeight.bold)),
               ),
             ),
             const SizedBox(width: 12),
@@ -1129,9 +1130,9 @@ class _PaymentFlowSheetState extends State<_PaymentFlowSheet> {
                         width: 20,
                         child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                       )
-                    : const Text(
-                        'Submit Proof',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    : Text(
+                        AppLocalizations.of(context)!.submitProof,
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                       ),
               ),
             ),
@@ -1155,13 +1156,13 @@ class _PaymentFlowSheetState extends State<_PaymentFlowSheet> {
         ),
         const SizedBox(height: 24),
         Text(
-          'Payment Proof Submitted',
+          AppLocalizations.of(context)!.paymentProofSubmitted,
           style: AppTextStyles.titleLarge,
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 8),
         Text(
-          'Your subscription request has been submitted.\nAn admin will review your payment and activate your plan.',
+          AppLocalizations.of(context)!.subscriptionRequestSubmitted,
           style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
           textAlign: TextAlign.center,
         ),
@@ -1177,9 +1178,9 @@ class _PaymentFlowSheetState extends State<_PaymentFlowSheet> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               elevation: 0,
             ),
-            child: const Text(
-              'Done',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            child: Text(
+              AppLocalizations.of(context)!.done,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
           ),
         ),

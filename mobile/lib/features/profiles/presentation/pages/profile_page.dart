@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/l10n/generated/app_localizations.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
@@ -89,15 +90,15 @@ class _ProfilePageState extends State<ProfilePage> {
               child: const Icon(Icons.logout, color: Colors.red, size: 20),
             ),
             const SizedBox(width: 12),
-            const Text('Confirm Logout'),
+            Text(AppLocalizations.of(context)!.confirmLogout),
           ],
         ),
-        content: const Text('Are you sure you want to log out of your account?'),
+        content: Text(AppLocalizations.of(context)!.confirmLogoutMessage),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Cancel', style: TextStyle(color: Colors.grey[600])),
+            child: Text(AppLocalizations.of(context)!.cancel, style: TextStyle(color: Colors.grey[600])),
           ),
           ElevatedButton(
             onPressed: () {
@@ -109,7 +110,7 @@ class _ProfilePageState extends State<ProfilePage> {
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
-            child: const Text('Logout'),
+            child: Text(AppLocalizations.of(context)!.logout),
           ),
         ],
       ),
@@ -144,12 +145,12 @@ class _ProfilePageState extends State<ProfilePage> {
             // Only show success message if password field has content (means update was triggered)
             if (_passwordController.text.isNotEmpty || _wasUpdateTriggered) {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
+                SnackBar(
                   content: Row(
                     children: [
-                      Icon(Icons.check_circle, color: Colors.white),
-                      SizedBox(width: 8),
-                      Text('Profile updated successfully'),
+                      const Icon(Icons.check_circle, color: Colors.white),
+                      const SizedBox(width: 8),
+                      Text(AppLocalizations.of(context)!.profileUpdated),
                     ],
                   ),
                   backgroundColor: Colors.green,
@@ -193,10 +194,10 @@ class _ProfilePageState extends State<ProfilePage> {
                                 onPressed: () => Navigator.pop(context),
                                 icon: const Icon(Icons.arrow_back, color: Colors.white),
                               ),
-                              const Expanded(
+                              Expanded(
                                 child: Text(
-                                  'My Profile',
-                                  style: TextStyle(
+                                  AppLocalizations.of(context)!.myProfile,
+                                  style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 20,
                                     fontWeight: FontWeight.bold,
@@ -258,7 +259,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                     displayName = authState.user.name;
                                   }
                                   return Text(
-                                    displayName.isNotEmpty ? displayName : 'Loading...',
+                                    displayName.isNotEmpty ? displayName : AppLocalizations.of(context)!.loading,
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 22,
@@ -277,7 +278,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                     displayEmail = authState.user.email;
                                   }
                                   return Text(
-                                    displayEmail.isNotEmpty ? displayEmail : 'Loading...',
+                                    displayEmail.isNotEmpty ? displayEmail : AppLocalizations.of(context)!.loading,
                                     style: TextStyle(
                                       color: Colors.white.withOpacity(0.8),
                                       fontSize: 14,
@@ -318,22 +319,22 @@ class _ProfilePageState extends State<ProfilePage> {
 
                             // Personal Information Card
                             _buildSectionCard(
-                              title: 'Personal Information',
+                              title: AppLocalizations.of(context)!.personalInformation,
                               icon: Icons.person,
                               children: [
                                 _buildTextField(
                                   controller: _nameController,
-                                  label: 'Full Name',
+                                  label: AppLocalizations.of(context)!.fullName,
                                   icon: Icons.badge_outlined,
-                                  validator: (value) => value!.isEmpty ? 'Name is required' : null,
+                                  validator: (value) => value!.isEmpty ? AppLocalizations.of(context)!.nameRequired : null,
                                 ),
                                 const SizedBox(height: 16),
                                 _buildTextField(
                                   controller: _emailController,
-                                  label: 'Email Address',
+                                  label: AppLocalizations.of(context)!.emailAddressLabel,
                                   icon: Icons.email_outlined,
                                   keyboardType: TextInputType.emailAddress,
-                                  validator: (value) => value!.isEmpty ? 'Email is required' : null,
+                                  validator: (value) => value!.isEmpty ? AppLocalizations.of(context)!.emailRequired : null,
                                 ),
                               ],
                             ),
@@ -341,14 +342,14 @@ class _ProfilePageState extends State<ProfilePage> {
                             
                             // Network Settings Card
                             _buildSectionCard(
-                              title: 'Network Settings',
+                              title: AppLocalizations.of(context)!.networkSettings,
                               icon: Icons.wifi,
                               children: [
                                 _buildTextField(
                                   controller: _networkNameController,
-                                  label: 'Network Name',
+                                  label: AppLocalizations.of(context)!.networkName,
                                   icon: Icons.router_outlined,
-                                  helperText: 'This name appears on printed vouchers',
+                                  helperText: AppLocalizations.of(context)!.networkNameHelper,
                                 ),
                               ],
                             ),
@@ -356,16 +357,16 @@ class _ProfilePageState extends State<ProfilePage> {
                             
                             // Security Card
                             _buildSectionCard(
-                              title: 'Security',
+                              title: AppLocalizations.of(context)!.security,
                               icon: Icons.security,
                               children: [
                                 _buildTextField(
                                   controller: _passwordController,
-                                  label: 'New Password',
+                                  label: AppLocalizations.of(context)!.newPassword,
                                   icon: Icons.lock_outline,
                                   isPassword: true,
                                   obscureText: _obscurePassword,
-                                  helperText: 'Leave empty to keep current password',
+                                  helperText: AppLocalizations.of(context)!.leaveEmptyKeepPassword,
                                   suffixIcon: IconButton(
                                     icon: Icon(
                                       _obscurePassword ? Icons.visibility_off : Icons.visibility,
@@ -398,14 +399,14 @@ class _ProfilePageState extends State<ProfilePage> {
                                         width: 24,
                                         child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                                       )
-                                    : const Row(
+                                    : Row(
                                         mainAxisAlignment: MainAxisAlignment.center,
                                         children: [
-                                          Icon(Icons.save),
-                                          SizedBox(width: 8),
+                                          const Icon(Icons.save),
+                                          const SizedBox(width: 8),
                                           Text(
-                                            'Save Changes',
-                                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                            AppLocalizations.of(context)!.saveChanges,
+                                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                                           ),
                                         ],
                                       ),
@@ -420,9 +421,9 @@ class _ProfilePageState extends State<ProfilePage> {
                               child: OutlinedButton.icon(
                                 onPressed: () => _showLogoutConfirmation(context),
                                 icon: const Icon(Icons.logout, color: Colors.red),
-                                label: const Text(
-                                  'Log Out',
-                                  style: TextStyle(
+                                label: Text(
+                                  AppLocalizations.of(context)!.logOut,
+                                  style: const TextStyle(
                                     color: Colors.red,
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,

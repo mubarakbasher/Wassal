@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/l10n/generated/app_localizations.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
@@ -166,7 +167,7 @@ class VoucherManagementPageState extends State<VoucherManagementPage> {
                       );
                     }
 
-                    return const LoadingIndicator(message: 'Loading vouchers...');
+                    return LoadingIndicator(message: AppLocalizations.of(context)!.loadingVouchers);
                   },
                 ),
               ),
@@ -205,7 +206,7 @@ class VoucherManagementPageState extends State<VoucherManagementPage> {
             ),
             const SizedBox(width: 8),
             Text(
-              "${_selectedVouchers.length} Selected",
+              AppLocalizations.of(context)!.selected(_selectedVouchers.length),
               style: AppTextStyles.titleLarge.copyWith(color: Colors.white),
             ),
             const Spacer(),
@@ -214,8 +215,8 @@ class VoucherManagementPageState extends State<VoucherManagementPage> {
               onPressed: _selectAll,
               child: Text(
                 _selectedVouchers.length == (context.read<VoucherBloc>().state is VouchersListLoaded ? (context.read<VoucherBloc>().state as VouchersListLoaded).vouchers.length : 0)
-                    ? "Deselect All"
-                    : "Select All",
+                    ? AppLocalizations.of(context)!.deselectAll
+                    : AppLocalizations.of(context)!.selectAll,
                 style: AppTextStyles.buttonSmall.copyWith(color: Colors.white),
               ),
             ),
@@ -242,7 +243,7 @@ class VoucherManagementPageState extends State<VoucherManagementPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "Vouchers",
+            AppLocalizations.of(context)!.vouchers,
             style: AppTextStyles.headlineMedium,
           ),
           const SizedBox(height: 16),
@@ -259,7 +260,7 @@ class VoucherManagementPageState extends State<VoucherManagementPage> {
                     controller: _searchController,
                     style: AppTextStyles.bodyMedium,
                     decoration: InputDecoration(
-                      hintText: "Search by code or plan...",
+                      hintText: AppLocalizations.of(context)!.searchByCodeOrPlan,
                       hintStyle: AppTextStyles.bodyMedium.copyWith(
                         color: AppColors.textTertiary,
                       ),
@@ -348,12 +349,12 @@ class VoucherManagementPageState extends State<VoucherManagementPage> {
               ),
             ),
             const SizedBox(height: 20),
-            Text('Filter Vouchers', style: AppTextStyles.titleLarge),
+            Text(AppLocalizations.of(context)!.filterVouchers, style: AppTextStyles.titleLarge),
             const SizedBox(height: 20),
-            _buildFilterOption('All', Icons.grid_view_rounded),
-            _buildFilterOption('Active', Icons.play_circle_outline_rounded),
-            _buildFilterOption('Unused', Icons.fiber_new_rounded),
-            _buildFilterOption('Expired', Icons.timer_off_outlined),
+            _buildFilterOption('All', AppLocalizations.of(context)!.all, Icons.grid_view_rounded),
+            _buildFilterOption('Active', AppLocalizations.of(context)!.active, Icons.play_circle_outline_rounded),
+            _buildFilterOption('Unused', AppLocalizations.of(context)!.unused, Icons.fiber_new_rounded),
+            _buildFilterOption('Expired', AppLocalizations.of(context)!.expired, Icons.timer_off_outlined),
             const SizedBox(height: 16),
           ],
         ),
@@ -361,7 +362,7 @@ class VoucherManagementPageState extends State<VoucherManagementPage> {
     );
   }
 
-  Widget _buildFilterOption(String filter, IconData icon) {
+  Widget _buildFilterOption(String filter, String displayLabel, IconData icon) {
     final isSelected = _selectedFilter == filter;
     return ListTile(
       leading: Container(
@@ -377,7 +378,7 @@ class VoucherManagementPageState extends State<VoucherManagementPage> {
         ),
       ),
       title: Text(
-        filter,
+        displayLabel,
         style: AppTextStyles.bodyLarge.copyWith(
           fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
           color: isSelected ? AppColors.primary : AppColors.textPrimary,
@@ -403,21 +404,21 @@ class VoucherManagementPageState extends State<VoucherManagementPage> {
       child: Row(
         children: [
           _buildGradientStatCard(
-            "Total",
+            AppLocalizations.of(context)!.total,
             "${stats['total'] ?? 0}",
             Icons.confirmation_number_outlined,
             AppColors.blueGradient,
           ),
           const SizedBox(width: 12),
           _buildGradientStatCard(
-            "Active",
+            AppLocalizations.of(context)!.active,
             "${stats['active'] ?? 0}",
             Icons.bolt_rounded,
             AppColors.greenGradient,
           ),
           const SizedBox(width: 12),
           _buildGradientStatCard(
-            "Revenue",
+            AppLocalizations.of(context)!.revenue,
             "${stats['totalRevenue'] ?? 0} SDG",
             Icons.payments_outlined,
             AppColors.orangeGradient,
@@ -582,7 +583,7 @@ class VoucherManagementPageState extends State<VoucherManagementPage> {
                 ),
               )
             : Text(
-                'Scroll for more',
+                AppLocalizations.of(context)!.scrollForMore,
                 style: AppTextStyles.bodySmall,
               ),
       ),
@@ -698,12 +699,12 @@ class VoucherManagementPageState extends State<VoucherManagementPage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Vouchers'),
-        content: Text('Are you sure you want to delete ${_selectedVouchers.length} vouchers? This action cannot be undone.'),
+        title: Text(AppLocalizations.of(context)!.deleteVouchers),
+        content: Text(AppLocalizations.of(context)!.deleteVouchersConfirm(_selectedVouchers.length)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context)!.cancel),
           ),
           TextButton(
             onPressed: () {
@@ -714,13 +715,13 @@ class VoucherManagementPageState extends State<VoucherManagementPage> {
               _exitSelectionMode();
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: const Text('Deleting vouchers...'),
+                  content: Text(AppLocalizations.of(context)!.deletingVouchers),
                   behavior: SnackBarBehavior.floating,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 ),
               );
             },
-            child: const Text('Delete', style: TextStyle(color: AppColors.error)),
+            child: Text(AppLocalizations.of(context)!.delete, style: const TextStyle(color: AppColors.error)),
           ),
         ],
       ),
@@ -756,12 +757,12 @@ class VoucherManagementPageState extends State<VoucherManagementPage> {
               ),
             ),
             const SizedBox(height: 20),
-            Text('Share Voucher', style: AppTextStyles.titleLarge),
+            Text(AppLocalizations.of(context)!.shareVoucher, style: AppTextStyles.titleLarge),
             const SizedBox(height: 20),
             _buildShareOptionTile(
               Icons.image_outlined,
-              'Share as Image',
-              'Beautiful styled voucher card',
+              AppLocalizations.of(context)!.shareAsImage,
+              AppLocalizations.of(context)!.beautifulStyledCard,
               () {
                 Navigator.pop(context);
                 VoucherImageGenerator.shareAsImage(context, voucher);
@@ -769,8 +770,8 @@ class VoucherManagementPageState extends State<VoucherManagementPage> {
             ),
             _buildShareOptionTile(
               Icons.text_fields_rounded,
-              'Share as Text',
-              'Plain text format',
+              AppLocalizations.of(context)!.shareAsText,
+              AppLocalizations.of(context)!.plainTextFormat,
               () {
                 Navigator.pop(context);
                 _shareAsText(voucher);
@@ -778,8 +779,8 @@ class VoucherManagementPageState extends State<VoucherManagementPage> {
             ),
             _buildShareOptionTile(
               Icons.qr_code_rounded,
-              'Share QR Code',
-              'Scannable QR image',
+              AppLocalizations.of(context)!.shareQRCode,
+              AppLocalizations.of(context)!.scannableQRImage,
               () {
                 Navigator.pop(context);
                 _shareQRCode(voucher);
@@ -858,23 +859,23 @@ http://mikrotik
             const SizedBox(height: 20),
             _buildOptionTile(
               Icons.print_rounded,
-              'Print Voucher',
+              AppLocalizations.of(context)!.printVoucherAction,
               () => _handlePrint(voucher),
             ),
             _buildOptionTile(
               Icons.share_rounded,
-              'Share Voucher',
+              AppLocalizations.of(context)!.shareVoucherAction,
               () => _handleShare(voucher),
             ),
             _buildOptionTile(
               Icons.copy_rounded,
-              'Copy Code',
+              AppLocalizations.of(context)!.copyCode,
               () {
                 Clipboard.setData(ClipboardData(text: voucher.username));
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: const Text('Code copied to clipboard'),
+                    content: Text(AppLocalizations.of(context)!.codeCopied),
                     behavior: SnackBarBehavior.floating,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
@@ -883,7 +884,7 @@ http://mikrotik
             ),
             _buildOptionTile(
               Icons.qr_code_rounded,
-              'Show QR Code',
+              AppLocalizations.of(context)!.showQRCode,
               () {
                 Navigator.pop(context);
                 _showQRCode(voucher);
@@ -892,25 +893,25 @@ http://mikrotik
             const SizedBox(height: 8),
             _buildOptionTile(
               Icons.delete_outline_rounded,
-              'Delete Voucher',
+              AppLocalizations.of(context)!.deleteVoucher,
               () {
                 Navigator.pop(context);
                 showDialog(
                   context: context,
                   builder: (ctx) => AlertDialog(
-                    title: const Text('Delete Voucher'),
-                    content: const Text('Are you sure you want to delete this voucher? This action cannot be undone.'),
+                    title: Text(AppLocalizations.of(ctx)!.deleteVoucher),
+                    content: Text(AppLocalizations.of(ctx)!.deleteVoucherConfirm),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.pop(ctx),
-                        child: const Text('Cancel'),
+                        child: Text(AppLocalizations.of(ctx)!.cancel),
                       ),
                       TextButton(
                         onPressed: () {
                           Navigator.pop(ctx);
                           context.read<VoucherBloc>().add(DeleteVouchersEvent([voucher.id]));
                         },
-                        child: const Text('Delete', style: TextStyle(color: AppColors.error)),
+                        child: Text(AppLocalizations.of(ctx)!.delete, style: const TextStyle(color: AppColors.error)),
                       ),
                     ],
                   ),
@@ -967,7 +968,7 @@ http://mikrotik
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Scan to Connect', style: AppTextStyles.titleLarge),
+              Text(AppLocalizations.of(context)!.scanToConnect, style: AppTextStyles.titleLarge),
               const SizedBox(height: 8),
               Text(
                 voucher.username,
@@ -992,7 +993,7 @@ http://mikrotik
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Close'),
+                  child: Text(AppLocalizations.of(context)!.close),
                 ),
               ),
             ],
@@ -1037,7 +1038,7 @@ http://mikrotik
               children: [
                 const Icon(Icons.add_rounded, color: Colors.white),
                 const SizedBox(width: 8),
-                Text('Generate', style: AppTextStyles.button),
+                Text(AppLocalizations.of(context)!.generate, style: AppTextStyles.button),
               ],
             ),
           ),
@@ -1075,7 +1076,7 @@ http://mikrotik
         children: [
           _buildBulkAction(
              Icons.print_rounded, 
-             "Print", 
+             AppLocalizations.of(context)!.print, 
              _handleBulkPrint,
           ),
           const SizedBox(width: 16),
@@ -1083,7 +1084,7 @@ http://mikrotik
           const SizedBox(width: 16),
           _buildBulkAction(
              Icons.share_rounded, 
-             "Share", 
+             AppLocalizations.of(context)!.share, 
              _handleBulkShare,
           ),
           const SizedBox(width: 16),
@@ -1091,7 +1092,7 @@ http://mikrotik
           const SizedBox(width: 16),
           _buildBulkAction(
              Icons.delete_outline_rounded, 
-             "Delete", 
+             AppLocalizations.of(context)!.delete, 
              _handleBulkDelete,
              isDestructive: true,
           ),

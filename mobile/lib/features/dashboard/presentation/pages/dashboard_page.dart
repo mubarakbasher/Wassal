@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/l10n/generated/app_localizations.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_event.dart';
@@ -96,22 +97,22 @@ class _DashboardPageState extends State<DashboardPage> {
                 _currentIndex = index;
               });
             },
-            items: const [
+            items: [
               BottomNavigationBarItem(
-                icon: Icon(Icons.router),
-                label: 'Routers',
+                icon: const Icon(Icons.router),
+                label: AppLocalizations.of(context)!.routers,
               ),
               BottomNavigationBarItem(
-                icon: Icon(Icons.dashboard),
-                label: 'Dashboard',
+                icon: const Icon(Icons.dashboard),
+                label: AppLocalizations.of(context)!.dashboard,
               ),
               BottomNavigationBarItem(
-                icon: Icon(Icons.confirmation_number),
-                label: 'Vouchers',
+                icon: const Icon(Icons.confirmation_number),
+                label: AppLocalizations.of(context)!.vouchers,
               ),
                BottomNavigationBarItem(
-                icon: Icon(Icons.settings),
-                label: 'Settings',
+                icon: const Icon(Icons.settings),
+                label: AppLocalizations.of(context)!.settings,
               ),
             ],
           ),

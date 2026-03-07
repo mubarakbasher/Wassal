@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/l10n/generated/app_localizations.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../widgets/activity_chart_widget.dart';
@@ -103,7 +104,7 @@ class _DashboardViewState extends State<_DashboardView> {
                 children: [
                   // Greeting
                   Text(
-                    'Hello, $userName',
+                    AppLocalizations.of(context)!.hello(userName),
                     style: const TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
@@ -112,7 +113,7 @@ class _DashboardViewState extends State<_DashboardView> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Here is your hotspot overview',
+                    AppLocalizations.of(context)!.hotspotOverview,
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.grey[600],
@@ -136,28 +137,28 @@ class _DashboardViewState extends State<_DashboardView> {
                     childAspectRatio: 1.1,
                     children: [
                       SummaryCardWidget(
-                        title: 'Total Routers',
+                        title: AppLocalizations.of(context)!.totalRouters,
                         value: totalRouters,
-                        subtitle: 'Online',
+                        subtitle: AppLocalizations.of(context)!.online,
                         icon: Icons.router,
                         isActive: false,
                       ),
                       SummaryCardWidget(
-                        title: 'Active Users',
+                        title: AppLocalizations.of(context)!.activeUsers,
                         value: activeUsers,
-                        subtitle: 'Users',
+                        subtitle: AppLocalizations.of(context)!.users,
                         icon: Icons.people,
                         isActive: isActiveUsersHighlight,
                       ),
                       SummaryCardWidget(
-                        title: 'Total Users',
+                        title: AppLocalizations.of(context)!.totalUsers,
                         value: totalUsers,
-                        subtitle: 'Registered',
+                        subtitle: AppLocalizations.of(context)!.registered,
                         icon: Icons.people_outline,
                         isActive: false,
                       ),
                       SummaryCardWidget(
-                        title: 'Revenue',
+                        title: AppLocalizations.of(context)!.revenue,
                         value: totalRevenue,
                         subtitle: '',
                         icon: Icons.payments_outlined,
@@ -169,9 +170,9 @@ class _DashboardViewState extends State<_DashboardView> {
                   const SizedBox(height: 30),
 
                   // Chart Section
-                  const Text(
-                    'Active Users Real-time',
-                    style: TextStyle(
+                  Text(
+                    AppLocalizations.of(context)!.activeUsersRealtime,
+                    style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
@@ -182,9 +183,9 @@ class _DashboardViewState extends State<_DashboardView> {
                   const SizedBox(height: 30),
 
                   // Quick Actions
-                  const Text(
-                    'Quick Actions',
-                    style: TextStyle(
+                  Text(
+                    AppLocalizations.of(context)!.quickActions,
+                    style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
@@ -194,14 +195,14 @@ class _DashboardViewState extends State<_DashboardView> {
                     children: [
                       Expanded(
                           child: _buildQuickAction(context, authState,
-                              Icons.add, "Add Router", AppColors.primary)),
+                              Icons.add, AppLocalizations.of(context)!.addRouter, AppColors.primary)),
                       const SizedBox(width: 16),
                       Expanded(
                           child: _buildQuickAction(
                               context,
                               authState,
                               Icons.print,
-                              "Print Voucher",
+                              AppLocalizations.of(context)!.printVoucher,
                               AppColors.success)),
                     ],
                   ),
@@ -269,7 +270,7 @@ class _DashboardViewState extends State<_DashboardView> {
                       ),
                     ),
                     Text(
-                      '$daysLeft days remaining',
+                      AppLocalizations.of(context)!.daysRemaining(daysLeft),
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.grey[600],
@@ -285,9 +286,9 @@ class _DashboardViewState extends State<_DashboardView> {
                   color: AppColors.success,
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: const Text(
-                  'Active',
-                  style: TextStyle(
+                child: Text(
+                  AppLocalizations.of(context)!.active,
+                  style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
                     fontSize: 11,
@@ -302,7 +303,7 @@ class _DashboardViewState extends State<_DashboardView> {
 
     // No subscription or expired/pending
     final statusLabel = sub == null
-        ? 'No Plan'
+        ? AppLocalizations.of(context)!.noPlan
         : sub.expiresAt.isBefore(DateTime.now())
             ? 'Expired'
             : sub.status;
@@ -344,7 +345,7 @@ class _DashboardViewState extends State<_DashboardView> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    sub?.planName ?? 'No Subscription',
+                    sub?.planName ?? AppLocalizations.of(context)!.noSubscription,
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 14,
@@ -353,8 +354,8 @@ class _DashboardViewState extends State<_DashboardView> {
                   ),
                   Text(
                     sub == null
-                        ? 'Tap to select a plan'
-                        : 'Tap to manage your plan',
+                        ? AppLocalizations.of(context)!.tapToSelectPlan
+                        : AppLocalizations.of(context)!.tapToManagePlan,
                     style: TextStyle(
                       fontSize: 12,
                       color: Colors.grey[600],
@@ -390,7 +391,7 @@ class _DashboardViewState extends State<_DashboardView> {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
       children: [
         Text(
-          'Hello, $userName',
+          AppLocalizations.of(context)!.hello(userName),
           style: const TextStyle(
             fontSize: 28,
             fontWeight: FontWeight.bold,
@@ -399,7 +400,7 @@ class _DashboardViewState extends State<_DashboardView> {
         ),
         const SizedBox(height: 4),
         Text(
-          'Here is your hotspot overview',
+          AppLocalizations.of(context)!.hotspotOverview,
           style: TextStyle(
             fontSize: 14,
             color: Colors.grey[600],
@@ -408,14 +409,14 @@ class _DashboardViewState extends State<_DashboardView> {
         const SizedBox(height: 16),
         _buildSubscriptionBanner(authState),
         const SizedBox(height: 40),
-        const Center(
+        Center(
           child: Column(
             children: [
-              CircularProgressIndicator(color: AppColors.primary),
-              SizedBox(height: 16),
+              const CircularProgressIndicator(color: AppColors.primary),
+              const SizedBox(height: 16),
               Text(
-                'Loading dashboard...',
-                style: TextStyle(
+                AppLocalizations.of(context)!.loadingDashboard,
+                style: const TextStyle(
                   color: Colors.grey,
                   fontSize: 14,
                 ),
@@ -448,9 +449,9 @@ class _DashboardViewState extends State<_DashboardView> {
               ),
             ),
             const SizedBox(height: 24),
-            const Text(
-              'Failed to Load Dashboard',
-              style: TextStyle(
+            Text(
+              AppLocalizations.of(context)!.failedLoadDashboard,
+              style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
                 color: Colors.black87,
@@ -475,7 +476,7 @@ class _DashboardViewState extends State<_DashboardView> {
                     .add(const LoadDashboardStats());
               },
               icon: const Icon(Icons.refresh),
-              label: const Text('Try Again'),
+              label: Text(AppLocalizations.of(context)!.tryAgain),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
@@ -504,7 +505,7 @@ class _DashboardViewState extends State<_DashboardView> {
           _showSubscriptionRequiredDialog(context);
           return;
         }
-        if (label == "Add Router") {
+        if (label == AppLocalizations.of(context)!.addRouter) {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const AddRouterPage()),
@@ -556,20 +557,20 @@ class _DashboardViewState extends State<_DashboardView> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.lock_outline, color: AppColors.warning),
-            SizedBox(width: 10),
-            Text('Subscription Required'),
+            const Icon(Icons.lock_outline, color: AppColors.warning),
+            const SizedBox(width: 10),
+            Text(AppLocalizations.of(context)!.subscriptionRequired),
           ],
         ),
-        content: const Text(
-          'You need an active subscription to use this feature. Would you like to view available plans?',
+        content: Text(
+          AppLocalizations.of(context)!.subscriptionRequiredMessage,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context)!.cancel),
           ),
           ElevatedButton(
             onPressed: () {
@@ -589,7 +590,7 @@ class _DashboardViewState extends State<_DashboardView> {
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10)),
             ),
-            child: const Text('View Plans'),
+            child: Text(AppLocalizations.of(context)!.viewPlans),
           ),
         ],
       ),

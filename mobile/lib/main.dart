@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:provider/provider.dart';
+import 'package:mobile/l10n/generated/app_localizations.dart';
 import 'features/auth/presentation/bloc/auth_bloc.dart';
 import 'features/auth/presentation/bloc/auth_event.dart';
 import 'features/auth/presentation/pages/login_page.dart';
@@ -13,6 +15,7 @@ import 'features/splash/presentation/pages/splash_page.dart';
 import 'features/splash/data/startup_service.dart';
 import 'core/constants/app_colors.dart';
 import 'core/api/api_client.dart';
+import 'core/providers/locale_provider.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'features/auth/data/datasources/auth_local_data_source.dart';
 import 'features/auth/data/datasources/auth_remote_data_source.dart';
@@ -31,12 +34,16 @@ import 'features/sales/data/datasources/sales_remote_data_source.dart';
 import 'features/sales/data/repositories/sales_repository_impl.dart';
 import 'features/sales/presentation/bloc/sales_bloc.dart';
 
-void main() {
-  runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final localeProvider = await LocaleProvider.init();
+  runApp(MyApp(localeProvider: localeProvider));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final LocaleProvider localeProvider;
+
+  const MyApp({super.key, required this.localeProvider});
 
   @override
   Widget build(BuildContext context) {
@@ -90,8 +97,12 @@ class MyApp extends StatelessWidget {
       secureStorage: secureStorage,
     );
 
-    return RepositoryProvider<ApiClient>(
+    return ListenableBuilder(
+      listenable: localeProvider,
+      builder: (context, _) => RepositoryProvider<ApiClient>(
       create: (_) => apiClient,
+      child: ChangeNotifierProvider<LocaleProvider>.value(
+      value: localeProvider,
       child: MultiBlocProvider(
         providers: [
           BlocProvider(
@@ -133,6 +144,9 @@ class MyApp extends StatelessWidget {
         child: MaterialApp(
         title: 'MikroTik Hotspot Manager',
         debugShowCheckedModeBanner: false,
+        locale: localeProvider.locale,
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
         theme: ThemeData(
           primaryColor: AppColors.primary,
           scaffoldBackgroundColor: AppColors.background,
@@ -208,6 +222,8 @@ class MyApp extends StatelessWidget {
           '/login': (context) => const LoginPage(),
           '/dashboard': (context) => const DashboardPage(),
         },
+      ),
+      ),
       ),
       ),
     );

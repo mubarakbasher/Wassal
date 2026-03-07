@@ -1,0 +1,491 @@
+{
+  "@@locale": "en",
+
+  "appTitle": "MikroTik Hotspot Manager",
+  "wassal": "Wassal",
+
+  "welcomeBack": "Welcome Back",
+  "signInSubtitle": "Sign in to manage your MikroTik hotspots",
+  "emailAddress": "Email Address",
+  "enterYourEmail": "Enter your email",
+  "pleaseEnterEmail": "Please enter your email",
+  "pleaseEnterValidEmail": "Please enter a valid email",
+  "password": "Password",
+  "enterYourPassword": "Enter your password",
+  "pleaseEnterPassword": "Please enter your password",
+  "passwordMinLength": "Password must be at least 6 characters",
+  "forgotPasswordQ": "Forgot Password?",
+  "signIn": "Sign In",
+  "dontHaveAccount": "Don't have an account? ",
+  "signUp": "Sign Up",
+  "cannotConnectServer": "Cannot connect to server. Please check your internet connection.",
+  "connectionTimeout": "Connection timeout. Please try again.",
+  "invalidCredentials": "Invalid email or password. Please try again.",
+  "checkInputTryAgain": "Please check your input and try again.",
+  "serverError": "Server error. Please try again later.",
+
+  "createAccount": "Create Account",
+  "signUpSubtitle": "Sign up to get started with MikroTik management",
+  "fullName": "Full Name",
+  "enterFullName": "Enter your full name",
+  "pleaseEnterName": "Please enter your name",
+  "nameMinLength": "Name must be at least 3 characters",
+  "createPassword": "Create a password",
+  "pleaseEnterAPassword": "Please enter a password",
+  "confirmPassword": "Confirm Password",
+  "reenterPassword": "Re-enter your password",
+  "pleaseConfirmPassword": "Please confirm your password",
+  "passwordsDoNotMatch": "Passwords do not match",
+  "alreadyHaveAccount": "Already have an account? ",
+  "emailAlreadyRegistered": "This email is already registered. Please login instead.",
+
+  "forgotPasswordTitle": "Forgot Password?",
+  "forgotPasswordSubtitle": "Enter your email address and we will send you a reset code.",
+  "sendResetCode": "Send Reset Code",
+  "resetCodeSent": "Reset code sent! Check your email or server logs.",
+  "failedSendResetCode": "Failed to send reset code. Try again.",
+  "somethingWentWrong": "Something went wrong. Please try again.",
+
+  "resetPassword": "Reset Password",
+  "resetPasswordSubtitle": "Enter the 6-digit code sent to {email} and your new password.",
+  "@resetPasswordSubtitle": {
+    "placeholders": {
+      "email": { "type": "String" }
+    }
+  },
+  "resetCode": "Reset Code",
+  "enterResetCode": "Enter 6-digit code",
+  "pleaseEnterResetCode": "Please enter the reset code",
+  "codeMustBe6Digits": "Code must be 6 digits",
+  "newPassword": "New Password",
+  "enterNewPassword": "Enter new password",
+  "pleaseEnterNewPassword": "Please enter a new password",
+  "passwordMin8Chars": "Password must be at least 8 characters",
+  "reenterNewPassword": "Re-enter new password",
+  "passwordResetSuccess": "Password reset successfully! Please log in.",
+  "failedResetPassword": "Failed to reset password. Try again.",
+
+  "settings": "Settings",
+  "management": "Management",
+  "monitoringAnalytics": "Monitoring & Analytics",
+  "monitoringSubtitle": "Real-time stats, bandwidth, and health",
+  "salesReports": "Sales & Reports",
+  "salesReportsSubtitle": "Voucher sales, revenue, and exports",
+  "general": "General",
+  "subscription": "Subscription",
+  "viewPlansManageSub": "View plans and manage subscription",
+  "active": "Active",
+  "expired": "Expired",
+  "none": "None",
+  "noActivePlanSelect": "No active plan — select one",
+  "billsPayments": "Bills & Payments",
+  "viewPaymentHistory": "View your payment history",
+  "profile": "Profile",
+  "manageYourAccount": "Manage your account",
+  "notifications": "Notifications",
+  "configureAlerts": "Configure alerts",
+  "about": "About",
+  "appVersion": "App version 1.0.0",
+  "language": "Language",
+  "languageSubtitle": "Change app language",
+  "english": "English",
+  "arabic": "Arabic",
+  "selectLanguage": "Select Language",
+
+  "hello": "Hello, {name}",
+  "@hello": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "hotspotOverview": "Here is your hotspot overview",
+  "totalRouters": "Total Routers",
+  "online": "Online",
+  "activeUsers": "Active Users",
+  "users": "Users",
+  "totalUsers": "Total Users",
+  "registered": "Registered",
+  "revenue": "Revenue",
+  "activeUsersRealtime": "Active Users Real-time",
+  "quickActions": "Quick Actions",
+  "addRouter": "Add Router",
+  "printVoucher": "Print Voucher",
+  "loadingDashboard": "Loading dashboard...",
+  "failedLoadDashboard": "Failed to Load Dashboard",
+  "tryAgain": "Try Again",
+  "subscriptionRequired": "Subscription Required",
+  "subscriptionRequiredMessage": "You need an active subscription to use this feature. Would you like to view available plans?",
+  "cancel": "Cancel",
+  "viewPlans": "View Plans",
+  "daysRemaining": "{days} days remaining",
+  "@daysRemaining": {
+    "placeholders": {
+      "days": { "type": "int" }
+    }
+  },
+  "noPlan": "No Plan",
+  "noSubscription": "No Subscription",
+  "tapToSelectPlan": "Tap to select a plan",
+  "tapToManagePlan": "Tap to manage your plan",
+
+  "routers": "Routers",
+  "dashboard": "Dashboard",
+  "vouchers": "Vouchers",
+
+  "loadingRouters": "Loading routers...",
+  "loadingStats": "Loading stats...",
+  "connectionFailed": "Connection Failed",
+  "goBack": "Go Back",
+  "retry": "Retry",
+  "noRoutersFound": "No Routers Found",
+  "addRouterToMonitor": "Add a router to start monitoring",
+  "tapRefreshLoadStats": "Tap refresh to load stats",
+  "routerOnline": "Router Online",
+  "routerOffline": "Router Offline",
+  "uptime": "Uptime: {value}",
+  "@uptime": {
+    "placeholders": {
+      "value": { "type": "String" }
+    }
+  },
+  "bandwidth": "Bandwidth",
+  "cpuLoad": "CPU Load",
+  "memory": "Memory",
+  "routerDetails": "Router Details",
+  "routerName": "Router Name",
+  "ipAddress": "IP Address",
+  "apiPort": "API Port",
+  "model": "Model",
+
+  "dailySales": "Daily Sales",
+  "monthlySales": "Monthly Sales",
+  "dataPoints": "{count} data points",
+  "@dataPoints": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "daily": "Daily",
+  "monthly": "Monthly",
+  "noSalesData": "No Sales Data",
+  "salesWillAppear": "Sales will appear here when you make your first sale",
+  "error": "Error",
+  "recentSales": "Recent Sales",
+  "viewSalesHistory": "View Sales History",
+  "loadingSalesHistory": "Loading sales history...",
+
+  "availablePlans": "Available Plans",
+  "selectPlanFits": "Select a plan that fits your needs",
+  "noActiveSubscription": "No Active Subscription",
+  "choosePlanBelow": "Choose a plan below to get started",
+  "subscriptionExpired": "Subscription expired",
+  "startDate": "Start Date",
+  "expires": "Expires",
+  "maxRouters": "Max Routers",
+  "maxHotspotUsers": "Max Hotspot Users",
+  "unlimited": "Unlimited",
+  "failedLoadPlans": "Failed to load plans",
+  "checkConnectionTryAgain": "Please check your connection and try again",
+  "noPlansAvailable": "No plans available",
+  "contactAdminPlans": "Contact your administrator to set up subscription plans",
+  "current": "CURRENT",
+  "currentPlan": "Current Plan",
+  "selectPlan": "Select Plan",
+  "upToRouters": "Up to {count} router(s)",
+  "@upToRouters": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "unlimitedHotspotUsers": "Unlimited hotspot users",
+  "upToHotspotUsers": "Up to {count} hotspot users",
+  "@upToHotspotUsers": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "voucherSystemIncluded": "Voucher system included",
+  "noVoucherSystem": "No voucher system",
+  "reportsAnalytics": "Reports & analytics",
+  "noReports": "No reports",
+
+  "requestSubmitted": "Request Submitted",
+  "paymentFor": "Payment for {plan}",
+  "@paymentFor": {
+    "placeholders": {
+      "plan": { "type": "String" }
+    }
+  },
+  "bankInfo": "Bank Info",
+  "uploadProof": "Upload Proof",
+  "transferInstructions": "Transfer the amount below to the bank account, then upload your payment confirmation.",
+  "bank": "Bank",
+  "accountName": "Account Name",
+  "accountNumber": "Account Number",
+  "amount": "Amount",
+  "iveSentMoney": "I've Sent the Money",
+  "failedLoadBankInfo": "Failed to load bank info",
+  "failedCreateRequest": "Failed to create request: {error}",
+  "@failedCreateRequest": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "uploadPaymentProof": "Upload a screenshot or photo of your payment confirmation.",
+  "tapToSelectImage": "Tap to select image",
+  "pngJpgUpTo5mb": "PNG, JPG up to 5MB",
+  "changeImage": "Change Image",
+  "skipForNow": "Skip for Now",
+  "requestSavedUploadLater": "Request saved. You can upload proof from Bills later.",
+  "submitProof": "Submit Proof",
+  "failedUploadProof": "Failed to upload proof: {error}",
+  "@failedUploadProof": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "paymentProofSubmitted": "Payment Proof Submitted",
+  "subscriptionRequestSubmitted": "Your subscription request has been submitted.\nAn admin will review your payment and activate your plan.",
+  "done": "Done",
+  "copiedToClipboard": "Copied to clipboard",
+
+  "failedLoadPayments": "Failed to load payments",
+  "noPaymentsYet": "No payments yet",
+  "paymentHistoryAppear": "Your payment history will appear here",
+  "approved": "Approved",
+  "rejected": "Rejected",
+  "pending": "Pending",
+  "date": "Date",
+  "method": "Method",
+  "planDuration": "Plan Duration",
+  "daysDuration": "{days} days",
+  "@daysDuration": {
+    "placeholders": {
+      "days": { "type": "int" }
+    }
+  },
+  "notes": "Notes",
+  "reviewed": "Reviewed",
+  "paymentProof": "Payment Proof",
+  "failedLoadImage": "Failed to load image",
+  "uploading": "Uploading...",
+  "proofUploadedSuccess": "Proof uploaded successfully",
+  "failedUpload": "Failed to upload: {error}",
+  "@failedUpload": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "noProofUploaded": "No proof uploaded",
+
+  "searchByCodeOrPlan": "Search by code or plan...",
+  "filterVouchers": "Filter Vouchers",
+  "all": "All",
+  "unused": "Unused",
+  "total": "Total",
+  "selected": "{count} Selected",
+  "@selected": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "selectAll": "Select All",
+  "deselectAll": "Deselect All",
+  "generate": "Generate",
+  "loadingVouchers": "Loading vouchers...",
+  "scrollForMore": "Scroll for more",
+  "shareVoucher": "Share Voucher",
+  "shareAsImage": "Share as Image",
+  "beautifulStyledCard": "Beautiful styled voucher card",
+  "shareAsText": "Share as Text",
+  "plainTextFormat": "Plain text format",
+  "shareQRCode": "Share QR Code",
+  "scannableQRImage": "Scannable QR image",
+  "printVoucherAction": "Print Voucher",
+  "shareVoucherAction": "Share Voucher",
+  "copyCode": "Copy Code",
+  "codeCopied": "Code copied to clipboard",
+  "showQRCode": "Show QR Code",
+  "deleteVoucher": "Delete Voucher",
+  "deleteVoucherConfirm": "Are you sure you want to delete this voucher? This action cannot be undone.",
+  "delete": "Delete",
+  "deleteVouchers": "Delete Vouchers",
+  "deleteVouchersConfirm": "Are you sure you want to delete {count} vouchers? This action cannot be undone.",
+  "@deleteVouchersConfirm": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "deletingVouchers": "Deleting vouchers...",
+  "scanToConnect": "Scan to Connect",
+  "close": "Close",
+  "print": "Print",
+  "share": "Share",
+
+  "generateVoucher": "Generate Voucher",
+  "selectRouter": "Select Router",
+  "chooseRouterForVouchers": "Choose the router for generating vouchers",
+  "configure": "Configure",
+  "confirm": "Confirm",
+  "configurePlan": "Configure Plan",
+  "setupVoucherDetails": "Set up the voucher details",
+  "limitType": "Limit Type",
+  "timeLimit": "Time Limit",
+  "dataLimit": "Data Limit",
+  "totalUse": "Total Use",
+  "totalOnlineTime": "Total Online Time",
+  "countsOnlyConnected": "Counts only when connected",
+  "totalTime": "Total Time",
+  "countsEvenOffline": "Counts even when offline",
+  "validityDuration": "Validity Duration",
+  "price": "Price",
+  "quantity": "Quantity",
+  "required": "Required",
+  "advancedOptions": "Advanced Options",
+  "codeFormat": "Code Format",
+  "numbersOnly": "Numbers Only (e.g., 12345678)",
+  "numbersAndLetters": "Numbers & Letters (e.g., AB12CD34)",
+  "lettersOnly": "Letters Only (e.g., ABCDEFGH)",
+  "continueBtn": "Continue",
+  "confirmGenerate": "Confirm & Generate",
+  "reviewVoucherSettings": "Review your voucher settings",
+  "plan": "Plan",
+  "duration": "Duration",
+  "router": "Router",
+  "vouchersCount": "{count} voucher(s)",
+  "@vouchersCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "priceEach": "Price Each",
+  "noRoutersFoundAdd": "No routers found",
+  "addRouterFirst": "Add a router first to generate vouchers",
+  "unknownRouter": "Unknown Router",
+  "noIP": "No IP",
+  "loadingProfiles": "Loading profiles...",
+  "noProfilesOnRouter": "No profiles found on this router",
+  "generateVouchersBtn": "Generate {count} Voucher(s)",
+  "@generateVouchersBtn": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+
+  "printVouchers": "Print Vouchers",
+  "printSettings": "Print Settings",
+  "paperFormat": "Paper Format",
+  "a4Paper": "A4 Paper",
+  "thermal58mm": "Thermal 58mm",
+  "thermal80mm": "Thermal 80mm",
+  "cardDesign": "Card Design",
+  "classic": "Classic",
+  "modern": "Modern",
+  "minimal": "Minimal",
+  "columns": "Columns: {count}",
+  "@columns": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "applyChanges": "Apply Changes",
+
+  "vouchersGenerated": "{count} Vouchers Generated!",
+  "@vouchersGenerated": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "voucherGenerated": "Voucher Generated!",
+  "vouchersReadyToUse": "Your vouchers are ready to use",
+  "copy": "Copy",
+  "username": "USERNAME",
+  "passwordLabel": "PASSWORD",
+
+  "myProfile": "My Profile",
+  "personalInformation": "Personal Information",
+  "emailAddressLabel": "Email Address",
+  "nameRequired": "Name is required",
+  "emailRequired": "Email is required",
+  "networkSettings": "Network Settings",
+  "networkName": "Network Name",
+  "networkNameHelper": "This name appears on printed vouchers",
+  "security": "Security",
+  "leaveEmptyKeepPassword": "Leave empty to keep current password",
+  "saveChanges": "Save Changes",
+  "logOut": "Log Out",
+  "confirmLogout": "Confirm Logout",
+  "confirmLogoutMessage": "Are you sure you want to log out of your account?",
+  "logout": "Logout",
+  "profileUpdated": "Profile updated successfully",
+  "loading": "Loading...",
+
+  "notificationSettings": "Notification Settings",
+  "configureNotifications": "Configure what notifications you receive from the app.",
+  "routerAlerts": "Router Alerts",
+  "routerStatus": "Router Status",
+  "routerStatusSubtitle": "Get notified when your routers go online or offline",
+  "routerStatusEnabled": "Router status notifications enabled",
+  "routerStatusDisabled": "Router status notifications disabled",
+  "comingSoon": "Coming Soon",
+  "soon": "Soon",
+  "lowBalanceAlert": "Low Balance Alert",
+  "lowBalanceSubtitle": "Get notified when voucher balance is low",
+  "dailySalesReport": "Daily Sales Report",
+  "dailySalesSubtitle": "Receive daily sales summary",
+
+  "noInternetConnection": "No Internet Connection",
+  "checkInternetConnection": "Please check your internet connection and try again.",
+  "connectionError": "Connection Error",
+  "serverErrorTitle": "Server Error",
+  "serverErrorMessage": "We're having trouble connecting to the server. Please try again later.",
+
+  "monitoring": "Monitoring",
+  "reports": "Reports",
+
+  "noRoutersYet": "No Routers Yet",
+  "noRoutersMessage": "Add your first MikroTik router to start managing hotspot vouchers and monitoring connections.",
+  "noVouchersYet": "No Vouchers Yet",
+  "noVouchersMessage": "Create your first voucher to start selling internet access. Make sure you have added a router first.",
+  "createVoucher": "Create Voucher",
+  "noSalesYet": "No Sales Yet",
+  "noSalesMessage": "Your sales history will appear here once you start selling vouchers to customers.",
+  "noActiveSessions": "No Active Sessions",
+  "noActiveSessionsMessage": "No users are currently connected to your hotspot. Active sessions will appear here.",
+  "noResultsFound": "No Results Found",
+  "noResultsMessage": "We couldn't find any results for \"{query}\". Try a different search term.",
+  "@noResultsMessage": {
+    "placeholders": {
+      "query": { "type": "String" }
+    }
+  },
+  "somethingWentWrongTitle": "Something Went Wrong",
+  "subscriptionRequiredTitle": "Subscription Required",
+  "subscriptionRequiredBody": "You need an active subscription to access this feature. Please subscribe to a plan to continue.",
+  "goToSubscriptions": "Go to Subscriptions",
+
+  "manual": "Manual",
+  "byScript": "By Script",
+  "routerAddedSuccess": "Router added successfully!",
+  "locationOptional": "Location (Optional)",
+  "vpnIpAssigned": "VPN IP assigned: {ip}",
+  "@vpnIpAssigned": {
+    "placeholders": {
+      "ip": { "type": "String" }
+    }
+  },
+  "runCommandsOnMikroTik": "Run these commands on your MikroTik Terminal (RouterOS v7):",
+  "importantNotes": "Important Notes:",
+  "importantNotesBody": "• Requires RouterOS v7 or later (WireGuard support)\n• Run each command in order in the MikroTik terminal\n• The VPN tunnel connects your router to Wassal securely",
+  "copyAllCommands": "Copy All Commands",
+  "allCommandsCopied": "All commands copied!",
+  "stepCopied": "Step {number} copied!",
+  "@stepCopied": {
+    "placeholders": {
+      "number": { "type": "int" }
+    }
+  },
+  "noSetupSteps": "No setup steps available.",
+  "needSubscriptionAddRouters": "You need an active subscription to add routers. Please subscribe to a plan to continue.",
+  "needSubscriptionFeature": "You need an active subscription to use this feature. Would you like to view available plans?"
+}

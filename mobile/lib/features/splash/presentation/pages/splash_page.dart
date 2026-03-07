@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/l10n/generated/app_localizations.dart';
 import '../bloc/splash_bloc.dart';
 import '../bloc/splash_event.dart';
 import '../bloc/splash_state.dart';
@@ -42,8 +43,8 @@ class SplashPage extends StatelessWidget {
       builder: (context, state) {
         if (state is SplashNoInternet) {
           return SplashErrorScreen(
-            title: 'No Internet Connection',
-            message: 'Please check your internet connection and try again.',
+            title: AppLocalizations.of(context)!.noInternetConnection,
+            message: AppLocalizations.of(context)!.checkInternetConnection,
             icon: Icons.wifi_off,
             onRetry: () {
               context.read<SplashBloc>().add(const RetrySplashChecks());
@@ -53,7 +54,7 @@ class SplashPage extends StatelessWidget {
 
         if (state is SplashServerError) {
           return SplashErrorScreen(
-            title: 'Connection Error',
+            title: AppLocalizations.of(context)!.connectionError,
             message: state.message,
             icon: Icons.cloud_off,
             onRetry: () {
@@ -197,9 +198,9 @@ class _MinimalSplashContentState extends State<_MinimalSplashContent>
                 builder: (context, child) {
                   return Opacity(
                     opacity: _fadeAnimation.value,
-                    child: const Text(
-                      'Wassal',
-                      style: TextStyle(
+                    child: Text(
+                      AppLocalizations.of(context)!.wassal,
+                      style: const TextStyle(
                         fontSize: 42,
                         fontWeight: FontWeight.w700,
                         color: Colors.white,

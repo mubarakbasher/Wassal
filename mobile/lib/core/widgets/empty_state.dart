@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/l10n/generated/app_localizations.dart';
 import '../../features/dashboard/presentation/pages/subscription_page.dart';
 
 /// Empty state widget with illustration and message
@@ -103,11 +104,12 @@ class EmptyRoutersState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return EmptyStateWidget(
       icon: Icons.router_outlined,
-      title: 'No Routers Yet',
-      message: 'Add your first MikroTik router to start managing hotspot vouchers and monitoring connections.',
-      actionLabel: 'Add Router',
+      title: l10n.noRoutersYet,
+      message: l10n.noRoutersMessage,
+      actionLabel: l10n.addRouter,
       onAction: onAddRouter,
       iconColor: Colors.blue,
     );
@@ -125,11 +127,12 @@ class EmptyVouchersState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return EmptyStateWidget(
       icon: Icons.confirmation_number_outlined,
-      title: 'No Vouchers Yet',
-      message: 'Create your first voucher to start selling internet access. Make sure you have added a router first.',
-      actionLabel: 'Create Voucher',
+      title: l10n.noVouchersYet,
+      message: l10n.noVouchersMessage,
+      actionLabel: l10n.createVoucher,
       onAction: onCreateVoucher,
       iconColor: Colors.green,
     );
@@ -142,10 +145,11 @@ class EmptySalesState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const EmptyStateWidget(
+    final l10n = AppLocalizations.of(context)!;
+    return EmptyStateWidget(
       icon: Icons.shopping_cart_outlined,
-      title: 'No Sales Yet',
-      message: 'Your sales history will appear here once you start selling vouchers to customers.',
+      title: l10n.noSalesYet,
+      message: l10n.noSalesMessage,
       iconColor: Colors.orange,
     );
   }
@@ -157,10 +161,11 @@ class EmptySessionsState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const EmptyStateWidget(
+    final l10n = AppLocalizations.of(context)!;
+    return EmptyStateWidget(
       icon: Icons.people_outline,
-      title: 'No Active Sessions',
-      message: 'No users are currently connected to your hotspot. Active sessions will appear here.',
+      title: l10n.noActiveSessions,
+      message: l10n.noActiveSessionsMessage,
       iconColor: Colors.purple,
     );
   }
@@ -177,10 +182,11 @@ class EmptySearchState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return EmptyStateWidget(
       icon: Icons.search_off,
-      title: 'No Results Found',
-      message: 'We couldn\'t find any results for "$searchQuery". Try a different search term.',
+      title: l10n.noResultsFound,
+      message: l10n.noResultsMessage(searchQuery),
       iconColor: Colors.grey,
     );
   }
@@ -254,7 +260,7 @@ class ErrorStateWidget extends StatelessWidget {
               ElevatedButton.icon(
                 onPressed: onRetry,
                 icon: const Icon(Icons.refresh),
-                label: const Text('Try Again'),
+                label: Text(AppLocalizations.of(context)!.tryAgain),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red[400],
                   foregroundColor: Colors.white,
@@ -319,9 +325,9 @@ class SubscriptionRequiredWidget extends StatelessWidget {
             const SizedBox(height: 24),
 
             // Title
-            const Text(
-              'Subscription Required',
-              style: TextStyle(
+            Text(
+              AppLocalizations.of(context)!.subscriptionRequiredTitle,
+              style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
                 color: Colors.black87,
@@ -332,7 +338,7 @@ class SubscriptionRequiredWidget extends StatelessWidget {
 
             // Message
             Text(
-              message ?? 'You need an active subscription to access this feature. Please subscribe to a plan to continue.',
+              message ?? AppLocalizations.of(context)!.subscriptionRequiredBody,
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.grey[600],
@@ -351,7 +357,7 @@ class SubscriptionRequiredWidget extends StatelessWidget {
                 );
               },
               icon: const Icon(Icons.subscriptions_outlined),
-              label: const Text('Go to Subscriptions'),
+              label: Text(AppLocalizations.of(context)!.goToSubscriptions),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.orange,
                 foregroundColor: Colors.white,
@@ -382,10 +388,11 @@ class NetworkErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return ErrorStateWidget(
       icon: Icons.wifi_off,
-      title: 'No Internet Connection',
-      message: 'Please check your internet connection and try again.',
+      title: l10n.noInternetConnection,
+      message: l10n.checkInternetConnection,
       onRetry: onRetry,
     );
   }
@@ -402,10 +409,11 @@ class ServerErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return ErrorStateWidget(
       icon: Icons.cloud_off,
-      title: 'Server Error',
-      message: 'We\'re having trouble connecting to the server. Please try again later.',
+      title: l10n.serverErrorTitle,
+      message: l10n.serverErrorMessage,
       onRetry: onRetry,
     );
   }

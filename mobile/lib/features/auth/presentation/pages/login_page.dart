@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/l10n/generated/app_localizations.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/custom_button.dart';
@@ -111,14 +112,14 @@ class _LoginPageState extends State<LoginPage> {
                     
                     // Title
                     Text(
-                      'Welcome Back',
+                      AppLocalizations.of(context)!.welcomeBack,
                       style: AppTextStyles.headlineLarge,
                     ),
                     
                     const SizedBox(height: 8),
                     
                     Text(
-                      'Sign in to manage your MikroTik hotspots',
+                      AppLocalizations.of(context)!.signInSubtitle,
                       style: AppTextStyles.bodyMedium.copyWith(
                         color: AppColors.textSecondary,
                       ),
@@ -129,17 +130,17 @@ class _LoginPageState extends State<LoginPage> {
                     // Email Field
                     CustomTextField(
                       controller: _emailController,
-                      label: 'Email Address',
-                      hint: 'Enter your email',
+                      label: AppLocalizations.of(context)!.emailAddress,
+                      hint: AppLocalizations.of(context)!.enterYourEmail,
                       keyboardType: TextInputType.emailAddress,
                       enabled: !isLoading,
                       prefixIcon: const Icon(Icons.email_outlined),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Please enter your email';
+                          return AppLocalizations.of(context)!.pleaseEnterEmail;
                         }
                         if (!value.contains('@')) {
-                          return 'Please enter a valid email';
+                          return AppLocalizations.of(context)!.pleaseEnterValidEmail;
                         }
                         return null;
                       },
@@ -150,8 +151,8 @@ class _LoginPageState extends State<LoginPage> {
                     // Password Field
                     CustomTextField(
                       controller: _passwordController,
-                      label: 'Password',
-                      hint: 'Enter your password',
+                      label: AppLocalizations.of(context)!.password,
+                      hint: AppLocalizations.of(context)!.enterYourPassword,
                       obscureText: _obscurePassword,
                       enabled: !isLoading,
                       prefixIcon: const Icon(Icons.lock_outline),
@@ -169,10 +170,10 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Please enter your password';
+                          return AppLocalizations.of(context)!.pleaseEnterPassword;
                         }
                         if (value.length < 6) {
-                          return 'Password must be at least 6 characters';
+                          return AppLocalizations.of(context)!.passwordMinLength;
                         }
                         return null;
                       },
@@ -192,7 +193,7 @@ class _LoginPageState extends State<LoginPage> {
                           );
                         },
                         child: Text(
-                          'Forgot Password?',
+                          AppLocalizations.of(context)!.forgotPasswordQ,
                           style: AppTextStyles.labelMedium.copyWith(
                             color: AppColors.primary,
                           ),
@@ -204,7 +205,7 @@ class _LoginPageState extends State<LoginPage> {
                     
                     // Login Button
                     CustomButton(
-                      text: 'Sign In',
+                      text: AppLocalizations.of(context)!.signIn,
                       onPressed: isLoading ? null : _onLogin,
                       isLoading: isLoading,
                     ),
@@ -216,7 +217,7 @@ class _LoginPageState extends State<LoginPage> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          "Don't have an account? ",
+                          AppLocalizations.of(context)!.dontHaveAccount,
                           style: AppTextStyles.bodyMedium,
                         ),
                         TextButton(
@@ -230,7 +231,7 @@ class _LoginPageState extends State<LoginPage> {
                                   );
                                 },
                           child: Text(
-                            'Sign Up',
+                            AppLocalizations.of(context)!.signUp,
                             style: AppTextStyles.labelLarge.copyWith(
                               color: AppColors.primary,
                             ),

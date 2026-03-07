@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/l10n/generated/app_localizations.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
@@ -47,14 +48,14 @@ class AppDrawerWidget extends StatelessWidget {
               ),
               ListTile(
                 leading: const Icon(Icons.dashboard),
-                title: const Text('Dashboard'),
+                title: Text(AppLocalizations.of(context)!.dashboard),
                 onTap: () {
                   Navigator.pop(context);
                 },
               ),
               ListTile(
                 leading: const Icon(Icons.router),
-                title: const Text('Routers'),
+                title: Text(AppLocalizations.of(context)!.routers),
                 onTap: () {
                   Navigator.pop(context);
                   Navigator.push(
@@ -65,7 +66,7 @@ class AppDrawerWidget extends StatelessWidget {
               ),
               ListTile(
                 leading: const Icon(Icons.analytics_outlined),
-                title: const Text('Monitoring'),
+                title: Text(AppLocalizations.of(context)!.monitoring),
                 onTap: () {
                   Navigator.pop(context);
                   Navigator.push(
@@ -76,7 +77,7 @@ class AppDrawerWidget extends StatelessWidget {
               ),
               ListTile(
                 leading: const Icon(Icons.bar_chart),
-                title: const Text('Reports'),
+                title: Text(AppLocalizations.of(context)!.reports),
                 onTap: () {
                   Navigator.pop(context);
                   Navigator.push(
@@ -88,11 +89,9 @@ class AppDrawerWidget extends StatelessWidget {
               const Divider(),
               ListTile(
                 leading: const Icon(Icons.settings),
-                title: const Text('Settings'),
+                title: Text(AppLocalizations.of(context)!.settings),
                 onTap: () {
                   Navigator.pop(context);
-                  // Navigate to settings tab (index 3 in bottom nav)
-                  // The parent DashboardPage controls tabs, so we just pop
                 },
               ),
             ],

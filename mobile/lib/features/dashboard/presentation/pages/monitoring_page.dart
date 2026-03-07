@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/l10n/generated/app_localizations.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/empty_state.dart';
@@ -136,7 +137,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
           const SizedBox(width: 16),
           Expanded(
             child: Text(
-              "Monitoring & Analytics",
+              AppLocalizations.of(context)!.monitoringAnalytics,
               style: AppTextStyles.headlineMedium,
             ),
           ),
@@ -191,9 +192,9 @@ class _MonitoringPageState extends State<MonitoringPage> {
           const SizedBox(width: 16),
           Expanded(
             child: _routers.isEmpty
-                ? const Text(
-                    'Loading routers...',
-                    style: TextStyle(color: Colors.white, fontSize: 16),
+                ? Text(
+                    AppLocalizations.of(context)!.loadingRouters,
+                    style: const TextStyle(color: Colors.white, fontSize: 16),
                   )
                 : DropdownButtonHideUnderline(
                     child: DropdownButton<String>(
@@ -231,7 +232,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
         const CircularProgressIndicator(color: AppColors.primary),
         const SizedBox(height: 16),
         Text(
-          'Loading stats...',
+          AppLocalizations.of(context)!.loadingStats,
           style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
         ),
       ],
@@ -274,7 +275,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
           ),
           const SizedBox(height: 20),
           Text(
-            'Connection Failed',
+            AppLocalizations.of(context)!.connectionFailed,
             style: AppTextStyles.headlineSmall.copyWith(color: AppColors.textPrimary),
           ),
           const SizedBox(height: 8),
@@ -290,7 +291,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
                 child: OutlinedButton.icon(
                   onPressed: () => Navigator.pop(context),
                   icon: const Icon(Icons.arrow_back),
-                  label: const Text('Go Back'),
+                  label: Text(AppLocalizations.of(context)!.goBack),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.textSecondary,
                     side: BorderSide(color: AppColors.border),
@@ -306,7 +307,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
                 child: ElevatedButton.icon(
                   onPressed: _fetchStats,
                   icon: const Icon(Icons.refresh),
-                  label: const Text('Retry'),
+                  label: Text(AppLocalizations.of(context)!.retry),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
@@ -325,11 +326,11 @@ class _MonitoringPageState extends State<MonitoringPage> {
   }
 
   Widget _buildNoRouterState() {
-    return const Center(
+    return Center(
       child: EmptyStateWidget(
         icon: Icons.router_outlined,
-        title: 'No Routers Found',
-        message: 'Add a router to start monitoring',
+        title: AppLocalizations.of(context)!.noRoutersFound,
+        message: AppLocalizations.of(context)!.addRouterToMonitor,
       ),
     );
   }
@@ -347,7 +348,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
           const Icon(Icons.analytics_outlined, size: 64, color: AppColors.textTertiary),
           const SizedBox(height: 16),
           Text(
-            'Tap refresh to load stats',
+            AppLocalizations.of(context)!.tapRefreshLoadStats,
             style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
           ),
         ],
@@ -391,7 +392,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      isOnline ? 'Router Online' : 'Router Offline',
+                      isOnline ? AppLocalizations.of(context)!.routerOnline : AppLocalizations.of(context)!.routerOffline,
                       style: AppTextStyles.bodyLarge.copyWith(
                         fontWeight: FontWeight.bold,
                         color: isOnline ? AppColors.success : AppColors.error,
@@ -399,7 +400,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
                     ),
                     if (stats['uptime'] != null)
                       Text(
-                        'Uptime: ${stats['uptime']}',
+                        AppLocalizations.of(context)!.uptime(stats['uptime'].toString()),
                         style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
                       ),
                   ],
@@ -415,14 +416,14 @@ class _MonitoringPageState extends State<MonitoringPage> {
         Row(
           children: [
             Expanded(child: _buildStatCard(
-              'Active Users',
+              AppLocalizations.of(context)!.activeUsers,
               '${stats['activeUsers'] ?? 0}',
               Icons.people_outline_rounded,
               AppColors.primary,
             )),
             const SizedBox(width: 12),
             Expanded(child: _buildStatCard(
-              'Bandwidth',
+              AppLocalizations.of(context)!.bandwidth,
               _formatBytes(stats['totalBandwidth']?.toString()),
               Icons.speed_rounded,
               Colors.orange,
@@ -435,14 +436,14 @@ class _MonitoringPageState extends State<MonitoringPage> {
         Row(
           children: [
             Expanded(child: _buildStatCard(
-              'CPU Load',
+              AppLocalizations.of(context)!.cpuLoad,
               '${stats['cpuLoad'] ?? 0}%',
               Icons.memory_rounded,
               Colors.purple,
             )),
             const SizedBox(width: 12),
             Expanded(child: _buildStatCard(
-              'Memory',
+              AppLocalizations.of(context)!.memory,
               '${stats['memoryUsage'] ?? 0}%',
               Icons.storage_rounded,
               Colors.teal,
@@ -453,7 +454,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
         const SizedBox(height: 24),
         
         // Router Info
-        Text('Router Details', style: AppTextStyles.bodyLarge.copyWith(fontWeight: FontWeight.bold)),
+        Text(AppLocalizations.of(context)!.routerDetails, style: AppTextStyles.bodyLarge.copyWith(fontWeight: FontWeight.bold)),
         const SizedBox(height: 12),
         
         Container(
@@ -464,13 +465,13 @@ class _MonitoringPageState extends State<MonitoringPage> {
           ),
           child: Column(
             children: [
-              _buildInfoRow('Router Name', _selectedRouter?.name ?? '-'),
+              _buildInfoRow(AppLocalizations.of(context)!.routerName, _selectedRouter?.name ?? '-'),
               const Divider(height: 24),
-              _buildInfoRow('IP Address', _selectedRouter?.ipAddress ?? '-'),
+              _buildInfoRow(AppLocalizations.of(context)!.ipAddress, _selectedRouter?.ipAddress ?? '-'),
               const Divider(height: 24),
-              _buildInfoRow('API Port', '${_selectedRouter?.apiPort ?? '-'}'),
+              _buildInfoRow(AppLocalizations.of(context)!.apiPort, '${_selectedRouter?.apiPort ?? '-'}'),
               const Divider(height: 24),
-              _buildInfoRow('Model', stats['model']?.toString() ?? '-'),
+              _buildInfoRow(AppLocalizations.of(context)!.model, stats['model']?.toString() ?? '-'),
             ],
           ),
         ),

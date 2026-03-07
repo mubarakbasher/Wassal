@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/l10n/generated/app_localizations.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/providers/locale_provider.dart';
 import 'bills_page.dart';
 import 'monitoring_page.dart';
 import 'reports_page.dart';
 import 'subscription_page.dart';
 import '../../../../features/profiles/presentation/pages/profile_page.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../features/auth/presentation/bloc/auth_bloc.dart';
 import '../../../../features/auth/presentation/bloc/auth_event.dart';
 import '../../../../features/auth/presentation/bloc/auth_state.dart';
@@ -30,7 +32,7 @@ class _SettingsPageState extends State<SettingsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Settings'),
+        title: Text(AppLocalizations.of(context)!.settings),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
@@ -38,12 +40,12 @@ class _SettingsPageState extends State<SettingsPage> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _buildSectionHeader('Management'),
+          _buildSectionHeader(AppLocalizations.of(context)!.management),
           _buildSettingsTile(
             context,
             icon: Icons.analytics_outlined,
-            title: 'Monitoring & Analytics',
-            subtitle: 'Real-time stats, bandwidth, and health',
+            title: AppLocalizations.of(context)!.monitoringAnalytics,
+            subtitle: AppLocalizations.of(context)!.monitoringSubtitle,
              onTap: () {
               Navigator.push(
                 context,
@@ -54,8 +56,8 @@ class _SettingsPageState extends State<SettingsPage> {
           _buildSettingsTile(
             context,
             icon: Icons.bar_chart_rounded,
-            title: 'Sales & Reports',
-            subtitle: 'Voucher sales, revenue, and exports',
+            title: AppLocalizations.of(context)!.salesReports,
+            subtitle: AppLocalizations.of(context)!.salesReportsSubtitle,
              onTap: () {
               Navigator.push(
                 context,
@@ -64,12 +66,12 @@ class _SettingsPageState extends State<SettingsPage> {
             },
           ),
           const SizedBox(height: 20),
-          _buildSectionHeader('General'),
+          _buildSectionHeader(AppLocalizations.of(context)!.general),
 
           // Subscription tile with live status
           BlocBuilder<AuthBloc, AuthState>(
             builder: (context, state) {
-              String subtitle = 'View plans and manage subscription';
+              String subtitle = AppLocalizations.of(context)!.viewPlansManageSub;
               Widget? trailing;
 
               if (state is AuthAuthenticated && state.user.subscription != null) {
@@ -77,7 +79,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 final isExpired = sub.expiresAt.isBefore(DateTime.now());
                 final isActive = sub.status == 'ACTIVE' && !isExpired;
 
-                subtitle = '${sub.planName} • ${isActive ? 'Active' : isExpired ? 'Expired' : sub.status}';
+                subtitle = '${sub.planName} • ${isActive ? AppLocalizations.of(context)!.active : isExpired ? AppLocalizations.of(context)!.expired : sub.status}';
                 trailing = Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
@@ -85,7 +87,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    isActive ? 'Active' : isExpired ? 'Expired' : sub.status,
+                    isActive ? AppLocalizations.of(context)!.active : isExpired ? AppLocalizations.of(context)!.expired : sub.status,
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -94,15 +96,15 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                 );
               } else {
-                subtitle = 'No active plan — select one';
+                subtitle = AppLocalizations.of(context)!.noActivePlanSelect;
                 trailing = Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: AppColors.warning,
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: const Text(
-                    'None',
+                  child: Text(
+                    AppLocalizations.of(context)!.none,
                     style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -115,7 +117,7 @@ class _SettingsPageState extends State<SettingsPage> {
               return _buildSettingsTileCustom(
                 context,
                 icon: Icons.workspace_premium_outlined,
-                title: 'Subscription',
+                title: AppLocalizations.of(context)!.subscription,
                 subtitle: subtitle,
                 trailing: trailing,
                 onTap: () {
@@ -134,8 +136,8 @@ class _SettingsPageState extends State<SettingsPage> {
           _buildSettingsTile(
             context,
             icon: Icons.receipt_long_outlined,
-            title: 'Bills & Payments',
-            subtitle: 'View your payment history',
+            title: AppLocalizations.of(context)!.billsPayments,
+            subtitle: AppLocalizations.of(context)!.viewPaymentHistory,
             onTap: () {
               Navigator.push(
                 context,
@@ -147,8 +149,8 @@ class _SettingsPageState extends State<SettingsPage> {
           _buildSettingsTile(
             context,
             icon: Icons.person_outline,
-            title: 'Profile',
-            subtitle: 'Manage your account',
+            title: AppLocalizations.of(context)!.profile,
+            subtitle: AppLocalizations.of(context)!.manageYourAccount,
             onTap: () {
               Navigator.push(
                 context,
@@ -159,8 +161,8 @@ class _SettingsPageState extends State<SettingsPage> {
           _buildSettingsTile(
             context,
             icon: Icons.notifications_none,
-            title: 'Notifications',
-            subtitle: 'Configure alerts',
+            title: AppLocalizations.of(context)!.notifications,
+            subtitle: AppLocalizations.of(context)!.configureAlerts,
             onTap: () {
               Navigator.push(
                 context,
@@ -168,14 +170,63 @@ class _SettingsPageState extends State<SettingsPage> {
               );
             },
           ),
+          _buildSettingsTile(
+            context,
+            icon: Icons.language,
+            title: AppLocalizations.of(context)!.language,
+            subtitle: AppLocalizations.of(context)!.languageSubtitle,
+            onTap: () {
+              _showLanguageDialog(context);
+            },
+          ),
            _buildSettingsTile(
             context,
             icon: Icons.info_outline,
-            title: 'About',
-            subtitle: 'App version 1.0.0',
+            title: AppLocalizations.of(context)!.about,
+            subtitle: AppLocalizations.of(context)!.appVersion,
             onTap: () {},
           ),
         ],
+      ),
+    );
+  }
+
+  void _showLanguageDialog(BuildContext context) {
+    final localeProvider = context.read<LocaleProvider>();
+    final l10n = AppLocalizations.of(context)!;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.selectLanguage),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Text('🇬🇧', style: TextStyle(fontSize: 24)),
+              title: Text(l10n.english),
+              trailing: localeProvider.locale.languageCode == 'en'
+                  ? const Icon(Icons.check_circle, color: AppColors.primary)
+                  : null,
+              onTap: () {
+                localeProvider.setLocale(const Locale('en'));
+                Navigator.pop(ctx);
+              },
+            ),
+            ListTile(
+              leading: const Text('🇸🇦', style: TextStyle(fontSize: 24)),
+              title: Text(l10n.arabic),
+              trailing: localeProvider.locale.languageCode == 'ar'
+                  ? const Icon(Icons.check_circle, color: AppColors.primary)
+                  : null,
+              onTap: () {
+                localeProvider.setLocale(const Locale('ar'));
+                Navigator.pop(ctx);
+              },
+            ),
+          ],
+        ),
       ),
     );
   }

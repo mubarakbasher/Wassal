@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/l10n/generated/app_localizations.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/api/api_client.dart';
@@ -99,7 +100,7 @@ class _BillsPageState extends State<BillsPage> {
           ),
           const SizedBox(width: 16),
           Expanded(
-            child: Text('Bills & Payments', style: AppTextStyles.headlineMedium),
+            child: Text(AppLocalizations.of(context)!.billsPayments, style: AppTextStyles.headlineMedium),
           ),
         ],
       ),
@@ -122,12 +123,12 @@ class _BillsPageState extends State<BillsPage> {
             children: [
               Icon(Icons.cloud_off_outlined, size: 48, color: AppColors.error.withValues(alpha: 0.6)),
               const SizedBox(height: 16),
-              Text('Failed to load payments', style: AppTextStyles.titleMedium),
+              Text(AppLocalizations.of(context)!.failedLoadPayments, style: AppTextStyles.titleMedium),
               const SizedBox(height: 16),
               ElevatedButton.icon(
                 onPressed: _loadPayments,
                 icon: const Icon(Icons.refresh, size: 18),
-                label: const Text('Retry'),
+                label: Text(AppLocalizations.of(context)!.retry),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
@@ -150,12 +151,12 @@ class _BillsPageState extends State<BillsPage> {
                 Icon(Icons.receipt_long_outlined, size: 64, color: Colors.grey[300]),
                 const SizedBox(height: 16),
                 Text(
-                  'No payments yet',
+                  AppLocalizations.of(context)!.noPaymentsYet,
                   style: AppTextStyles.titleMedium.copyWith(color: AppColors.textSecondary),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Your payment history will appear here',
+                  AppLocalizations.of(context)!.paymentHistoryAppear,
                   style: AppTextStyles.bodySmall,
                 ),
               ],
@@ -365,7 +366,7 @@ class _PaymentDetailSheetState extends State<_PaymentDetailSheet> {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Proof uploaded successfully'),
+            content: Text(AppLocalizations.of(context)!.proofUploadedSuccess),
             backgroundColor: AppColors.success,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -454,18 +455,18 @@ class _PaymentDetailSheetState extends State<_PaymentDetailSheet> {
             const SizedBox(height: 24),
             const Divider(),
             const SizedBox(height: 16),
-            _buildDetailRow('Date', widget.dateStr),
-            _buildDetailRow('Method', payment.method),
-            _buildDetailRow('Plan Duration', '${payment.planDays} days'),
+            _buildDetailRow(AppLocalizations.of(context)!.date, widget.dateStr),
+            _buildDetailRow(AppLocalizations.of(context)!.method, payment.method),
+            _buildDetailRow(AppLocalizations.of(context)!.planDuration, '${payment.planDays} days'),
             if (payment.notes != null && payment.notes!.isNotEmpty)
-              _buildDetailRow('Notes', payment.notes!),
+              _buildDetailRow(AppLocalizations.of(context)!.notes, payment.notes!),
             if (payment.reviewedAt != null)
               _buildDetailRow(
-                'Reviewed',
+                AppLocalizations.of(context)!.reviewed,
                 DateFormat('MMM dd, yyyy – hh:mm a').format(payment.reviewedAt!),
               ),
             const SizedBox(height: 16),
-            Text('Payment Proof', style: AppTextStyles.titleMedium),
+            Text(AppLocalizations.of(context)!.paymentProof, style: AppTextStyles.titleMedium),
             const SizedBox(height: 10),
             if (hasProof)
               ClipRRect(
@@ -487,7 +488,7 @@ class _PaymentDetailSheetState extends State<_PaymentDetailSheet> {
                         children: [
                           Icon(Icons.broken_image_outlined, size: 40, color: Colors.grey[400]),
                           const SizedBox(height: 8),
-                          Text('Failed to load image', style: AppTextStyles.bodySmall),
+                          Text(AppLocalizations.of(context)!.failedLoadImage, style: AppTextStyles.bodySmall),
                         ],
                       ),
                     ),
@@ -506,7 +507,7 @@ class _PaymentDetailSheetState extends State<_PaymentDetailSheet> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(Icons.upload_file),
-                  label: Text(_uploading ? 'Uploading...' : 'Upload Proof'),
+                  label: Text(_uploading ? AppLocalizations.of(context)!.uploading : AppLocalizations.of(context)!.uploadProof),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.primary,
                     padding: const EdgeInsets.symmetric(vertical: 14),
@@ -526,7 +527,7 @@ class _PaymentDetailSheetState extends State<_PaymentDetailSheet> {
                   children: [
                     Icon(Icons.image_not_supported_outlined, color: Colors.grey[400]),
                     const SizedBox(width: 12),
-                    Text('No proof uploaded', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary)),
+                    Text(AppLocalizations.of(context)!.noProofUploaded, style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary)),
                   ],
                 ),
               ),
