@@ -28,29 +28,17 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   }
 
   Future<void> _onSubmit() async {
-    // #region agent log
-    print('[DEBUG-e14aa1] H4: _onSubmit called, email="${_emailController.text.trim()}", isLoading=$_isLoading');
-    // #endregion
     if (_formKey.currentState!.validate()) {
-      // #region agent log
-      print('[DEBUG-e14aa1] H4: form validation passed');
-      // #endregion
       setState(() {
         _isLoading = true;
       });
 
       try {
         final apiClient = ApiClient();
-        // #region agent log
-        print('[DEBUG-e14aa1] H2: calling POST ${ApiEndpoints.forgotPassword}');
-        // #endregion
-        final response = await apiClient.post(
+        await apiClient.post(
           ApiEndpoints.forgotPassword,
           data: {'email': _emailController.text.trim()},
         );
-        // #region agent log
-        print('[DEBUG-e14aa1] H2: API success, status=${response.statusCode}, data=${response.data}');
-        // #endregion
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -70,9 +58,6 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
           );
         }
       } on DioException catch (e) {
-        // #region agent log
-        print('[DEBUG-e14aa1] H2/H3: DioException type=${e.type}, status=${e.response?.statusCode}, data=${e.response?.data}, message=${e.message}');
-        // #endregion
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -84,9 +69,6 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
           );
         }
       } catch (e) {
-        // #region agent log
-        print('[DEBUG-e14aa1] H2: generic exception: $e');
-        // #endregion
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -102,10 +84,6 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
           });
         }
       }
-    } else {
-      // #region agent log
-      print('[DEBUG-e14aa1] H4: form validation FAILED');
-      // #endregion
     }
   }
 
