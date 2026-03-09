@@ -684,8 +684,10 @@ export class MikroTikApiService {
     }
 
     /**
-     * Configure all RADIUS settings on a router using a SINGLE connection.
-     * Avoids the overhead of 8+ separate TCP connections through VPN.
+     * Configure all RADIUS settings on a router using TWO connections:
+     *  - Phase 1: Hotspot profile configuration (reliable, fast)
+     *  - Phase 2: RADIUS server entry (may hang on some routers)
+     * Separated so that /radius/* hangs don't corrupt the profile connection.
      */
     async configureAllRadiusInOneConnection(
         connection: MikroTikConnection,
@@ -698,11 +700,9 @@ export class MikroTikApiService {
         loginResult: MikroTikCommandResult;
         pageResult: MikroTikCommandResult;
     }> {
-        const api = this.createApi(connection, 30);
-
         // #region agent log
         const _start = Date.now();
-        this.logger.warn(`[DEBUG-cdbc15] configureAllRadiusInOneConnection START on ${connection.host}`);
+        this.logger.warn(`[DEBUG-cdbc15] configureAllRadius START on ${connection.host}`);
         // #endregion
 
         let addResult: MikroTikCommandResult = { success: false, error: 'Not executed' };
@@ -710,52 +710,23 @@ export class MikroTikApiService {
         let loginResult: MikroTikCommandResult = { success: false, error: 'Not executed' };
         let pageResult: MikroTikCommandResult = { success: false, error: 'Not executed' };
 
+        // ── Phase 1: Configure hotspot profiles (reliable commands) ──
+        const profileApi = this.createApi(connection, 30);
         try {
             // #region agent log
-            const _connStart = Date.now();
+            const _p1Start = Date.now();
             // #endregion
-            await api.connect();
+            await profileApi.connect();
             // #region agent log
-            this.logger.warn(`[DEBUG-cdbc15] Single connection established in ${Date.now() - _connStart}ms`);
-            // #endregion
-
-            // --- Step 1: Add/update RADIUS server entry ---
-            // #region agent log
-            let _stepStart = Date.now();
-            // #endregion
-            const existing = await this.writeCommand(api, '/radius/print', [`?address=${radiusServerIp}`]);
-            if (existing.success && existing.data && existing.data.length > 0) {
-                const id = existing.data[0]['.id'];
-                addResult = await this.writeCommand(api, '/radius/set', [
-                    `=.id=${id}`, `=service=hotspot`, `=address=${radiusServerIp}`,
-                    `=secret=${secret}`, `=authentication-port=1812`,
-                    `=accounting-port=1813`, `=timeout=3000ms`,
-                ]);
-            } else {
-                addResult = await this.writeCommand(api, '/radius/add', [
-                    `=service=hotspot`, `=address=${radiusServerIp}`,
-                    `=secret=${secret}`, `=authentication-port=1812`,
-                    `=accounting-port=1813`, `=timeout=3000ms`,
-                ]);
-            }
-            // #region agent log
-            this.logger.warn(`[DEBUG-cdbc15] Step1 addRadius: ${Date.now() - _stepStart}ms success=${addResult.success}`);
+            this.logger.warn(`[DEBUG-cdbc15] Phase1 connected in ${Date.now() - _p1Start}ms`);
             // #endregion
 
-            // --- Fetch hotspot profiles ONCE (used by steps 2, 3, 4) ---
+            const profiles = await this.writeCommand(profileApi, '/ip/hotspot/profile/print');
             // #region agent log
-            _stepStart = Date.now();
-            // #endregion
-            const profiles = await this.writeCommand(api, '/ip/hotspot/profile/print');
-            // #region agent log
-            this.logger.warn(`[DEBUG-cdbc15] profilesFetch: ${Date.now() - _stepStart}ms found=${profiles.data?.length || 0}`);
+            this.logger.warn(`[DEBUG-cdbc15] Phase1 profilesFetch: found=${profiles.data?.length || 0}`);
             // #endregion
 
             if (profiles.success && profiles.data && profiles.data.length > 0) {
-                // --- Step 2: Enable RADIUS on all hotspot profiles ---
-                // #region agent log
-                _stepStart = Date.now();
-                // #endregion
                 for (const profile of profiles.data) {
                     const id = profile['.id'];
                     const args = [
@@ -763,58 +734,82 @@ export class MikroTikApiService {
                         `=radius-accounting=yes`, `=radius-interim-update=00:05:00`,
                     ];
                     if (routerId) args.push(`=location-name=${routerId}`);
-                    enableResult = await this.writeCommand(api, '/ip/hotspot/profile/set', args);
+                    enableResult = await this.writeCommand(profileApi, '/ip/hotspot/profile/set', args);
                 }
-                // #region agent log
-                this.logger.warn(`[DEBUG-cdbc15] Step2 enableRadius: ${Date.now() - _stepStart}ms success=${enableResult.success}`);
-                // #endregion
 
-                // --- Step 3: Set login to HTTP PAP ---
-                // #region agent log
-                _stepStart = Date.now();
-                // #endregion
                 for (const profile of profiles.data) {
                     const id = profile['.id'];
-                    loginResult = await this.writeCommand(api, '/ip/hotspot/profile/set', [
+                    loginResult = await this.writeCommand(profileApi, '/ip/hotspot/profile/set', [
                         `=.id=${id}`, `=login-by=http-pap`,
                     ]);
                 }
-                // #region agent log
-                this.logger.warn(`[DEBUG-cdbc15] Step3 loginConfig: ${Date.now() - _stepStart}ms success=${loginResult.success}`);
-                // #endregion
 
-                // --- Step 4: Set html-directory for username-only login ---
-                // #region agent log
-                _stepStart = Date.now();
-                // #endregion
                 for (const profile of profiles.data) {
                     const id = profile['.id'];
-                    pageResult = await this.writeCommand(api, '/ip/hotspot/profile/set', [
+                    pageResult = await this.writeCommand(profileApi, '/ip/hotspot/profile/set', [
                         `=.id=${id}`, `=login-by=http-pap`, `=html-directory=hotspot`,
                     ]);
                 }
-                // #region agent log
-                this.logger.warn(`[DEBUG-cdbc15] Step4 loginPage: ${Date.now() - _stepStart}ms success=${pageResult.success}`);
-                // #endregion
             } else {
                 enableResult = { success: false, error: 'No hotspot server profiles found' };
                 loginResult = { success: false, error: 'No hotspot server profiles found' };
                 pageResult = { success: false, error: 'No hotspot server profiles found' };
             }
 
-            await api.close();
+            await profileApi.close();
+            // #region agent log
+            this.logger.warn(`[DEBUG-cdbc15] Phase1 DONE in ${Date.now() - _p1Start}ms enable=${enableResult.success} login=${loginResult.success} page=${pageResult.success}`);
+            // #endregion
         } catch (error) {
-            this.logger.error(`configureAllRadiusInOneConnection failed: ${error.message}`);
-            try { await api.close(); } catch (e) { }
-            const errResult = { success: false, error: error.message };
-            if (!addResult.success && addResult.error === 'Not executed') addResult = errResult;
-            if (!enableResult.success && enableResult.error === 'Not executed') enableResult = errResult;
-            if (!loginResult.success && loginResult.error === 'Not executed') loginResult = errResult;
-            if (!pageResult.success && pageResult.error === 'Not executed') pageResult = errResult;
+            this.logger.error(`Phase1 profile config failed: ${error.message}`);
+            try { await profileApi.close(); } catch (e) { }
+        }
+
+        // ── Phase 2: RADIUS server entry (may hang — isolated connection) ──
+        const radiusApi = this.createApi(connection, 15);
+        try {
+            // #region agent log
+            const _p2Start = Date.now();
+            // #endregion
+            await radiusApi.connect();
+            // #region agent log
+            this.logger.warn(`[DEBUG-cdbc15] Phase2 connected in ${Date.now() - _p2Start}ms`);
+            // #endregion
+
+            const existing = await this.writeCommand(radiusApi, '/radius/print', [`?address=${radiusServerIp}`]);
+            if (existing.success && existing.data && existing.data.length > 0) {
+                const id = existing.data[0]['.id'];
+                addResult = await this.writeCommand(radiusApi, '/radius/set', [
+                    `=.id=${id}`, `=service=hotspot`, `=address=${radiusServerIp}`,
+                    `=secret=${secret}`, `=authentication-port=1812`,
+                    `=accounting-port=1813`, `=timeout=3000ms`,
+                ]);
+            } else if (existing.success) {
+                addResult = await this.writeCommand(radiusApi, '/radius/add', [
+                    `=service=hotspot`, `=address=${radiusServerIp}`,
+                    `=secret=${secret}`, `=authentication-port=1812`,
+                    `=accounting-port=1813`, `=timeout=3000ms`,
+                ]);
+            } else {
+                addResult = await this.writeCommand(radiusApi, '/radius/add', [
+                    `=service=hotspot`, `=address=${radiusServerIp}`,
+                    `=secret=${secret}`, `=authentication-port=1812`,
+                    `=accounting-port=1813`, `=timeout=3000ms`,
+                ]);
+            }
+
+            await radiusApi.close();
+            // #region agent log
+            this.logger.warn(`[DEBUG-cdbc15] Phase2 DONE in ${Date.now() - _p2Start}ms add=${addResult.success}`);
+            // #endregion
+        } catch (error) {
+            this.logger.warn(`Phase2 RADIUS entry failed: ${error.message}`);
+            try { await radiusApi.close(); } catch (e) { }
+            if (addResult.error === 'Not executed') addResult = { success: false, error: error.message };
         }
 
         // #region agent log
-        this.logger.warn(`[DEBUG-cdbc15] configureAllRadiusInOneConnection DONE total=${Date.now() - _start}ms`);
+        this.logger.warn(`[DEBUG-cdbc15] configureAllRadius DONE total=${Date.now() - _start}ms`);
         // #endregion
 
         return { addResult, enableResult, loginResult, pageResult };
