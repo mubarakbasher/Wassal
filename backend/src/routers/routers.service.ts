@@ -154,71 +154,45 @@ export class RoutersService {
         try {
             const conn = { host: ipAddress, port: apiPort, username, password };
 
-            // Step 1: Add RADIUS server entry on the router
             // #region agent log
             _stepStart = Date.now();
-            this.logger.warn(`[DEBUG-cdbc15] Step1 addRadiusServer START host=${ipAddress}:${apiPort}`);
+            this.logger.warn(`[DEBUG-cdbc15] configureAllRadiusInOneConnection START host=${ipAddress}:${apiPort}`);
             // #endregion
-            const addResult = await this.mikrotikApi.addRadiusServer(conn, radiusServerIp, radiusSecret);
+
+            const result = await this.mikrotikApi.configureAllRadiusInOneConnection(
+                conn, radiusServerIp, radiusSecret, routerId,
+            );
+
             // #region agent log
-            _timings['addRadiusServer'] = Date.now() - _stepStart;
-            this.logger.warn(`[DEBUG-cdbc15] Step1 addRadiusServer: ${_timings['addRadiusServer']}ms success=${addResult.success}`);
+            _timings['singleConnectionRadius'] = Date.now() - _stepStart;
+            this.logger.warn(`[DEBUG-cdbc15] configureAllRadiusInOneConnection: ${_timings['singleConnectionRadius']}ms`);
             // #endregion
-            if (addResult.success) {
+
+            if (result.addResult.success) {
                 this.logger.log(`RADIUS server ${radiusServerIp} added to router ${routerName}`);
             } else {
-                warnings.push(`Failed to add RADIUS server entry: ${addResult.error}`);
-                this.logger.warn(`Failed to add RADIUS server to ${routerName}: ${addResult.error}`);
+                warnings.push(`Failed to add RADIUS server entry: ${result.addResult.error}`);
+                this.logger.warn(`Failed to add RADIUS server to ${routerName}: ${result.addResult.error}`);
             }
 
-            // Step 2: Enable RADIUS on hotspot server profiles
-            // #region agent log
-            _stepStart = Date.now();
-            this.logger.warn(`[DEBUG-cdbc15] Step2 enableHotspotRadius START`);
-            // #endregion
-            const enableResult = await this.mikrotikApi.enableHotspotRadius(conn, routerId);
-            // #region agent log
-            _timings['enableHotspotRadius'] = Date.now() - _stepStart;
-            this.logger.warn(`[DEBUG-cdbc15] Step2 enableHotspotRadius: ${_timings['enableHotspotRadius']}ms success=${enableResult.success}`);
-            // #endregion
-            if (enableResult.success) {
+            if (result.enableResult.success) {
                 this.logger.log(`RADIUS enabled on hotspot for router ${routerName} with location-name=${routerId}`);
                 radiusConfigured = true;
             } else {
-                warnings.push(`Failed to enable RADIUS on hotspot: ${enableResult.error}`);
-                this.logger.warn(`Failed to enable RADIUS on hotspot for ${routerName}: ${enableResult.error}`);
+                warnings.push(`Failed to enable RADIUS on hotspot: ${result.enableResult.error}`);
+                this.logger.warn(`Failed to enable RADIUS on hotspot for ${routerName}: ${result.enableResult.error}`);
             }
 
-            // Step 3: Configure hotspot login to HTTP PAP (fixes "did not send challenge response" error)
-            // #region agent log
-            _stepStart = Date.now();
-            this.logger.warn(`[DEBUG-cdbc15] Step3 configureHotspotLogin START`);
-            // #endregion
-            const loginResult = await this.mikrotikApi.configureHotspotLogin(conn);
-            // #region agent log
-            _timings['configureHotspotLogin'] = Date.now() - _stepStart;
-            this.logger.warn(`[DEBUG-cdbc15] Step3 configureHotspotLogin: ${_timings['configureHotspotLogin']}ms success=${loginResult.success}`);
-            // #endregion
-            if (loginResult.success) {
+            if (result.loginResult.success) {
                 this.logger.log(`Hotspot login set to HTTP PAP on ${routerName}`);
             } else {
-                warnings.push(`Failed to set login method: ${loginResult.error}`);
+                warnings.push(`Failed to set login method: ${result.loginResult.error}`);
             }
 
-            // Step 4: Upload username-only login page (hides password field)
-            // #region agent log
-            _stepStart = Date.now();
-            this.logger.warn(`[DEBUG-cdbc15] Step4 uploadUsernameOnlyLoginPage START`);
-            // #endregion
-            const pageResult = await this.mikrotikApi.uploadUsernameOnlyLoginPage(conn);
-            // #region agent log
-            _timings['uploadLoginPage'] = Date.now() - _stepStart;
-            this.logger.warn(`[DEBUG-cdbc15] Step4 uploadUsernameOnlyLoginPage: ${_timings['uploadLoginPage']}ms success=${pageResult.success}`);
-            // #endregion
-            if (pageResult.success) {
+            if (result.pageResult.success) {
                 this.logger.log(`Username-only login page uploaded to ${routerName}`);
             } else {
-                warnings.push(`Login page upload failed: ${pageResult.error} — may need manual setup`);
+                warnings.push(`Login page upload failed: ${result.pageResult.error} — may need manual setup`);
             }
         } catch (error) {
             warnings.push(`Auto RADIUS setup failed: ${error.message}`);

@@ -654,6 +654,165 @@ export class MikroTikApiService {
     }
 
     /**
+     * Execute a command on an already-connected API instance (no connect/close overhead).
+     */
+    private async writeCommand(api: any, command: string, params?: any[]): Promise<MikroTikCommandResult> {
+        try {
+            let response;
+            if (params && params.length > 0) {
+                response = await api.write(command, params);
+            } else {
+                response = await api.write(command);
+            }
+            return { success: true, data: response || [] };
+        } catch (error) {
+            const errorMessage = error.message || '';
+            const errorErrno = error.errno || '';
+            if (errorErrno === 'UNKNOWNREPLY' || errorMessage.includes('!empty') || errorMessage.includes('unknown reply')) {
+                return { success: true, data: [] };
+            }
+            return { success: false, error: errorMessage };
+        }
+    }
+
+    /**
+     * Configure all RADIUS settings on a router using a SINGLE connection.
+     * Avoids the overhead of 8+ separate TCP connections through VPN.
+     */
+    async configureAllRadiusInOneConnection(
+        connection: MikroTikConnection,
+        radiusServerIp: string,
+        secret: string,
+        routerId?: string,
+    ): Promise<{
+        addResult: MikroTikCommandResult;
+        enableResult: MikroTikCommandResult;
+        loginResult: MikroTikCommandResult;
+        pageResult: MikroTikCommandResult;
+    }> {
+        const api = this.createApi(connection, 30);
+
+        // #region agent log
+        const _start = Date.now();
+        this.logger.warn(`[DEBUG-cdbc15] configureAllRadiusInOneConnection START on ${connection.host}`);
+        // #endregion
+
+        let addResult: MikroTikCommandResult = { success: false, error: 'Not executed' };
+        let enableResult: MikroTikCommandResult = { success: false, error: 'Not executed' };
+        let loginResult: MikroTikCommandResult = { success: false, error: 'Not executed' };
+        let pageResult: MikroTikCommandResult = { success: false, error: 'Not executed' };
+
+        try {
+            // #region agent log
+            const _connStart = Date.now();
+            // #endregion
+            await api.connect();
+            // #region agent log
+            this.logger.warn(`[DEBUG-cdbc15] Single connection established in ${Date.now() - _connStart}ms`);
+            // #endregion
+
+            // --- Step 1: Add/update RADIUS server entry ---
+            // #region agent log
+            let _stepStart = Date.now();
+            // #endregion
+            const existing = await this.writeCommand(api, '/radius/print', [`?address=${radiusServerIp}`]);
+            if (existing.success && existing.data && existing.data.length > 0) {
+                const id = existing.data[0]['.id'];
+                addResult = await this.writeCommand(api, '/radius/set', [
+                    `=.id=${id}`, `=service=hotspot`, `=address=${radiusServerIp}`,
+                    `=secret=${secret}`, `=authentication-port=1812`,
+                    `=accounting-port=1813`, `=timeout=3000ms`,
+                ]);
+            } else {
+                addResult = await this.writeCommand(api, '/radius/add', [
+                    `=service=hotspot`, `=address=${radiusServerIp}`,
+                    `=secret=${secret}`, `=authentication-port=1812`,
+                    `=accounting-port=1813`, `=timeout=3000ms`,
+                ]);
+            }
+            // #region agent log
+            this.logger.warn(`[DEBUG-cdbc15] Step1 addRadius: ${Date.now() - _stepStart}ms success=${addResult.success}`);
+            // #endregion
+
+            // --- Fetch hotspot profiles ONCE (used by steps 2, 3, 4) ---
+            // #region agent log
+            _stepStart = Date.now();
+            // #endregion
+            const profiles = await this.writeCommand(api, '/ip/hotspot/profile/print');
+            // #region agent log
+            this.logger.warn(`[DEBUG-cdbc15] profilesFetch: ${Date.now() - _stepStart}ms found=${profiles.data?.length || 0}`);
+            // #endregion
+
+            if (profiles.success && profiles.data && profiles.data.length > 0) {
+                // --- Step 2: Enable RADIUS on all hotspot profiles ---
+                // #region agent log
+                _stepStart = Date.now();
+                // #endregion
+                for (const profile of profiles.data) {
+                    const id = profile['.id'];
+                    const args = [
+                        `=.id=${id}`, `=use-radius=yes`,
+                        `=radius-accounting=yes`, `=radius-interim-update=00:05:00`,
+                    ];
+                    if (routerId) args.push(`=location-name=${routerId}`);
+                    enableResult = await this.writeCommand(api, '/ip/hotspot/profile/set', args);
+                }
+                // #region agent log
+                this.logger.warn(`[DEBUG-cdbc15] Step2 enableRadius: ${Date.now() - _stepStart}ms success=${enableResult.success}`);
+                // #endregion
+
+                // --- Step 3: Set login to HTTP PAP ---
+                // #region agent log
+                _stepStart = Date.now();
+                // #endregion
+                for (const profile of profiles.data) {
+                    const id = profile['.id'];
+                    loginResult = await this.writeCommand(api, '/ip/hotspot/profile/set', [
+                        `=.id=${id}`, `=login-by=http-pap`,
+                    ]);
+                }
+                // #region agent log
+                this.logger.warn(`[DEBUG-cdbc15] Step3 loginConfig: ${Date.now() - _stepStart}ms success=${loginResult.success}`);
+                // #endregion
+
+                // --- Step 4: Set html-directory for username-only login ---
+                // #region agent log
+                _stepStart = Date.now();
+                // #endregion
+                for (const profile of profiles.data) {
+                    const id = profile['.id'];
+                    pageResult = await this.writeCommand(api, '/ip/hotspot/profile/set', [
+                        `=.id=${id}`, `=login-by=http-pap`, `=html-directory=hotspot`,
+                    ]);
+                }
+                // #region agent log
+                this.logger.warn(`[DEBUG-cdbc15] Step4 loginPage: ${Date.now() - _stepStart}ms success=${pageResult.success}`);
+                // #endregion
+            } else {
+                enableResult = { success: false, error: 'No hotspot server profiles found' };
+                loginResult = { success: false, error: 'No hotspot server profiles found' };
+                pageResult = { success: false, error: 'No hotspot server profiles found' };
+            }
+
+            await api.close();
+        } catch (error) {
+            this.logger.error(`configureAllRadiusInOneConnection failed: ${error.message}`);
+            try { await api.close(); } catch (e) { }
+            const errResult = { success: false, error: error.message };
+            if (!addResult.success && addResult.error === 'Not executed') addResult = errResult;
+            if (!enableResult.success && enableResult.error === 'Not executed') enableResult = errResult;
+            if (!loginResult.success && loginResult.error === 'Not executed') loginResult = errResult;
+            if (!pageResult.success && pageResult.error === 'Not executed') pageResult = errResult;
+        }
+
+        // #region agent log
+        this.logger.warn(`[DEBUG-cdbc15] configureAllRadiusInOneConnection DONE total=${Date.now() - _start}ms`);
+        // #endregion
+
+        return { addResult, enableResult, loginResult, pageResult };
+    }
+
+    /**
      * Remove RADIUS server entry from MikroTik router
      * Used when a router is being removed from the system
      */
