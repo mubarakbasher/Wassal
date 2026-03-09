@@ -91,32 +91,16 @@ export class MikroTikApiService {
     ): Promise<MikroTikCommandResult> {
         const api = this.createApi(connection, 20);
 
-        // #region agent log
-        const _cmdStart = Date.now();
-        // #endregion
         try {
-            // #region agent log
-            const _connStart = Date.now();
-            // #endregion
             await api.connect();
-            // #region agent log
-            const _connTime = Date.now() - _connStart;
-            // #endregion
 
             // Write command with parameters
             let response;
-            // #region agent log
-            const _writeStart = Date.now();
-            // #endregion
             if (params && params.length > 0) {
                 response = await api.write(command, params);
             } else {
                 response = await api.write(command);
             }
-            // #region agent log
-            const _writeTime = Date.now() - _writeStart;
-            this.logger.warn(`[DEBUG-cdbc15] executeCommand ${command} on ${connection.host}: connect=${_connTime}ms write=${_writeTime}ms total=${Date.now() - _cmdStart}ms`);
-            // #endregion
 
             await api.close();
 
@@ -676,9 +660,6 @@ export class MikroTikApiService {
             if (errorErrno === 'UNKNOWNREPLY' || errorMessage.includes('!empty') || errorMessage.includes('unknown reply')) {
                 return { success: true, data: [] };
             }
-            // #region agent log
-            this.logger.warn(`[DEBUG-cdbc15] writeCommand FAILED ${command}: ${errorMessage}`);
-            // #endregion
             return { success: false, error: errorMessage };
         }
     }
@@ -700,11 +681,6 @@ export class MikroTikApiService {
         loginResult: MikroTikCommandResult;
         pageResult: MikroTikCommandResult;
     }> {
-        // #region agent log
-        const _start = Date.now();
-        this.logger.warn(`[DEBUG-cdbc15] configureAllRadius START on ${connection.host}`);
-        // #endregion
-
         let addResult: MikroTikCommandResult = { success: false, error: 'Not executed' };
         let enableResult: MikroTikCommandResult = { success: false, error: 'Not executed' };
         let loginResult: MikroTikCommandResult = { success: false, error: 'Not executed' };
@@ -713,18 +689,9 @@ export class MikroTikApiService {
         // ── Phase 1: Configure hotspot profiles (reliable commands) ──
         const profileApi = this.createApi(connection, 30);
         try {
-            // #region agent log
-            const _p1Start = Date.now();
-            // #endregion
             await profileApi.connect();
-            // #region agent log
-            this.logger.warn(`[DEBUG-cdbc15] Phase1 connected in ${Date.now() - _p1Start}ms`);
-            // #endregion
 
             const profiles = await this.writeCommand(profileApi, '/ip/hotspot/profile/print');
-            // #region agent log
-            this.logger.warn(`[DEBUG-cdbc15] Phase1 profilesFetch: found=${profiles.data?.length || 0}`);
-            // #endregion
 
             if (profiles.success && profiles.data && profiles.data.length > 0) {
                 for (const profile of profiles.data) {
@@ -742,9 +709,7 @@ export class MikroTikApiService {
                             `=.id=${id}`, `=location-name=${routerId}`,
                         ]);
                         if (!locResult.success) {
-                            // #region agent log
-                            this.logger.warn(`[DEBUG-cdbc15] location-name failed (non-critical): ${locResult.error}`);
-                            // #endregion
+                            this.logger.warn(`location-name set failed (non-critical): ${locResult.error}`);
                         }
                     }
                 }
@@ -769,9 +734,6 @@ export class MikroTikApiService {
             }
 
             await profileApi.close();
-            // #region agent log
-            this.logger.warn(`[DEBUG-cdbc15] Phase1 DONE in ${Date.now() - _p1Start}ms enable=${enableResult.success} login=${loginResult.success} page=${pageResult.success}`);
-            // #endregion
         } catch (error) {
             this.logger.error(`Phase1 profile config failed: ${error.message}`);
             try { await profileApi.close(); } catch (e) { }
@@ -780,13 +742,7 @@ export class MikroTikApiService {
         // ── Phase 2: RADIUS server entry (may hang — isolated connection) ──
         const radiusApi = this.createApi(connection, 15);
         try {
-            // #region agent log
-            const _p2Start = Date.now();
-            // #endregion
             await radiusApi.connect();
-            // #region agent log
-            this.logger.warn(`[DEBUG-cdbc15] Phase2 connected in ${Date.now() - _p2Start}ms`);
-            // #endregion
 
             const existing = await this.writeCommand(radiusApi, '/radius/print', [`?address=${radiusServerIp}`]);
             if (existing.success && existing.data && existing.data.length > 0) {
@@ -811,18 +767,11 @@ export class MikroTikApiService {
             }
 
             await radiusApi.close();
-            // #region agent log
-            this.logger.warn(`[DEBUG-cdbc15] Phase2 DONE in ${Date.now() - _p2Start}ms add=${addResult.success}`);
-            // #endregion
         } catch (error) {
             this.logger.warn(`Phase2 RADIUS entry failed: ${error.message}`);
             try { await radiusApi.close(); } catch (e) { }
             if (addResult.error === 'Not executed') addResult = { success: false, error: error.message };
         }
-
-        // #region agent log
-        this.logger.warn(`[DEBUG-cdbc15] configureAllRadius DONE total=${Date.now() - _start}ms`);
-        // #endregion
 
         return { addResult, enableResult, loginResult, pageResult };
     }

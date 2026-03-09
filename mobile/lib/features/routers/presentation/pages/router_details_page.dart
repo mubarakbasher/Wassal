@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import '../../../../core/api/api_client.dart';
@@ -136,18 +135,10 @@ class _RouterDetailsPageState extends State<RouterDetailsPage> {
     
     // Step 1: Re-setup RADIUS on the router
     try {
-      // #region agent log
-      final _stopwatch = Stopwatch()..start();
-      debugPrint('[DEBUG-cdbc15] RADIUS setup request START');
-      // #endregion
       final radiusResponse = await _apiClient.post(
         '/routers/${widget.router.id}/setup-radius',
-        options: Options(receiveTimeout: const Duration(seconds: 120)),
+        options: Options(receiveTimeout: const Duration(seconds: 60)),
       );
-      // #region agent log
-      _stopwatch.stop();
-      debugPrint('[DEBUG-cdbc15] RADIUS setup response in ${_stopwatch.elapsedMilliseconds}ms: ${radiusResponse.data}');
-      // #endregion
       if (mounted) {
         final data = radiusResponse.data;
         final radiusEnabled = data?['radiusEnabled'] == true;
@@ -162,9 +153,6 @@ class _RouterDetailsPageState extends State<RouterDetailsPage> {
         }
       }
     } catch (e) {
-      // #region agent log
-      debugPrint('[DEBUG-cdbc15] RADIUS setup FAILED: $e');
-      // #endregion
       if (mounted) {
         _showSnackBar('❌ RADIUS setup failed: $e', Colors.red);
       }

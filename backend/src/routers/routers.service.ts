@@ -80,20 +80,10 @@ export class RoutersService {
         const warnings: string[] = [];
         let radiusConfigured = false;
 
-        // #region agent log
-        const _totalStart = Date.now();
-        const _timings: Record<string, number> = {};
-        let _stepStart = Date.now();
-        this.logger.warn(`[DEBUG-cdbc15] configureRadiusOnRouter START router=${routerName} host=${ipAddress}:${apiPort}`);
-        // #endregion
-
         // Generate or use existing RADIUS secret
         const radiusSecret = existingSecret || crypto.randomBytes(16).toString('hex');
 
         // Register as NAS client in FreeRADIUS DB
-        // #region agent log
-        _stepStart = Date.now();
-        // #endregion
         try {
             await this.radiusService.registerNas(
                 ipAddress,
@@ -101,10 +91,6 @@ export class RoutersService {
                 routerName,
                 description || undefined,
             );
-            // #region agent log
-            _timings['nasRegistration'] = Date.now() - _stepStart;
-            this.logger.warn(`[DEBUG-cdbc15] NAS registration: ${_timings['nasRegistration']}ms`);
-            // #endregion
             this.logger.log(`NAS client registered for ${routerName} (${ipAddress})`);
 
             // Reload FreeRADIUS so it picks up the new NAS entry immediately
@@ -122,26 +108,15 @@ export class RoutersService {
                 this.logger.warn(`Could not reload FreeRADIUS: ${reloadErr.message}`);
             }
         } catch (error) {
-            // #region agent log
-            _timings['nasRegistration'] = Date.now() - _stepStart;
-            this.logger.warn(`[DEBUG-cdbc15] NAS registration FAILED after ${_timings['nasRegistration']}ms: ${error.message}`);
-            // #endregion
             warnings.push(`Failed to register NAS: ${error.message}`);
             this.logger.warn(`Failed to register NAS for ${routerName}: ${error.message}`);
         }
 
         // Update router record with the radiusSecret
-        // #region agent log
-        _stepStart = Date.now();
-        // #endregion
         await this.prisma.router.update({
             where: { id: routerId },
             data: { radiusSecret },
         });
-        // #region agent log
-        _timings['dbUpdate'] = Date.now() - _stepStart;
-        this.logger.warn(`[DEBUG-cdbc15] DB update: ${_timings['dbUpdate']}ms`);
-        // #endregion
 
         // Auto-configure RADIUS on the MikroTik router
         const radiusServerIp = process.env.RADIUS_SERVER_IP;
@@ -154,19 +129,9 @@ export class RoutersService {
         try {
             const conn = { host: ipAddress, port: apiPort, username, password };
 
-            // #region agent log
-            _stepStart = Date.now();
-            this.logger.warn(`[DEBUG-cdbc15] configureAllRadiusInOneConnection START host=${ipAddress}:${apiPort}`);
-            // #endregion
-
             const result = await this.mikrotikApi.configureAllRadiusInOneConnection(
                 conn, radiusServerIp, radiusSecret, routerId,
             );
-
-            // #region agent log
-            _timings['singleConnectionRadius'] = Date.now() - _stepStart;
-            this.logger.warn(`[DEBUG-cdbc15] configureAllRadiusInOneConnection: ${_timings['singleConnectionRadius']}ms`);
-            // #endregion
 
             if (result.addResult.success) {
                 this.logger.log(`RADIUS server ${radiusServerIp} added to router ${routerName}`);
@@ -198,14 +163,6 @@ export class RoutersService {
             warnings.push(`Auto RADIUS setup failed: ${error.message}`);
             this.logger.warn(`Auto RADIUS setup failed for ${routerName}: ${error.message}`);
         }
-
-        // #region agent log
-        const _totalTime = Date.now() - _totalStart;
-        _timings['TOTAL'] = _totalTime;
-        const _timingSummary = Object.entries(_timings).map(([k, v]) => `${k}=${v}ms`).join(' | ');
-        this.logger.warn(`[DEBUG-cdbc15] configureRadiusOnRouter DONE: ${_timingSummary}`);
-        warnings.push(`[DEBUG-TIMING] ${_timingSummary}`);
-        // #endregion
 
         return { radiusSecret, radiusConfigured, warnings };
     }
