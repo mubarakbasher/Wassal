@@ -25,7 +25,7 @@ class _HomeRoutersPageState extends State<HomeRoutersPage> {
     super.initState();
     context.read<RouterBloc>().add(const LoadRoutersEvent());
     _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
-      if (mounted) {
+      if (mounted && WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed) {
         context.read<RouterBloc>().add(const LoadRoutersEvent(statusOnly: true));
       }
     });

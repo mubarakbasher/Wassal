@@ -65,7 +65,7 @@ class VoucherManagementPageState extends State<VoucherManagementPage> {
   void _startStatsPolling() {
     _statsTimer?.cancel();
     _statsTimer = Timer.periodic(const Duration(seconds: 30), (_) {
-      if (mounted) {
+      if (mounted && WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed) {
         context.read<VoucherBloc>().add(const LoadVoucherStats());
       }
     });
