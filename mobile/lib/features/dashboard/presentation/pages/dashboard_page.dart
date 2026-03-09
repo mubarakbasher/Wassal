@@ -56,7 +56,9 @@ class _DashboardPageState extends State<DashboardPage> with WidgetsBindingObserv
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      _refreshCurrentPage();
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) _refreshCurrentPage();
+      });
     } else if (state == AppLifecycleState.paused) {
       context.read<DashboardBloc>().add(const PauseDashboardPolling());
     }
