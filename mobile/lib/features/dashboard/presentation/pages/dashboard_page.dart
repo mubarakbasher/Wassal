@@ -5,6 +5,10 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_event.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
+import '../../../routers/presentation/bloc/router_bloc.dart';
+import '../../../routers/presentation/bloc/router_event.dart';
+import '../../../vouchers/presentation/bloc/voucher_bloc.dart';
+import '../../../vouchers/presentation/bloc/voucher_event.dart';
 import '../bloc/dashboard_bloc.dart';
 import '../bloc/dashboard_event.dart';
 import '../widgets/dashboard_app_bar_widget.dart';
@@ -22,7 +26,7 @@ class DashboardPage extends StatefulWidget {
   State<DashboardPage> createState() => _DashboardPageState();
 }
 
-class _DashboardPageState extends State<DashboardPage> {
+class _DashboardPageState extends State<DashboardPage> with WidgetsBindingObserver {
   int _currentIndex = 1; // Default to Business Dashboard (index 1)
   
   // GlobalKey to access VoucherManagementPage state
@@ -34,12 +38,46 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _pages = [
       const HomeRoutersPage(),
       const BusinessDashboardPage(),
       VoucherManagementPage(key: _voucherPageKey),
       const SettingsPage(),
     ];
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _refreshCurrentPage();
+    } else if (state == AppLifecycleState.paused) {
+      context.read<DashboardBloc>().add(const PauseDashboardPolling());
+    }
+  }
+
+  void _refreshCurrentPage() {
+    switch (_currentIndex) {
+      case 0:
+        context.read<RouterBloc>().add(const LoadRoutersEvent());
+        break;
+      case 1:
+        context.read<DashboardBloc>().add(const ResumeDashboardPolling());
+        context.read<DashboardBloc>().add(const LoadDashboardStats());
+        break;
+      case 2:
+        context.read<VoucherBloc>().add(LoadVoucherStats());
+        context.read<VoucherBloc>().add(const LoadVouchersEvent());
+        break;
+      case 3:
+        break;
+    }
   }
 
   void _navigateToProfile() {
