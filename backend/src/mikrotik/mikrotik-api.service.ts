@@ -655,15 +655,20 @@ export class MikroTikApiService {
 
     /**
      * Execute a command on an already-connected API instance (no connect/close overhead).
+     * Includes a hard per-command timeout to prevent hangs from node-routeros SOCKTMOUT.
      */
     private async writeCommand(api: any, command: string, params?: any[]): Promise<MikroTikCommandResult> {
+        const COMMAND_TIMEOUT_MS = 10_000;
         try {
-            let response;
-            if (params && params.length > 0) {
-                response = await api.write(command, params);
-            } else {
-                response = await api.write(command);
-            }
+            const writePromise = (params && params.length > 0)
+                ? api.write(command, params)
+                : api.write(command);
+
+            const timeoutPromise = new Promise<never>((_, reject) =>
+                setTimeout(() => reject(new Error(`Command ${command} timed out after ${COMMAND_TIMEOUT_MS}ms`)), COMMAND_TIMEOUT_MS),
+            );
+
+            const response = await Promise.race([writePromise, timeoutPromise]);
             return { success: true, data: response || [] };
         } catch (error) {
             const errorMessage = error.message || '';
@@ -671,6 +676,9 @@ export class MikroTikApiService {
             if (errorErrno === 'UNKNOWNREPLY' || errorMessage.includes('!empty') || errorMessage.includes('unknown reply')) {
                 return { success: true, data: [] };
             }
+            // #region agent log
+            this.logger.warn(`[DEBUG-cdbc15] writeCommand FAILED ${command}: ${errorMessage}`);
+            // #endregion
             return { success: false, error: errorMessage };
         }
     }
