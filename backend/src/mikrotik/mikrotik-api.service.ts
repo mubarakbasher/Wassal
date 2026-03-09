@@ -91,16 +91,32 @@ export class MikroTikApiService {
     ): Promise<MikroTikCommandResult> {
         const api = this.createApi(connection, 20);
 
+        // #region agent log
+        const _cmdStart = Date.now();
+        // #endregion
         try {
+            // #region agent log
+            const _connStart = Date.now();
+            // #endregion
             await api.connect();
+            // #region agent log
+            const _connTime = Date.now() - _connStart;
+            // #endregion
 
             // Write command with parameters
             let response;
+            // #region agent log
+            const _writeStart = Date.now();
+            // #endregion
             if (params && params.length > 0) {
                 response = await api.write(command, params);
             } else {
                 response = await api.write(command);
             }
+            // #region agent log
+            const _writeTime = Date.now() - _writeStart;
+            this.logger.warn(`[DEBUG-cdbc15] executeCommand ${command} on ${connection.host}: connect=${_connTime}ms write=${_writeTime}ms total=${Date.now() - _cmdStart}ms`);
+            // #endregion
 
             await api.close();
 

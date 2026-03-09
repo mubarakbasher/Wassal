@@ -80,10 +80,20 @@ export class RoutersService {
         const warnings: string[] = [];
         let radiusConfigured = false;
 
+        // #region agent log
+        const _totalStart = Date.now();
+        const _timings: Record<string, number> = {};
+        let _stepStart = Date.now();
+        this.logger.warn(`[DEBUG-cdbc15] configureRadiusOnRouter START router=${routerName} host=${ipAddress}:${apiPort}`);
+        // #endregion
+
         // Generate or use existing RADIUS secret
         const radiusSecret = existingSecret || crypto.randomBytes(16).toString('hex');
 
         // Register as NAS client in FreeRADIUS DB
+        // #region agent log
+        _stepStart = Date.now();
+        // #endregion
         try {
             await this.radiusService.registerNas(
                 ipAddress,
@@ -91,6 +101,10 @@ export class RoutersService {
                 routerName,
                 description || undefined,
             );
+            // #region agent log
+            _timings['nasRegistration'] = Date.now() - _stepStart;
+            this.logger.warn(`[DEBUG-cdbc15] NAS registration: ${_timings['nasRegistration']}ms`);
+            // #endregion
             this.logger.log(`NAS client registered for ${routerName} (${ipAddress})`);
 
             // Reload FreeRADIUS so it picks up the new NAS entry immediately
@@ -108,15 +122,26 @@ export class RoutersService {
                 this.logger.warn(`Could not reload FreeRADIUS: ${reloadErr.message}`);
             }
         } catch (error) {
+            // #region agent log
+            _timings['nasRegistration'] = Date.now() - _stepStart;
+            this.logger.warn(`[DEBUG-cdbc15] NAS registration FAILED after ${_timings['nasRegistration']}ms: ${error.message}`);
+            // #endregion
             warnings.push(`Failed to register NAS: ${error.message}`);
             this.logger.warn(`Failed to register NAS for ${routerName}: ${error.message}`);
         }
 
         // Update router record with the radiusSecret
+        // #region agent log
+        _stepStart = Date.now();
+        // #endregion
         await this.prisma.router.update({
             where: { id: routerId },
             data: { radiusSecret },
         });
+        // #region agent log
+        _timings['dbUpdate'] = Date.now() - _stepStart;
+        this.logger.warn(`[DEBUG-cdbc15] DB update: ${_timings['dbUpdate']}ms`);
+        // #endregion
 
         // Auto-configure RADIUS on the MikroTik router
         const radiusServerIp = process.env.RADIUS_SERVER_IP;
@@ -130,7 +155,15 @@ export class RoutersService {
             const conn = { host: ipAddress, port: apiPort, username, password };
 
             // Step 1: Add RADIUS server entry on the router
+            // #region agent log
+            _stepStart = Date.now();
+            this.logger.warn(`[DEBUG-cdbc15] Step1 addRadiusServer START host=${ipAddress}:${apiPort}`);
+            // #endregion
             const addResult = await this.mikrotikApi.addRadiusServer(conn, radiusServerIp, radiusSecret);
+            // #region agent log
+            _timings['addRadiusServer'] = Date.now() - _stepStart;
+            this.logger.warn(`[DEBUG-cdbc15] Step1 addRadiusServer: ${_timings['addRadiusServer']}ms success=${addResult.success}`);
+            // #endregion
             if (addResult.success) {
                 this.logger.log(`RADIUS server ${radiusServerIp} added to router ${routerName}`);
             } else {
@@ -139,7 +172,15 @@ export class RoutersService {
             }
 
             // Step 2: Enable RADIUS on hotspot server profiles
+            // #region agent log
+            _stepStart = Date.now();
+            this.logger.warn(`[DEBUG-cdbc15] Step2 enableHotspotRadius START`);
+            // #endregion
             const enableResult = await this.mikrotikApi.enableHotspotRadius(conn, routerId);
+            // #region agent log
+            _timings['enableHotspotRadius'] = Date.now() - _stepStart;
+            this.logger.warn(`[DEBUG-cdbc15] Step2 enableHotspotRadius: ${_timings['enableHotspotRadius']}ms success=${enableResult.success}`);
+            // #endregion
             if (enableResult.success) {
                 this.logger.log(`RADIUS enabled on hotspot for router ${routerName} with location-name=${routerId}`);
                 radiusConfigured = true;
@@ -149,7 +190,15 @@ export class RoutersService {
             }
 
             // Step 3: Configure hotspot login to HTTP PAP (fixes "did not send challenge response" error)
+            // #region agent log
+            _stepStart = Date.now();
+            this.logger.warn(`[DEBUG-cdbc15] Step3 configureHotspotLogin START`);
+            // #endregion
             const loginResult = await this.mikrotikApi.configureHotspotLogin(conn);
+            // #region agent log
+            _timings['configureHotspotLogin'] = Date.now() - _stepStart;
+            this.logger.warn(`[DEBUG-cdbc15] Step3 configureHotspotLogin: ${_timings['configureHotspotLogin']}ms success=${loginResult.success}`);
+            // #endregion
             if (loginResult.success) {
                 this.logger.log(`Hotspot login set to HTTP PAP on ${routerName}`);
             } else {
@@ -157,7 +206,15 @@ export class RoutersService {
             }
 
             // Step 4: Upload username-only login page (hides password field)
+            // #region agent log
+            _stepStart = Date.now();
+            this.logger.warn(`[DEBUG-cdbc15] Step4 uploadUsernameOnlyLoginPage START`);
+            // #endregion
             const pageResult = await this.mikrotikApi.uploadUsernameOnlyLoginPage(conn);
+            // #region agent log
+            _timings['uploadLoginPage'] = Date.now() - _stepStart;
+            this.logger.warn(`[DEBUG-cdbc15] Step4 uploadUsernameOnlyLoginPage: ${_timings['uploadLoginPage']}ms success=${pageResult.success}`);
+            // #endregion
             if (pageResult.success) {
                 this.logger.log(`Username-only login page uploaded to ${routerName}`);
             } else {
@@ -167,6 +224,14 @@ export class RoutersService {
             warnings.push(`Auto RADIUS setup failed: ${error.message}`);
             this.logger.warn(`Auto RADIUS setup failed for ${routerName}: ${error.message}`);
         }
+
+        // #region agent log
+        const _totalTime = Date.now() - _totalStart;
+        _timings['TOTAL'] = _totalTime;
+        const _timingSummary = Object.entries(_timings).map(([k, v]) => `${k}=${v}ms`).join(' | ');
+        this.logger.warn(`[DEBUG-cdbc15] configureRadiusOnRouter DONE: ${_timingSummary}`);
+        warnings.push(`[DEBUG-TIMING] ${_timingSummary}`);
+        // #endregion
 
         return { radiusSecret, radiusConfigured, warnings };
     }
