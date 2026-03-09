@@ -729,12 +729,24 @@ export class MikroTikApiService {
             if (profiles.success && profiles.data && profiles.data.length > 0) {
                 for (const profile of profiles.data) {
                     const id = profile['.id'];
-                    const args = [
+                    enableResult = await this.writeCommand(profileApi, '/ip/hotspot/profile/set', [
                         `=.id=${id}`, `=use-radius=yes`,
                         `=radius-accounting=yes`, `=radius-interim-update=00:05:00`,
-                    ];
-                    if (routerId) args.push(`=location-name=${routerId}`);
-                    enableResult = await this.writeCommand(profileApi, '/ip/hotspot/profile/set', args);
+                    ]);
+                }
+
+                if (routerId) {
+                    for (const profile of profiles.data) {
+                        const id = profile['.id'];
+                        const locResult = await this.writeCommand(profileApi, '/ip/hotspot/profile/set', [
+                            `=.id=${id}`, `=location-name=${routerId}`,
+                        ]);
+                        if (!locResult.success) {
+                            // #region agent log
+                            this.logger.warn(`[DEBUG-cdbc15] location-name failed (non-critical): ${locResult.error}`);
+                            // #endregion
+                        }
+                    }
                 }
 
                 for (const profile of profiles.data) {
