@@ -244,7 +244,7 @@ export class AuthService {
             this.jwtService.signAsync(payload),
             this.jwtService.signAsync(payload, {
                 secret: refreshSecret,
-                expiresIn: '7d',
+                expiresIn: '90d',
             }),
         ]);
 

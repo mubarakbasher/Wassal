@@ -14,7 +14,7 @@ import 'features/splash/presentation/bloc/splash_event.dart';
 import 'features/splash/presentation/pages/splash_page.dart';
 import 'features/splash/data/startup_service.dart';
 import 'core/constants/app_colors.dart';
-import 'core/api/api_client.dart';
+import 'core/api/api_client.dart' show ApiClient, navigatorKey;
 import 'core/providers/locale_provider.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'features/auth/data/datasources/auth_local_data_source.dart';
@@ -158,6 +158,7 @@ class MyApp extends StatelessWidget {
           ),
         ],
         child: MaterialApp(
+        navigatorKey: navigatorKey,
         title: 'MikroTik Hotspot Manager',
         debugShowCheckedModeBanner: false,
         locale: localeProvider.locale,

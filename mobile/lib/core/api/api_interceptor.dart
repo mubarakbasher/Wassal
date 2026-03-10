@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../constants/app_constants.dart';
+import 'api_client.dart';
 
 class ApiInterceptor extends Interceptor {
   final FlutterSecureStorage _secureStorage;
@@ -52,6 +53,9 @@ class ApiInterceptor extends Interceptor {
       await _secureStorage.delete(key: AppConstants.accessTokenKey);
       await _secureStorage.delete(key: AppConstants.refreshTokenKey);
       await _secureStorage.delete(key: AppConstants.userDataKey);
+
+      navigatorKey.currentState?.pushNamedAndRemoveUntil('/login', (_) => false);
+      return handler.next(err);
     }
 
     super.onError(err, handler);

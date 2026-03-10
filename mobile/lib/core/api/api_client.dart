@@ -1,8 +1,11 @@
 import 'dart:io';
+import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../constants/app_constants.dart';
 import 'api_interceptor.dart';
+
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 class ApiClient {
   static final ApiClient _instance = ApiClient._internal();
