@@ -1,4 +1,4 @@
-import { Injectable, ConflictException, UnauthorizedException, BadRequestException, Logger } from '@nestjs/common';
+import { Injectable, ConflictException, UnauthorizedException, BadRequestException, NotFoundException, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
@@ -156,9 +156,8 @@ export class AuthService {
     async forgotPassword(email: string) {
         const user = await this.prisma.user.findUnique({ where: { email } });
 
-        // Always return success to prevent email enumeration
         if (!user) {
-            return { message: 'If the email exists, a reset code has been sent' };
+            throw new NotFoundException('No account found with this email');
         }
 
         // Generate a 6-digit reset code
