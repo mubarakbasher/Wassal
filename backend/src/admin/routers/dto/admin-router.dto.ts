@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsInt, IsOptional, Min, Max, IsIP } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsNumber, IsIP, IsIn } from 'class-validator';
 
 export class CreateRouterDto {
     @IsString()
@@ -9,11 +9,9 @@ export class CreateRouterDto {
     @IsNotEmpty()
     ipAddress: string;
 
-    @IsInt()
-    @Min(1)
-    @Max(65535)
+    @IsNumber()
     @IsOptional()
-    apiPort?: number = 8728;
+    apiPort?: number;
 
     @IsString()
     @IsNotEmpty()
@@ -30,6 +28,10 @@ export class CreateRouterDto {
     @IsString()
     @IsOptional()
     location?: string;
+
+    @IsString()
+    @IsOptional()
+    userId?: string;
 }
 
 export class UpdateRouterDto {
@@ -37,13 +39,11 @@ export class UpdateRouterDto {
     @IsOptional()
     name?: string;
 
-    @IsString()
+    @IsIP()
     @IsOptional()
     ipAddress?: string;
 
-    @IsInt()
-    @Min(1)
-    @Max(65535)
+    @IsNumber()
     @IsOptional()
     apiPort?: number;
 
@@ -62,4 +62,13 @@ export class UpdateRouterDto {
     @IsString()
     @IsOptional()
     location?: string;
+
+    @IsString()
+    @IsOptional()
+    @IsIn(['ONLINE', 'OFFLINE', 'ERROR'])
+    status?: string;
+
+    @IsString()
+    @IsOptional()
+    userId?: string;
 }

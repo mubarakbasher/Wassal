@@ -686,7 +686,9 @@ class _PaymentFlowSheetState extends State<_PaymentFlowSheet> {
       final response = await widget.apiClient.get(ApiEndpoints.bankInfo);
       if (mounted && response.statusCode == 200) {
         setState(() {
-          _bankInfo = BankInfo.fromJson(response.data as Map<String, dynamic>);
+          final rawData = response.data;
+          if (rawData is! Map<String, dynamic>) throw Exception('Unexpected response format');
+          _bankInfo = BankInfo.fromJson(rawData);
           _loadingBank = false;
         });
       }
@@ -737,7 +739,17 @@ class _PaymentFlowSheetState extends State<_PaymentFlowSheet> {
       imageQuality: 85,
     );
     if (picked != null && mounted) {
-      setState(() => _proofImage = File(picked.path));
+      final file = File(picked.path);
+      final fileSize = await file.length();
+      if (fileSize > 5 * 1024 * 1024) { // 5MB
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('File too large. Maximum size is 5MB.')),
+          );
+        }
+        return;
+      }
+      setState(() => _proofImage = file);
     }
   }
 

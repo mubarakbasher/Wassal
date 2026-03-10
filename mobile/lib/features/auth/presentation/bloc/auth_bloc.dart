@@ -45,13 +45,16 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     result.fold(
       (failure) => emit(AuthError(failure.message)),
       (data) {
-        final user = data['user'];
-        final token = data['accessToken'];
-        
-        emit(AuthAuthenticated(
-          user: _mapToUser(user),
-          token: token,
-        ));
+        try {
+          final user = data['user'];
+          final token = data['accessToken'] as String? ?? '';
+          emit(AuthAuthenticated(
+            user: _mapToUser(user),
+            token: token,
+          ));
+        } catch (e) {
+          emit(AuthError('Failed to process login response: $e'));
+        }
       },
     );
   }
@@ -69,13 +72,16 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     result.fold(
       (failure) => emit(AuthError(failure.message)),
       (data) {
-        final user = data['user'];
-        final token = data['accessToken'];
-        
-        emit(AuthAuthenticated(
-          user: _mapToUser(user),
-          token: token,
-        ));
+        try {
+          final user = data['user'];
+          final token = data['accessToken'] as String? ?? '';
+          emit(AuthAuthenticated(
+            user: _mapToUser(user),
+            token: token,
+          ));
+        } catch (e) {
+          emit(AuthError('Failed to process registration response: $e'));
+        }
       },
     );
   }

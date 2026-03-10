@@ -19,8 +19,9 @@ class SessionRemoteDataSourceImpl implements SessionRemoteDataSource {
         queryParameters: queryParams,
       );
 
-      final List<dynamic> data = response.data as List<dynamic>;
-      return data.map((json) => SessionModel.fromJson(json as Map<String, dynamic>)).toList();
+      final rawData = response.data;
+      if (rawData is! List) throw Exception('Unexpected response format');
+      return rawData.map((json) => SessionModel.fromJson(json as Map<String, dynamic>)).toList();
     } on DioException catch (e) {
       throw Exception('Failed to fetch sessions: ${e.message}');
     }
@@ -39,8 +40,9 @@ class SessionRemoteDataSourceImpl implements SessionRemoteDataSource {
         queryParameters: queryParams,
       );
 
-      final List<dynamic> data = response.data as List<dynamic>;
-      return data.map((json) => SessionModel.fromJson(json as Map<String, dynamic>)).toList();
+      final rawData = response.data;
+      if (rawData is! List) throw Exception('Unexpected response format');
+      return rawData.map((json) => SessionModel.fromJson(json as Map<String, dynamic>)).toList();
     } on DioException catch (e) {
       throw Exception('Failed to fetch sessions for router: ${e.message}');
     }
@@ -50,7 +52,9 @@ class SessionRemoteDataSourceImpl implements SessionRemoteDataSource {
   Future<SessionModel> getSessionById(String id) async {
     try {
       final response = await apiClient.dio.get('/sessions/$id');
-      return SessionModel.fromJson(response.data as Map<String, dynamic>);
+      final rawData = response.data;
+      if (rawData is! Map<String, dynamic>) throw Exception('Unexpected response format');
+      return SessionModel.fromJson(rawData);
     } on DioException catch (e) {
       throw Exception('Failed to fetch session: ${e.message}');
     }
@@ -62,7 +66,9 @@ class SessionRemoteDataSourceImpl implements SessionRemoteDataSource {
       final endpoint = routerId != null ? '/sessions/stats/$routerId' : '/sessions/stats';
       
       final response = await apiClient.dio.get(endpoint);
-      return SessionStatisticsModel.fromJson(response.data as Map<String, dynamic>);
+      final rawData = response.data;
+      if (rawData is! Map<String, dynamic>) throw Exception('Unexpected response format');
+      return SessionStatisticsModel.fromJson(rawData);
     } on DioException catch (e) {
       throw Exception('Failed to fetch session statistics: ${e.message}');
     }

@@ -11,9 +11,18 @@ import { SettingsPage } from './pages/Settings';
 import { RoutersPage } from './pages/Routers';
 import { VouchersPage } from './pages/Vouchers';
 
+const isTokenValid = (token: string): boolean => {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.exp * 1000 > Date.now();
+  } catch {
+    return false;
+  }
+};
+
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const token = localStorage.getItem('admin_token');
-  if (!token) {
+  if (!token || !isTokenValid(token)) {
     return <Navigate to="/login" replace />;
   }
   return <>{children}</>;

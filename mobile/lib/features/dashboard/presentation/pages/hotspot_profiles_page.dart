@@ -46,7 +46,9 @@ class _HotspotProfilesPageState extends State<HotspotProfilesPage> {
       );
       
       if (response.statusCode == 200) {
-        final List<dynamic> data = response.data as List<dynamic>;
+        final rawData = response.data;
+        if (rawData is! List) throw Exception('Unexpected response format');
+        final List<dynamic> data = rawData;
         setState(() {
           _profiles = data.map((e) => Map<String, dynamic>.from(e)).toList();
           _isLoading = false;

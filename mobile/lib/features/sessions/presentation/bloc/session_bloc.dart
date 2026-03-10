@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/utils/error_handler.dart';
 import '../../domain/repositories/session_repository.dart';
 import 'session_event.dart';
 import 'session_state.dart';
@@ -24,7 +25,7 @@ class SessionBloc extends Bloc<SessionEvent, SessionState> {
       final statistics = await repository.getStatistics();
       emit(SessionsLoaded(sessions, statistics: statistics));
     } catch (e) {
-      emit(SessionError(e.toString()));
+      emit(SessionError(ErrorHandler.mapDioErrorToMessage(e)));
     }
   }
 
@@ -41,7 +42,7 @@ class SessionBloc extends Bloc<SessionEvent, SessionState> {
       final statistics = await repository.getStatistics(routerId: event.routerId);
       emit(SessionsLoaded(sessions, statistics: statistics));
     } catch (e) {
-      emit(SessionError(e.toString()));
+      emit(SessionError(ErrorHandler.mapDioErrorToMessage(e)));
     }
   }
 
@@ -63,7 +64,7 @@ class SessionBloc extends Bloc<SessionEvent, SessionState> {
         emit(SessionsLoaded(sessions, statistics: statistics));
       }
     } catch (e) {
-      emit(SessionError(e.toString()));
+      emit(SessionError(ErrorHandler.mapDioErrorToMessage(e)));
     }
   }
 
@@ -82,7 +83,7 @@ class SessionBloc extends Bloc<SessionEvent, SessionState> {
         emit(SessionsLoaded(sessions, statistics: currentState.statistics));
       }
     } catch (e) {
-      emit(SessionError(e.toString()));
+      emit(SessionError(ErrorHandler.mapDioErrorToMessage(e)));
     }
   }
 
@@ -96,7 +97,7 @@ class SessionBloc extends Bloc<SessionEvent, SessionState> {
       final statistics = await repository.getStatistics();
       emit(SessionsLoaded(sessions, statistics: statistics));
     } catch (e) {
-      emit(SessionError(e.toString()));
+      emit(SessionError(ErrorHandler.mapDioErrorToMessage(e)));
     }
   }
 }

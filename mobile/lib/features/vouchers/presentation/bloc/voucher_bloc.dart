@@ -75,7 +75,7 @@ class VoucherBloc extends Bloc<VoucherEvent, VoucherState> {
                  final mergedStats = <String, int>{
                    ...safeStats,
                    if (currentState.stats.containsKey('totalRevenue'))
-                     'totalRevenue': currentState.stats['totalRevenue']!,
+                     'totalRevenue': currentState.stats['totalRevenue'] ?? 0,
                  };
                  emit(currentState.copyWith(stats: mergedStats));
             } else {
@@ -187,8 +187,9 @@ class VoucherBloc extends Bloc<VoucherEvent, VoucherState> {
       (vouchers) {
          // Client-side search filtering
          var filteredVouchers = vouchers;
-         if (event.search != null && event.search!.isNotEmpty) {
-           final searchLower = event.search!.toLowerCase();
+         final search = event.search;
+         if (search != null && search.isNotEmpty) {
+           final searchLower = search.toLowerCase();
            filteredVouchers = vouchers.where((v) =>
              v.username.toLowerCase().contains(searchLower) ||
              v.planName.toLowerCase().contains(searchLower) ||
@@ -242,8 +243,9 @@ class VoucherBloc extends Bloc<VoucherEvent, VoucherState> {
       (vouchers) {
         // Apply search filter if needed
         var filteredVouchers = vouchers;
-        if (event.search != null && event.search!.isNotEmpty) {
-          final searchLower = event.search!.toLowerCase();
+        final search = event.search;
+        if (search != null && search.isNotEmpty) {
+          final searchLower = search.toLowerCase();
           filteredVouchers = vouchers.where((v) =>
             v.username.toLowerCase().contains(searchLower) ||
             v.planName.toLowerCase().contains(searchLower) ||

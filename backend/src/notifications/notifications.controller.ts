@@ -15,8 +15,8 @@ export class NotificationsController {
     }
 
     @Delete('remove-token')
-    async removeToken(@Body('token') token: string) {
-        await this.notificationsService.removeToken(token);
+    async removeToken(@Req() req, @Body('token') token: string) {
+        await this.notificationsService.removeToken(token, req.user.id);
         return { success: true, message: 'Device token removed' };
     }
 }

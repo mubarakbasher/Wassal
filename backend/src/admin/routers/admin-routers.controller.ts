@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import { AdminJwtAuthGuard } from '../auth/guards/admin-jwt-auth.guard';
 import { AdminRoutersService } from './admin-routers.service';
+import { CreateRouterDto, UpdateRouterDto } from './dto/admin-router.dto';
 
 @Controller('admin/routers')
 @UseGuards(AdminJwtAuthGuard)
@@ -29,12 +30,12 @@ export class AdminRoutersController {
     }
 
     @Post()
-    create(@Body() body: any) {
+    create(@Body() body: CreateRouterDto) {
         return this.routersService.create(body);
     }
 
     @Patch(':id')
-    update(@Param('id') id: string, @Body() body: any) {
+    update(@Param('id') id: string, @Body() body: UpdateRouterDto) {
         return this.routersService.update(id, body);
     }
 

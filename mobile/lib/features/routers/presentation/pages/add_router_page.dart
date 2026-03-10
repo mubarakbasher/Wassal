@@ -146,7 +146,7 @@ class _ScriptAddRouterViewState extends State<ScriptAddRouterView> {
             children: [
               Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
               const SizedBox(height: 16),
-              Text(_error!, textAlign: TextAlign.center, style: const TextStyle(fontSize: 16)),
+              Text(_error ?? '', textAlign: TextAlign.center, style: const TextStyle(fontSize: 16)),
               const SizedBox(height: 24),
               ElevatedButton(onPressed: _fetchWireguardSetup, child: Text(AppLocalizations.of(context)!.retry)),
             ],
@@ -155,7 +155,7 @@ class _ScriptAddRouterViewState extends State<ScriptAddRouterView> {
       );
     }
 
-    if (_steps == null || _steps!.isEmpty) {
+    if (_steps == null || _steps.isEmpty) {
       return Center(child: Text(AppLocalizations.of(context)!.noSetupSteps));
     }
 
@@ -163,7 +163,8 @@ class _ScriptAddRouterViewState extends State<ScriptAddRouterView> {
   }
 
   Widget _buildStepsList() {
-    final allCommands = _steps!.map((s) => s['command'] as String).join('\n');
+    final steps = _steps ?? [];
+    final allCommands = steps.map((s) => s['command'] as String).join('\n');
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
@@ -177,7 +178,7 @@ class _ScriptAddRouterViewState extends State<ScriptAddRouterView> {
               decoration: BoxDecoration(
                 color: Colors.green[50],
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.green[200]!),
+                border: Border.all(color: Colors.green[200] ?? Colors.green),
               ),
               child: Row(
                 children: [
@@ -185,7 +186,7 @@ class _ScriptAddRouterViewState extends State<ScriptAddRouterView> {
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      AppLocalizations.of(context)!.vpnIpAssigned(_vpnIp!),
+                      AppLocalizations.of(context)!.vpnIpAssigned(_vpnIp ?? ''),
                       style: TextStyle(fontWeight: FontWeight.w600, color: Colors.green[800]),
                     ),
                   ),
@@ -197,8 +198,8 @@ class _ScriptAddRouterViewState extends State<ScriptAddRouterView> {
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
           ),
           const SizedBox(height: 20),
-          ...List.generate(_steps!.length, (i) {
-            final step = _steps![i];
+          ...List.generate(steps.length, (i) {
+            final step = steps[i];
             return Padding(
               padding: const EdgeInsets.only(bottom: 16),
               child: _buildStepCard(
@@ -215,7 +216,7 @@ class _ScriptAddRouterViewState extends State<ScriptAddRouterView> {
             decoration: BoxDecoration(
               color: Colors.orange[50],
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.orange[200]!),
+              border: Border.all(color: Colors.orange[200] ?? Colors.orange),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -267,7 +268,7 @@ class _ScriptAddRouterViewState extends State<ScriptAddRouterView> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[300]!),
+        border: Border.all(color: Colors.grey[300] ?? Colors.grey),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -375,18 +376,17 @@ class _AddRouterFormState extends State<AddRouterForm> {
   }
 
   void _submit() {
-    if (_formKey.currentState!.validate()) {
-      context.read<AddRouterBloc>().add(
-        SubmitAddRouterForm(
-          name: _nameController.text,
-          ipAddress: _ipController.text,
-          apiPort: int.parse(_apiPortController.text),
-          username: _usernameController.text,
-          password: _passwordController.text,
-          location: _locationController.text,
-        ),
-      );
-    }
+    if (_formKey.currentState?.validate() != true) return;
+    context.read<AddRouterBloc>().add(
+      SubmitAddRouterForm(
+        name: _nameController.text,
+        ipAddress: _ipController.text,
+        apiPort: int.parse(_apiPortController.text),
+        username: _usernameController.text,
+        password: _passwordController.text,
+        location: _locationController.text,
+      ),
+    );
   }
 
   @override
@@ -414,14 +414,19 @@ class _AddRouterFormState extends State<AddRouterForm> {
                 controller: _nameController,
                 label: AppLocalizations.of(context)!.routerName,
                 icon: Icons.router,
-                validator: (v) => v!.isEmpty ? AppLocalizations.of(context)!.required : null,
+                validator: (v) => (v ?? '').isEmpty ? AppLocalizations.of(context)!.required : null,
               ),
               const SizedBox(height: 16),
               _buildTextField(
                 controller: _ipController,
                 label: AppLocalizations.of(context)!.ipAddress,
                 icon: Icons.wifi,
-                validator: (v) => v!.isEmpty ? AppLocalizations.of(context)!.required : null,
+                validator: (v) {
+                  if (v == null || v.isEmpty) return AppLocalizations.of(context)!.required;
+                  final ipRegex = RegExp(r'^(\d{1,3}\.){3}\d{1,3}$');
+                  if (!ipRegex.hasMatch(v)) return 'Enter a valid IP address';
+                  return null;
+                },
               ),
               const SizedBox(height: 16),
               _buildTextField(
@@ -429,14 +434,19 @@ class _AddRouterFormState extends State<AddRouterForm> {
                 label: AppLocalizations.of(context)!.apiPort,
                 icon: Icons.settings_ethernet,
                 keyboardType: TextInputType.number,
-                validator: (v) => v!.isEmpty ? AppLocalizations.of(context)!.required : null,
+                validator: (v) {
+                  if (v == null || v.isEmpty) return AppLocalizations.of(context)!.required;
+                  final port = int.tryParse(v);
+                  if (port == null || port < 1 || port > 65535) return 'Enter a valid port (1-65535)';
+                  return null;
+                },
               ),
               const SizedBox(height: 16),
               _buildTextField(
                 controller: _usernameController,
                 label: 'Username',
                 icon: Icons.person,
-                validator: (v) => v!.isEmpty ? AppLocalizations.of(context)!.required : null,
+                validator: (v) => (v ?? '').isEmpty ? AppLocalizations.of(context)!.required : null,
               ),
               const SizedBox(height: 16),
               _buildTextField(
@@ -444,7 +454,7 @@ class _AddRouterFormState extends State<AddRouterForm> {
                 label: AppLocalizations.of(context)!.password,
                 icon: Icons.lock,
                 isPassword: true,
-                validator: (v) => v!.isEmpty ? AppLocalizations.of(context)!.required : null,
+                validator: (v) => (v ?? '').isEmpty ? AppLocalizations.of(context)!.required : null,
               ),
               const SizedBox(height: 16),
               _buildTextField(
@@ -504,7 +514,7 @@ class _AddRouterFormState extends State<AddRouterForm> {
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey[300]!),
+          borderSide: BorderSide(color: Colors.grey[300] ?? Colors.grey),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),

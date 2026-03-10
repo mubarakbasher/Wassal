@@ -19,6 +19,7 @@ class DashboardLoaded extends DashboardState {
   final bool isOnline;
   final double totalRevenue;
   final List<FlSpot> activityHistory;
+  final String? refreshError;
 
   const DashboardLoaded({
     required this.activeUsers,
@@ -27,10 +28,31 @@ class DashboardLoaded extends DashboardState {
     required this.isOnline,
     this.totalRevenue = 0.0,
     this.activityHistory = const [],
+    this.refreshError,
   });
 
+  DashboardLoaded copyWith({
+    int? activeUsers,
+    int? totalUsers,
+    int? totalRouters,
+    bool? isOnline,
+    double? totalRevenue,
+    List<FlSpot>? activityHistory,
+    String? Function()? refreshError,
+  }) {
+    return DashboardLoaded(
+      activeUsers: activeUsers ?? this.activeUsers,
+      totalUsers: totalUsers ?? this.totalUsers,
+      totalRouters: totalRouters ?? this.totalRouters,
+      isOnline: isOnline ?? this.isOnline,
+      totalRevenue: totalRevenue ?? this.totalRevenue,
+      activityHistory: activityHistory ?? this.activityHistory,
+      refreshError: refreshError != null ? refreshError() : this.refreshError,
+    );
+  }
+
   @override
-  List<Object?> get props => [activeUsers, totalUsers, totalRouters, isOnline, totalRevenue, activityHistory];
+  List<Object?> get props => [activeUsers, totalUsers, totalRouters, isOnline, totalRevenue, activityHistory, refreshError];
 }
 
 class DashboardError extends DashboardState {

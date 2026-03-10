@@ -11,7 +11,6 @@ import '../bloc/dashboard_state.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_event.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
-import '../../../auth/domain/entities/user.dart';
 import 'package:mobile/features/routers/presentation/pages/add_router_page.dart';
 import '../../../vouchers/presentation/pages/generate_voucher_page.dart';
 import 'subscription_page.dart';
@@ -59,158 +58,170 @@ class _DashboardViewState extends State<_DashboardView> {
         final userName =
             authState is AuthAuthenticated ? authState.user.name : 'User';
 
-        return BlocBuilder<DashboardBloc, DashboardState>(
-          builder: (context, state) {
-            // Handle subscription error state
-            if (state is DashboardError) {
-              if (SubscriptionRequiredWidget.isSubscriptionError(
-                  state.message)) {
-                return const SubscriptionRequiredWidget();
-              }
-              return _buildErrorState(state.message);
+        return BlocListener<DashboardBloc, DashboardState>(
+          listenWhen: (previous, current) =>
+              current is DashboardLoaded && current.refreshError != null,
+          listener: (context, state) {
+            if (state is DashboardLoaded && state.refreshError != null) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(state.refreshError!),
+                  backgroundColor: AppColors.error,
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  margin: const EdgeInsets.all(16),
+                  duration: const Duration(seconds: 3),
+                ),
+              );
             }
-
-            // Handle loading state
-            if (state is DashboardLoading) {
-              return _buildLoadingState(userName, authState);
-            }
-
-            // Defaults
-            String totalRouters = "0";
-            String activeUsers = "0";
-            String totalUsers = "0";
-            String totalRevenue = "0 SDG";
-            bool isActiveUsersHighlight = true;
-
-            if (state is DashboardLoaded) {
-              activeUsers = state.activeUsers.toString();
-              totalRouters = state.totalRouters.toString();
-              totalUsers = state.totalUsers.toString();
-              totalRevenue =
-                  "${state.totalRevenue.toStringAsFixed(0)} SDG";
-            }
-
-            return RefreshIndicator(
-              color: AppColors.primary,
-              onRefresh: () async {
-                context
-                    .read<DashboardBloc>()
-                    .add(const LoadDashboardStats());
-                await Future.delayed(const Duration(milliseconds: 500));
-              },
-              child: ListView(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-                children: [
-                  // Greeting
-                  Text(
-                    AppLocalizations.of(context)!.hello(userName),
-                    style: const TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    AppLocalizations.of(context)!.hotspotOverview,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Subscription Status Banner
-                  _buildSubscriptionBanner(authState),
-
-                  const SizedBox(height: 24),
-
-                  // Summary Grid
-                  GridView.count(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 16,
-                    crossAxisSpacing: 16,
-                    childAspectRatio: 1.1,
-                    children: [
-                      SummaryCardWidget(
-                        title: AppLocalizations.of(context)!.totalRouters,
-                        value: totalRouters,
-                        subtitle: AppLocalizations.of(context)!.online,
-                        icon: Icons.router,
-                        isActive: false,
-                      ),
-                      SummaryCardWidget(
-                        title: AppLocalizations.of(context)!.activeUsers,
-                        value: activeUsers,
-                        subtitle: AppLocalizations.of(context)!.users,
-                        icon: Icons.people,
-                        isActive: isActiveUsersHighlight,
-                      ),
-                      SummaryCardWidget(
-                        title: AppLocalizations.of(context)!.totalUsers,
-                        value: totalUsers,
-                        subtitle: AppLocalizations.of(context)!.registered,
-                        icon: Icons.people_outline,
-                        isActive: false,
-                      ),
-                      SummaryCardWidget(
-                        title: AppLocalizations.of(context)!.revenue,
-                        value: totalRevenue,
-                        subtitle: '',
-                        icon: Icons.payments_outlined,
-                        isActive: false,
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 30),
-
-                  // Chart Section
-                  Text(
-                    AppLocalizations.of(context)!.activeUsersRealtime,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  const ActivityChartWidget(),
-
-                  const SizedBox(height: 30),
-
-                  // Quick Actions
-                  Text(
-                    AppLocalizations.of(context)!.quickActions,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                          child: _buildQuickAction(context, authState,
-                              Icons.add, AppLocalizations.of(context)!.addRouter, AppColors.primary)),
-                      const SizedBox(width: 16),
-                      Expanded(
-                          child: _buildQuickAction(
-                              context,
-                              authState,
-                              Icons.print,
-                              AppLocalizations.of(context)!.printVoucher,
-                              AppColors.success)),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                ],
-              ),
-            );
           },
+          child: BlocBuilder<DashboardBloc, DashboardState>(
+            builder: (context, state) {
+              if (state is DashboardError) {
+                if (SubscriptionRequiredWidget.isSubscriptionError(
+                    state.message)) {
+                  return const SubscriptionRequiredWidget();
+                }
+                return _buildErrorState(userName, authState, state.message);
+              }
+
+              if (state is DashboardLoading) {
+                return _buildLoadingState(userName, authState);
+              }
+
+              String totalRouters = "0";
+              String activeUsers = "0";
+              String totalUsers = "0";
+              String totalRevenue = "0 SDG";
+              bool isActiveUsersHighlight = true;
+
+              if (state is DashboardLoaded) {
+                activeUsers = state.activeUsers.toString();
+                totalRouters = state.totalRouters.toString();
+                totalUsers = state.totalUsers.toString();
+                totalRevenue =
+                    "${state.totalRevenue.toStringAsFixed(0)} SDG";
+              }
+
+              return RefreshIndicator(
+                color: AppColors.primary,
+                onRefresh: () async {
+                  context
+                      .read<DashboardBloc>()
+                      .add(const LoadDashboardStats());
+                  await Future.delayed(const Duration(milliseconds: 500));
+                },
+                child: ListView(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                  children: [
+                    Text(
+                      AppLocalizations.of(context)!.hello(userName),
+                      style: const TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      AppLocalizations.of(context)!.hotspotOverview,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    _buildSubscriptionBanner(authState),
+
+                    const SizedBox(height: 24),
+
+                    GridView.count(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      crossAxisCount: 2,
+                      mainAxisSpacing: 16,
+                      crossAxisSpacing: 16,
+                      childAspectRatio: 1.1,
+                      children: [
+                        SummaryCardWidget(
+                          title: AppLocalizations.of(context)!.totalRouters,
+                          value: totalRouters,
+                          subtitle: AppLocalizations.of(context)!.online,
+                          icon: Icons.router,
+                          isActive: false,
+                        ),
+                        SummaryCardWidget(
+                          title: AppLocalizations.of(context)!.activeUsers,
+                          value: activeUsers,
+                          subtitle: AppLocalizations.of(context)!.users,
+                          icon: Icons.people,
+                          isActive: isActiveUsersHighlight,
+                        ),
+                        SummaryCardWidget(
+                          title: AppLocalizations.of(context)!.totalUsers,
+                          value: totalUsers,
+                          subtitle: AppLocalizations.of(context)!.registered,
+                          icon: Icons.people_outline,
+                          isActive: false,
+                        ),
+                        SummaryCardWidget(
+                          title: AppLocalizations.of(context)!.revenue,
+                          value: totalRevenue,
+                          subtitle: '',
+                          icon: Icons.payments_outlined,
+                          isActive: false,
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 30),
+
+                    Text(
+                      AppLocalizations.of(context)!.activeUsersRealtime,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const ActivityChartWidget(),
+
+                    const SizedBox(height: 30),
+
+                    Text(
+                      AppLocalizations.of(context)!.quickActions,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                            child: _buildQuickAction(context, authState,
+                                Icons.add, AppLocalizations.of(context)!.addRouter, AppColors.primary)),
+                        const SizedBox(width: 16),
+                        Expanded(
+                            child: _buildQuickAction(
+                                context,
+                                authState,
+                                Icons.print,
+                                AppLocalizations.of(context)!.printVoucher,
+                                AppColors.success)),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                  ],
+                ),
+              );
+            },
+          ),
         );
       },
     );
@@ -428,70 +439,93 @@ class _DashboardViewState extends State<_DashboardView> {
     );
   }
 
-  Widget _buildErrorState(String message) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                color: AppColors.error.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.error_outline,
-                size: 60,
-                color: AppColors.error.withValues(alpha: 0.7),
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              AppLocalizations.of(context)!.failedLoadDashboard,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              message,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[600],
-                height: 1.5,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 32),
-            ElevatedButton.icon(
-              onPressed: () {
-                context
-                    .read<DashboardBloc>()
-                    .add(const LoadDashboardStats());
-              },
-              icon: const Icon(Icons.refresh),
-              label: Text(AppLocalizations.of(context)!.tryAgain),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-          ],
+  Widget _buildErrorState(String userName, AuthState authState, String message) {
+    return ListView(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+      children: [
+        Text(
+          AppLocalizations.of(context)!.hello(userName),
+          style: const TextStyle(
+            fontSize: 28,
+            fontWeight: FontWeight.bold,
+            color: Colors.black,
+          ),
         ),
-      ),
+        const SizedBox(height: 4),
+        Text(
+          AppLocalizations.of(context)!.hotspotOverview,
+          style: TextStyle(
+            fontSize: 14,
+            color: Colors.grey[600],
+          ),
+        ),
+        const SizedBox(height: 16),
+        _buildSubscriptionBanner(authState),
+        const SizedBox(height: 40),
+        Center(
+          child: Column(
+            children: [
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: AppColors.error.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.cloud_off_rounded,
+                  size: 40,
+                  color: AppColors.error.withValues(alpha: 0.7),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                AppLocalizations.of(context)!.failedLoadDashboard,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  message,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey[600],
+                    height: 1.5,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                onPressed: () {
+                  context
+                      .read<DashboardBloc>()
+                      .add(const LoadDashboardStats());
+                },
+                icon: const Icon(Icons.refresh, size: 18),
+                label: Text(AppLocalizations.of(context)!.tryAgain),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 

@@ -11,6 +11,7 @@ import {
 import { SessionsService } from './sessions.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { SubscriptionGuard } from '../auth/guards/subscription.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Session } from '@prisma/client';
 
 @Controller('sessions')
@@ -19,44 +20,45 @@ export class SessionsController {
     constructor(private readonly sessionsService: SessionsService) { }
 
     @Get()
-    async findAll(@Query('active') active?: string): Promise<Session[]> {
+    async findAll(@CurrentUser() user: any, @Query('active') active?: string): Promise<Session[]> {
         const isActive = active === 'true' ? true : active === 'false' ? false : undefined;
-        return this.sessionsService.findAll(isActive);
+        return this.sessionsService.findAll(user.id, isActive);
     }
 
     @Get('active')
-    async findActive(): Promise<Session[]> {
-        return this.sessionsService.findAll(true);
+    async findActive(@CurrentUser() user: any): Promise<Session[]> {
+        return this.sessionsService.findAll(user.id, true);
     }
 
     @Get('router/:routerId')
     async findByRouter(
+        @CurrentUser() user: any,
         @Param('routerId') routerId: string,
         @Query('active') active?: string,
     ): Promise<Session[]> {
         const isActive = active === 'true' ? true : active === 'false' ? false : undefined;
-        return this.sessionsService.findByRouter(routerId, isActive);
+        return this.sessionsService.findByRouter(user.id, routerId, isActive);
     }
 
     @Get('stats')
-    async getGlobalStatistics() {
-        return this.sessionsService.getStatistics();
+    async getGlobalStatistics(@CurrentUser() user: any) {
+        return this.sessionsService.getStatistics(user.id);
     }
 
     @Get('stats/:routerId')
-    async getStatistics(@Param('routerId') routerId: string) {
-        return this.sessionsService.getStatistics(routerId);
+    async getStatistics(@CurrentUser() user: any, @Param('routerId') routerId: string) {
+        return this.sessionsService.getStatistics(user.id, routerId);
     }
 
     @Get(':id')
-    async findOne(@Param('id') id: string): Promise<Session> {
-        return this.sessionsService.findOne(id);
+    async findOne(@CurrentUser() user: any, @Param('id') id: string): Promise<Session> {
+        return this.sessionsService.findOne(user.id, id);
     }
 
     @Delete(':id')
     @HttpCode(HttpStatus.OK)
-    async terminate(@Param('id') id: string): Promise<{ message: string; session: Session }> {
-        const session = await this.sessionsService.terminateSession(id);
+    async terminate(@CurrentUser() user: any, @Param('id') id: string): Promise<{ message: string; session: Session }> {
+        const session = await this.sessionsService.terminateSession(user.id, id);
         return {
             message: 'Session terminated successfully',
             session,

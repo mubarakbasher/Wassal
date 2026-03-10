@@ -25,8 +25,9 @@ class SalesRemoteDataSourceImpl implements SalesRemoteDataSource {
       );
 
       if (response.statusCode == 200) {
-        final List<dynamic> data = response.data as List<dynamic>;
-        return data.map((json) => SalesData.fromJson(json)).toList();
+        final rawData = response.data;
+        if (rawData is! List) throw Exception('Unexpected response format');
+        return rawData.map((json) => SalesData.fromJson(json)).toList();
       } else {
         throw ServerException('Failed to load sales chart');
       }
@@ -43,8 +44,9 @@ class SalesRemoteDataSourceImpl implements SalesRemoteDataSource {
       final response = await apiClient.get(ApiEndpoints.salesHistory);
 
       if (response.statusCode == 200) {
-        final List<dynamic> data = response.data as List<dynamic>;
-        return data.map((json) => SalesHistoryItem.fromJson(json)).toList();
+        final rawData = response.data;
+        if (rawData is! List) throw Exception('Unexpected response format');
+        return rawData.map((json) => SalesHistoryItem.fromJson(json)).toList();
       } else {
         throw ServerException('Failed to load sales history');
       }

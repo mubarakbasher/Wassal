@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { AdminSubscriptionsService } from './admin-subscriptions.service';
 import { AdminJwtAuthGuard } from '../auth/guards/admin-jwt-auth.guard';
+import { CreatePlanDto, UpdatePlanDto, AssignSubscriptionDto, ExtendSubscriptionDto } from './dto/admin-subscription.dto';
 
 @Controller('admin/subscriptions')
 @UseGuards(AdminJwtAuthGuard)
@@ -14,12 +15,12 @@ export class AdminSubscriptionsController {
     }
 
     @Post('plans')
-    createPlan(@Body() data: any) {
+    createPlan(@Body() data: CreatePlanDto) {
         return this.subService.createPlan(data);
     }
 
     @Patch('plans/:id')
-    updatePlan(@Param('id') id: string, @Body() data: any) {
+    updatePlan(@Param('id') id: string, @Body() data: UpdatePlanDto) {
         return this.subService.updatePlan(id, data);
     }
 
@@ -40,15 +41,16 @@ export class AdminSubscriptionsController {
     @Patch(':id/extend')
     extendSubscription(
         @Param('id') id: string,
-        @Body('days') days: number
+        @Body() body: ExtendSubscriptionDto
     ) {
-        return this.subService.extendSubscription(id, days);
+        return this.subService.extendSubscription(id, body.days);
     }
 
     @Post('assign')
-    assignSubscription(@Body() body: { userId: string, planId: string, durationDays?: number }) {
+    assignSubscription(@Body() body: AssignSubscriptionDto) {
         return this.subService.assignSubscription(body.userId, body.planId, body.durationDays);
     }
+
     @Patch(':id/cancel')
     cancelSubscription(@Param('id') id: string) {
         return this.subService.cancelSubscription(id);

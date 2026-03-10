@@ -148,7 +148,7 @@ class _CreateHotspotProfilePageState extends State<CreateHotspotProfilePage> {
   }
 
   Future<void> _submitProfile() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (_formKey.currentState?.validate() != true) return;
     if (_selectedRouter == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select a router'), backgroundColor: Colors.red),
@@ -162,7 +162,7 @@ class _CreateHotspotProfilePageState extends State<CreateHotspotProfilePage> {
       final profileData = _generateProfileData();
       
       final response = await ApiClient().post(
-        ApiEndpoints.routerHotspotProfiles(_selectedRouter!.id),
+        ApiEndpoints.routerHotspotProfiles(_selectedRouter?.id ?? ''),
         data: profileData,
       );
 

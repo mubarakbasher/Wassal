@@ -82,13 +82,19 @@ export function VoucherList() {
         }
     };
 
+    const escapeHtml = (str: string) =>
+        str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
     const handlePrint = (voucher: Voucher) => {
         const printWindow = window.open('', '_blank');
         if (printWindow) {
+            const safeUsername = escapeHtml(voucher.username || '');
+            const safePlanName = escapeHtml(voucher.planName || '');
+            const priceDisplay = Number(voucher.price) > 0 ? 'SDG ' + escapeHtml(String(voucher.price)) : 'Free';
             printWindow.document.write(`
         <html>
           <head>
-            <title>Voucher ${voucher.username}</title>
+            <title>Voucher ${safeUsername}</title>
             <style>
               body { font-family: 'Segoe UI', sans-serif; padding: 24px; text-align: center; border: 2px dashed #4f46e5; border-radius: 12px; width: 300px; margin: 0 auto; }
               h2 { margin: 0; color: #4f46e5; font-size: 16px; }
@@ -101,9 +107,9 @@ export function VoucherList() {
           <body>
             <h2>Wi-Fi Access Code</h2>
             <div class="label">Enter this code to connect</div>
-            <div class="code">${voucher.username}</div>
+            <div class="code">${safeUsername}</div>
             <div class="details">
-              ${voucher.planName} · ${Number(voucher.price) > 0 ? '$' + voucher.price : 'Free'}
+              ${safePlanName} · ${priceDisplay}
             </div>
             <div class="hint">Username only — no password needed</div>
             <script>window.print();</script>

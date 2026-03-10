@@ -2257,6 +2257,252 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'You need an active subscription to use this feature. Would you like to view available plans?'**
   String get needSubscriptionFeature;
+
+  /// No description provided for @errorConnectionTimeout.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection timed out.\n\nThe server may be busy or unreachable. Please try again in a moment.'**
+  String get errorConnectionTimeout;
+
+  /// No description provided for @errorConnectionFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to connect to the server.\n\nPlease check your internet connection and try again.'**
+  String get errorConnectionFailed;
+
+  /// No description provided for @errorAuthFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Authentication failed.\n\nYour session may have expired. Please log in again.'**
+  String get errorAuthFailed;
+
+  /// No description provided for @errorPermissionDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Permission denied.\n\nYou do not have access to this resource.'**
+  String get errorPermissionDenied;
+
+  /// No description provided for @errorNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Resource not found.\n\nThe requested data could not be located.'**
+  String get errorNotFound;
+
+  /// No description provided for @errorServerGeneric.
+  ///
+  /// In en, this message translates to:
+  /// **'Server error ({statusCode}).\n\nPlease try again later.'**
+  String errorServerGeneric(int statusCode);
+
+  /// No description provided for @errorRequestCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Request cancelled.'**
+  String get errorRequestCancelled;
+
+  /// No description provided for @errorNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'Network error.\n\nPlease check your internet connection and try again.'**
+  String get errorNetwork;
+
+  /// No description provided for @errorUnexpected.
+  ///
+  /// In en, this message translates to:
+  /// **'An unexpected error occurred.'**
+  String get errorUnexpected;
+
+  /// No description provided for @ok.
+  ///
+  /// In en, this message translates to:
+  /// **'OK'**
+  String get ok;
+
+  /// No description provided for @dismiss.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss'**
+  String get dismiss;
+
+  /// No description provided for @sessions.
+  ///
+  /// In en, this message translates to:
+  /// **'Sessions'**
+  String get sessions;
+
+  /// No description provided for @activeSessions.
+  ///
+  /// In en, this message translates to:
+  /// **'Active Sessions'**
+  String get activeSessions;
+
+  /// No description provided for @allSessions.
+  ///
+  /// In en, this message translates to:
+  /// **'All Sessions'**
+  String get allSessions;
+
+  /// No description provided for @sessionDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Session Details'**
+  String get sessionDetails;
+
+  /// No description provided for @terminateSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Terminate Session'**
+  String get terminateSession;
+
+  /// No description provided for @sessionTerminated.
+  ///
+  /// In en, this message translates to:
+  /// **'Session terminated successfully'**
+  String get sessionTerminated;
+
+  /// No description provided for @noSessionsFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No sessions found'**
+  String get noSessionsFound;
+
+  /// No description provided for @hotspotProfiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Hotspot Profiles'**
+  String get hotspotProfiles;
+
+  /// No description provided for @createProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Profile'**
+  String get createProfile;
+
+  /// No description provided for @profileName.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile Name'**
+  String get profileName;
+
+  /// No description provided for @rateLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Rate Limit'**
+  String get rateLimit;
+
+  /// No description provided for @sharedUsers.
+  ///
+  /// In en, this message translates to:
+  /// **'Shared Users'**
+  String get sharedUsers;
+
+  /// No description provided for @sessionTimeout.
+  ///
+  /// In en, this message translates to:
+  /// **'Session Timeout'**
+  String get sessionTimeout;
+
+  /// No description provided for @idleTimeout.
+  ///
+  /// In en, this message translates to:
+  /// **'Idle Timeout'**
+  String get idleTimeout;
+
+  /// No description provided for @keepaliveTimeout.
+  ///
+  /// In en, this message translates to:
+  /// **'Keepalive Timeout'**
+  String get keepaliveTimeout;
+
+  /// No description provided for @deleteRouter.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Router'**
+  String get deleteRouter;
+
+  /// No description provided for @deleteRouterConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete this router? This action cannot be undone.'**
+  String get deleteRouterConfirm;
+
+  /// No description provided for @routerDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Router deleted successfully'**
+  String get routerDeleted;
+
+  /// No description provided for @editRouter.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Router'**
+  String get editRouter;
+
+  /// No description provided for @routerUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Router updated successfully'**
+  String get routerUpdated;
+
+  /// No description provided for @failedDeleteRouter.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to delete router'**
+  String get failedDeleteRouter;
+
+  /// No description provided for @failedUpdateRouter.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to update router'**
+  String get failedUpdateRouter;
+
+  /// No description provided for @rebootRouter.
+  ///
+  /// In en, this message translates to:
+  /// **'Reboot Router'**
+  String get rebootRouter;
+
+  /// No description provided for @rebootRouterConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to reboot this router?'**
+  String get rebootRouterConfirm;
+
+  /// No description provided for @rebootSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Router reboot initiated'**
+  String get rebootSuccess;
+
+  /// No description provided for @splashConnecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting to server...'**
+  String get splashConnecting;
+
+  /// No description provided for @splashCheckingAuth.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking authentication...'**
+  String get splashCheckingAuth;
+
+  /// No description provided for @splashLoadingProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading profile...'**
+  String get splashLoadingProfile;
+
+  /// No description provided for @splashReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready!'**
+  String get splashReady;
+
+  /// No description provided for @splashFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection failed'**
+  String get splashFailed;
 }
 
 class _AppLocalizationsDelegate

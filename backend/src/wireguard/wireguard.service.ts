@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { execSync } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class WireGuardService {
@@ -169,7 +170,7 @@ export class WireGuardService {
             {
                 title: 'Create API User',
                 description: 'Creates the management user for Wassal',
-                command: `:do { /user remove wassal_auto } on-error={}; /user add name=wassal_auto group=full password=WassalAuto2026 comment="Wassal Auto-Connect"`,
+                command: `:do { /user remove wassal_auto } on-error={}; /user add name=wassal_auto group=full password=${process.env.MIKROTIK_AUTO_PASSWORD || 'WassalAuto2026'} comment="Wassal Auto-Connect"`,
             },
             {
                 title: 'Enable API Service',
@@ -179,7 +180,11 @@ export class WireGuardService {
             {
                 title: 'Register Router',
                 description: 'Sends router info to Wassal for auto-discovery',
-                command: `/tool fetch url="${callbackBaseUrl}/public/routers/script-callback?vpnIp=${vpnIp}&userId=${userId}" mode=https check-certificate=no keep-result=no`,
+                command: (() => {
+                    const secret = process.env.JWT_SECRET!;
+                    const sig = crypto.createHmac('sha256', secret).update(userId).digest('hex').substring(0, 16);
+                    return `/tool fetch url="${callbackBaseUrl}/public/routers/script-callback?vpnIp=${vpnIp}&userId=${userId}&sig=${sig}" mode=https check-certificate=no keep-result=no`;
+                })(),
             },
         ];
 

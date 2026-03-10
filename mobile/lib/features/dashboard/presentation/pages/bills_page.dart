@@ -38,7 +38,9 @@ class _BillsPageState extends State<BillsPage> {
       final apiClient = context.read<ApiClient>();
       final response = await apiClient.get(ApiEndpoints.myPayments);
       if (mounted && response.statusCode == 200) {
-        final List<dynamic> data = response.data as List<dynamic>;
+        final rawData = response.data;
+        if (rawData is! List) throw Exception('Unexpected response format');
+        final List<dynamic> data = rawData;
         setState(() {
           _payments = data
               .map((json) => PaymentModel.fromJson(json as Map<String, dynamic>))

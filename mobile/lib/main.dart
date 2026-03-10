@@ -33,6 +33,9 @@ import 'features/vouchers/data/repositories/voucher_repository_impl.dart';
 import 'features/sales/data/datasources/sales_remote_data_source.dart';
 import 'features/sales/data/repositories/sales_repository_impl.dart';
 import 'features/sales/presentation/bloc/sales_bloc.dart';
+import 'features/sessions/data/datasources/session_remote_data_source_impl.dart';
+import 'features/sessions/data/repositories/session_repository_impl.dart';
+import 'features/sessions/presentation/bloc/session_bloc.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -91,6 +94,14 @@ class MyApp extends StatelessWidget {
       localDataSource: voucherLocalDataSource,
     );
 
+    final sessionRemoteDataSource = SessionRemoteDataSourceImpl(
+      apiClient: apiClient,
+    );
+
+    final sessionRepository = SessionRepositoryImpl(
+      remoteDataSource: sessionRemoteDataSource,
+    );
+
     // Startup service for splash screen checks
     final startupService = StartupService(
       apiClient: apiClient,
@@ -138,6 +149,11 @@ class MyApp extends StatelessWidget {
           BlocProvider(
             create: (context) => DashboardBloc(
               apiClient: apiClient,
+            ),
+          ),
+          BlocProvider(
+            create: (context) => SessionBloc(
+              repository: sessionRepository,
             ),
           ),
         ],

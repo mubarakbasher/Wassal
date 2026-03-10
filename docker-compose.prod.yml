@@ -36,6 +36,7 @@ services:
       ENV_RADIUS_DB_USER: ${DB_USER:-postgres}
       ENV_RADIUS_DB_PASS: ${DB_PASSWORD}
       ENV_RADIUS_DB_NAME: ${DB_NAME:-mikrotik_hotspot}
+      RADIUS_SECRET: ${RADIUS_SECRET}
     restart: unless-stopped
 
   backend:

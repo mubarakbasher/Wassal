@@ -64,15 +64,14 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   void _updateProfile() {
-    if (_formKey.currentState!.validate()) {
-      _wasUpdateTriggered = true;
-      context.read<AuthBloc>().add(UpdateProfileEvent(
-        name: _nameController.text,
-        email: _emailController.text,
-        networkName: _networkNameController.text,
-        password: _passwordController.text.isNotEmpty ? _passwordController.text : null,
-      ));
-    }
+    if (_formKey.currentState?.validate() != true) return;
+    _wasUpdateTriggered = true;
+    context.read<AuthBloc>().add(UpdateProfileEvent(
+      name: _nameController.text,
+      email: _emailController.text,
+      networkName: _networkNameController.text,
+      password: _passwordController.text.isNotEmpty ? _passwordController.text : null,
+    ));
   }
 
   void _showLogoutConfirmation(BuildContext context) {
@@ -326,7 +325,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                   controller: _nameController,
                                   label: AppLocalizations.of(context)!.fullName,
                                   icon: Icons.badge_outlined,
-                                  validator: (value) => value!.isEmpty ? AppLocalizations.of(context)!.nameRequired : null,
+                                  validator: (value) => (value ?? '').isEmpty ? AppLocalizations.of(context)!.nameRequired : null,
                                 ),
                                 const SizedBox(height: 16),
                                 _buildTextField(
@@ -334,7 +333,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                   label: AppLocalizations.of(context)!.emailAddressLabel,
                                   icon: Icons.email_outlined,
                                   keyboardType: TextInputType.emailAddress,
-                                  validator: (value) => value!.isEmpty ? AppLocalizations.of(context)!.emailRequired : null,
+                                  validator: (value) => (value ?? '').isEmpty ? AppLocalizations.of(context)!.emailRequired : null,
                                 ),
                               ],
                             ),

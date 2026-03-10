@@ -35,8 +35,8 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   void _onRegister() {
-    if (_formKey.currentState!.validate()) {
-      context.read<AuthBloc>().add(
+    if (_formKey.currentState?.validate() != true) return;
+    context.read<AuthBloc>().add(
             RegisterEvent(
               email: _emailController.text.trim(),
               password: _passwordController.text,
@@ -44,7 +44,6 @@ class _RegisterPageState extends State<RegisterPage> {
               role: 'OPERATOR',
             ),
           );
-    }
   }
 
   @override

@@ -11,12 +11,15 @@ import {
     HttpStatus,
     Query,
     Req,
+    BadRequestException,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { RoutersService } from './routers.service';
 import { CreateRouterDto, UpdateRouterDto } from './dto/router.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { SubscriptionGuard } from '../auth/guards/subscription.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import * as crypto from 'crypto';
 
 @Controller('routers')
 @UseGuards(JwtAuthGuard, SubscriptionGuard)
@@ -146,12 +149,32 @@ export class PublicRoutersController {
     constructor(private readonly routersService: RoutersService) { }
 
     @Get('script-callback')
+    @Throttle({ short: { limit: 3, ttl: 60000 } })
     handleCallback(
         @Query('ip') ip: string,
         @Query('vpnIp') vpnIp: string,
         @Query('userId') userId: string,
+        @Query('sig') sig: string,
         @Req() req: any
     ) {
+        if (!userId) {
+            throw new BadRequestException('Missing userId parameter');
+        }
+
+        const secret = process.env.JWT_SECRET;
+        if (secret) {
+            if (!sig) {
+                throw new BadRequestException('Missing callback signature');
+            }
+            const expectedSig = crypto
+                .createHmac('sha256', secret)
+                .update(userId)
+                .digest('hex')
+                .substring(0, 16);
+            if (sig !== expectedSig) {
+                throw new BadRequestException('Invalid callback signature');
+            }
+        }
         // WireGuard VPN path: vpnIp is provided by the script
         if (vpnIp) {
             return this.routersService.handleScriptCallback(vpnIp, userId, vpnIp);

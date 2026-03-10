@@ -28,7 +28,9 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        return response.data as Map<String, dynamic>;
+        final data = response.data;
+        if (data is! Map<String, dynamic>) throw Exception('Unexpected response format');
+        return data;
       } else {
         throw ServerException('Login failed');
       }
@@ -61,7 +63,9 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        return response.data as Map<String, dynamic>;
+        final data = response.data;
+        if (data is! Map<String, dynamic>) throw Exception('Unexpected response format');
+        return data;
       } else {
         throw ServerException('Registration failed');
       }
@@ -81,7 +85,9 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       final response = await apiClient.get(ApiEndpoints.profile);
 
       if (response.statusCode == 200) {
-        return UserModel.fromJson(response.data as Map<String, dynamic>);
+        final data = response.data;
+        if (data is! Map<String, dynamic>) throw Exception('Unexpected response format');
+        return UserModel.fromJson(data);
       } else {
         throw ServerException('Failed to get profile');
       }
@@ -104,7 +110,9 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       );
 
       if (response.statusCode == 200) {
-        return UserModel.fromJson(response.data as Map<String, dynamic>);
+        final data = response.data;
+        if (data is! Map<String, dynamic>) throw Exception('Unexpected response format');
+        return UserModel.fromJson(data);
       } else {
         throw ServerException('Failed to update profile');
       }

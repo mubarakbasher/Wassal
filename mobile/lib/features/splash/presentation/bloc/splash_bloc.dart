@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import '../../data/startup_service.dart';
@@ -27,6 +29,19 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
   }
 
   Future<void> _runChecks(Emitter<SplashState> emit) async {
+    try {
+      await _runChecksInternal(emit).timeout(
+        const Duration(seconds: 15),
+        onTimeout: () => throw TimeoutException('Connection timed out'),
+      );
+    } on TimeoutException {
+      emit(const SplashServerError(
+        message: 'Connection timed out. Please check your connection and try again.',
+      ));
+    }
+  }
+
+  Future<void> _runChecksInternal(Emitter<SplashState> emit) async {
     // Phase 1: Logo animation (0-1s)
     emit(const SplashChecking(
       statusText: '',

@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Patch, Body, Query, UseGuards, Request } from '@nestjs/common';
 import { AdminSystemService } from './admin-system.service';
 import { AdminJwtAuthGuard } from '../auth/guards/admin-jwt-auth.guard';
+import { UpdateConfigDto, ChangePasswordDto, UpdateProfileDto } from './dto/admin-system.dto';
 
 @Controller('admin/system')
 @UseGuards(AdminJwtAuthGuard)
@@ -18,7 +19,7 @@ export class AdminSystemController {
     }
 
     @Post('config')
-    updateConfig(@Body() body: { key: string; value: string }) {
+    updateConfig(@Body() body: UpdateConfigDto) {
         return this.systemService.updateSystemConfig(body.key, body.value);
     }
 
@@ -38,14 +39,14 @@ export class AdminSystemController {
     }
 
     @Patch('profile')
-    updateProfile(@Request() req: any, @Body() body: { name?: string; email?: string }) {
+    updateProfile(@Request() req: any, @Body() body: UpdateProfileDto) {
         return this.systemService.updateAdminProfile(req.user.id, body);
     }
 
     @Patch('change-password')
     changePassword(
         @Request() req: any,
-        @Body() body: { currentPassword: string; newPassword: string },
+        @Body() body: ChangePasswordDto,
     ) {
         return this.systemService.changeAdminPassword(req.user.id, body.currentPassword, body.newPassword);
     }

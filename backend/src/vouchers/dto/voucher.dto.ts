@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsEnum, IsInt, IsOptional, Min, IsNumber } from 'class-validator';
+import { IsString, IsNotEmpty, IsEnum, IsInt, IsOptional, Min, IsNumber, IsIn } from 'class-validator';
 import { PlanType, CountType } from '@prisma/client';
 
 export enum VoucherCharset {
@@ -66,7 +66,7 @@ export class CreateVoucherDto {
 }
 
 export class UpdateVoucherStatusDto {
-    @IsEnum(['UNUSED', 'ACTIVE', 'EXPIRED', 'SOLD'])
+    @IsIn(['UNUSED', 'ACTIVE', 'EXPIRED', 'SOLD'])
     status: string;
 }
 
@@ -75,7 +75,7 @@ export class VoucherFilterDto {
     @IsOptional()
     routerId?: string;
 
-    @IsEnum(['UNUSED', 'ACTIVE', 'EXPIRED', 'SOLD'])
+    @IsIn(['UNUSED', 'ACTIVE', 'EXPIRED', 'SOLD'])
     @IsOptional()
     status?: string;
 

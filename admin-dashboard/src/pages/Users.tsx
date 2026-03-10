@@ -30,7 +30,28 @@ export function UsersPage() {
     const [totalPages, setTotalPages] = useState(1);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
-    const fetchUsers = async () => {
+    useEffect(() => {
+        const fetchUsers = async () => {
+            setLoading(true);
+            try {
+                const { data } = await api.get('/admin/users', {
+                    params: { page, limit: 10, search }
+                });
+                setUsers(data.data);
+                setTotalPages(data.meta.lastPage);
+            } catch (error) {
+                console.error('Failed to fetch users', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        const handler = setTimeout(() => {
+            fetchUsers();
+        }, 300); // Debounce search
+        return () => clearTimeout(handler);
+    }, [page, search]);
+
+    const refreshUsers = async () => {
         setLoading(true);
         try {
             const { data } = await api.get('/admin/users', {
@@ -45,19 +66,12 @@ export function UsersPage() {
         }
     };
 
-    useEffect(() => {
-        const handler = setTimeout(() => {
-            fetchUsers();
-        }, 300); // Debounce search
-        return () => clearTimeout(handler);
-    }, [page, search]);
-
     const toggleStatus = async (id: string, currentStatus: boolean) => {
         if (!window.confirm(`Are you sure you want to ${currentStatus ? 'ban' : 'activate'} this user?`)) return;
 
         try {
             await api.patch(`/admin/users/${id}/status`, { isActive: !currentStatus });
-            fetchUsers(); // Refresh list
+            refreshUsers(); // Refresh list
         } catch (error) {
             alert('Failed to update status');
         }
@@ -66,7 +80,7 @@ export function UsersPage() {
     const handleCreateUser = async (data: any) => {
         try {
             await api.post('/admin/users', data);
-            fetchUsers();
+            refreshUsers();
         } catch (error: any) {
             alert(error.response?.data?.message || 'Failed to create user');
             throw error;

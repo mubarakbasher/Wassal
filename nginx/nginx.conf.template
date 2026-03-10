@@ -1,7 +1,15 @@
+# Rate limiting zone (must be at http level; included files are inside http)
+limit_req_zone $binary_remote_addr zone=api:10m rate=30r/s;
+
 # HTTP — redirect all traffic to HTTPS and serve ACME challenges
 server {
     listen 80;
     server_name __DOMAIN__ admin.__DOMAIN__ api.__DOMAIN__;
+
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
 
     location /.well-known/acme-challenge/ {
         root /var/www/certbot;
@@ -26,7 +34,13 @@ server {
 
     client_max_body_size 20M;
 
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+
     location / {
+        limit_req zone=api burst=50 nodelay;
         proxy_pass         http://host.docker.internal:3001;
         proxy_http_version 1.1;
         proxy_read_timeout    120s;
@@ -53,6 +67,11 @@ server {
     ssl_ciphers HIGH:!aNULL:!MD5;
     ssl_prefer_server_ciphers on;
 
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+
     location / {
         proxy_pass         http://wassal-admin:80;
         proxy_http_version 1.1;
@@ -74,6 +93,11 @@ server {
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_ciphers HIGH:!aNULL:!MD5;
     ssl_prefer_server_ciphers on;
+
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
 
     location / {
         return 301 https://admin.__DOMAIN__$request_uri;

@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import { AdminJwtAuthGuard } from '../auth/guards/admin-jwt-auth.guard';
 import { AdminVouchersService } from './admin-vouchers.service';
+import { CreateVoucherDto } from './dto/admin-voucher.dto';
 
 @Controller('admin/vouchers')
 @UseGuards(AdminJwtAuthGuard)
@@ -24,7 +25,7 @@ export class AdminVouchersController {
     }
 
     @Post()
-    create(@Body() body: any) {
+    create(@Body() body: CreateVoucherDto) {
         return this.vouchersService.create(body);
     }
 

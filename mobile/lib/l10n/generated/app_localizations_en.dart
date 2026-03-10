@@ -1160,4 +1160,137 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get needSubscriptionFeature =>
       'You need an active subscription to use this feature. Would you like to view available plans?';
+
+  @override
+  String get errorConnectionTimeout =>
+      'Connection timed out.\n\nThe server may be busy or unreachable. Please try again in a moment.';
+
+  @override
+  String get errorConnectionFailed =>
+      'Unable to connect to the server.\n\nPlease check your internet connection and try again.';
+
+  @override
+  String get errorAuthFailed =>
+      'Authentication failed.\n\nYour session may have expired. Please log in again.';
+
+  @override
+  String get errorPermissionDenied =>
+      'Permission denied.\n\nYou do not have access to this resource.';
+
+  @override
+  String get errorNotFound =>
+      'Resource not found.\n\nThe requested data could not be located.';
+
+  @override
+  String errorServerGeneric(int statusCode) {
+    return 'Server error ($statusCode).\n\nPlease try again later.';
+  }
+
+  @override
+  String get errorRequestCancelled => 'Request cancelled.';
+
+  @override
+  String get errorNetwork =>
+      'Network error.\n\nPlease check your internet connection and try again.';
+
+  @override
+  String get errorUnexpected => 'An unexpected error occurred.';
+
+  @override
+  String get ok => 'OK';
+
+  @override
+  String get dismiss => 'Dismiss';
+
+  @override
+  String get sessions => 'Sessions';
+
+  @override
+  String get activeSessions => 'Active Sessions';
+
+  @override
+  String get allSessions => 'All Sessions';
+
+  @override
+  String get sessionDetails => 'Session Details';
+
+  @override
+  String get terminateSession => 'Terminate Session';
+
+  @override
+  String get sessionTerminated => 'Session terminated successfully';
+
+  @override
+  String get noSessionsFound => 'No sessions found';
+
+  @override
+  String get hotspotProfiles => 'Hotspot Profiles';
+
+  @override
+  String get createProfile => 'Create Profile';
+
+  @override
+  String get profileName => 'Profile Name';
+
+  @override
+  String get rateLimit => 'Rate Limit';
+
+  @override
+  String get sharedUsers => 'Shared Users';
+
+  @override
+  String get sessionTimeout => 'Session Timeout';
+
+  @override
+  String get idleTimeout => 'Idle Timeout';
+
+  @override
+  String get keepaliveTimeout => 'Keepalive Timeout';
+
+  @override
+  String get deleteRouter => 'Delete Router';
+
+  @override
+  String get deleteRouterConfirm =>
+      'Are you sure you want to delete this router? This action cannot be undone.';
+
+  @override
+  String get routerDeleted => 'Router deleted successfully';
+
+  @override
+  String get editRouter => 'Edit Router';
+
+  @override
+  String get routerUpdated => 'Router updated successfully';
+
+  @override
+  String get failedDeleteRouter => 'Failed to delete router';
+
+  @override
+  String get failedUpdateRouter => 'Failed to update router';
+
+  @override
+  String get rebootRouter => 'Reboot Router';
+
+  @override
+  String get rebootRouterConfirm =>
+      'Are you sure you want to reboot this router?';
+
+  @override
+  String get rebootSuccess => 'Router reboot initiated';
+
+  @override
+  String get splashConnecting => 'Connecting to server...';
+
+  @override
+  String get splashCheckingAuth => 'Checking authentication...';
+
+  @override
+  String get splashLoadingProfile => 'Loading profile...';
+
+  @override
+  String get splashReady => 'Ready!';
+
+  @override
+  String get splashFailed => 'Connection failed';
 }

@@ -1,39 +1,52 @@
 import 'package:dio/dio.dart';
+import 'package:mobile/l10n/generated/app_localizations.dart';
 
 class ErrorHandler {
-  static String mapDioErrorToMessage(dynamic e) {
+  /// Maps a Dio error to a user-friendly localized message.
+  /// Pass [l10n] to get a localized string; falls back to English if null.
+  static String mapDioErrorToMessage(dynamic e, [AppLocalizations? l10n]) {
     if (e is DioException) {
       switch (e.type) {
         case DioExceptionType.connectionTimeout:
         case DioExceptionType.sendTimeout:
         case DioExceptionType.receiveTimeout:
-          return "Connection Timeout. \n\nPossible Solution: Check if the IP address is correct and the router is reachable from this network.";
-        
+          return l10n?.errorConnectionTimeout ??
+              "Connection timed out.\n\nThe server may be busy or unreachable. Please try again in a moment.";
+
         case DioExceptionType.connectionError:
-           return "Connection Error. \n\nPossible Solution: Ensure the router is powered on and the API service is enabled.";
+          return l10n?.errorConnectionFailed ??
+              "Unable to connect to the server.\n\nPlease check your internet connection and try again.";
 
         case DioExceptionType.badResponse:
           final statusCode = e.response?.statusCode;
           if (statusCode == 401) {
-             return "Authentication Failed. \n\nPossible Solution: Check your username and password.";
+            return l10n?.errorAuthFailed ??
+                "Authentication failed.\n\nYour session may have expired. Please log in again.";
           } else if (statusCode == 403) {
-             final message = e.response?.data is Map ? e.response?.data['message'] : null;
-             if (message != null && message.toString().toLowerCase().contains('subscription')) {
-               return "[SUBSCRIPTION_REQUIRED]$message";
-             }
-             return "Permission Denied. \n\nPossible Solution: The user does not have sufficient rights.";
+            final message =
+                e.response?.data is Map ? e.response?.data['message'] : null;
+            if (message != null &&
+                message.toString().toLowerCase().contains('subscription')) {
+              return "[SUBSCRIPTION_REQUIRED]$message";
+            }
+            return l10n?.errorPermissionDenied ??
+                "Permission denied.\n\nYou do not have access to this resource.";
           } else if (statusCode == 404) {
-             return "Resource Not Found. \n\nPossible Solution: The requested resource path is incorrect.";
+            return l10n?.errorNotFound ??
+                "Resource not found.\n\nThe requested data could not be located.";
           }
-           return e.response?.data['message'] ?? "Server Error ($statusCode). \n\nPossible Solution: Check server logs.";
+          return e.response?.data['message'] ??
+              l10n?.errorServerGeneric(statusCode ?? 500) ??
+              "Server error ($statusCode).\n\nPlease try again later.";
 
         case DioExceptionType.cancel:
-          return "Request Cancelled.";
-          
+          return l10n?.errorRequestCancelled ?? "Request cancelled.";
+
         default:
-          return "Network Error: ${e.message}. \n\nPossible Solution: Check your internet connection.";
+          return l10n?.errorNetwork ??
+              "Network error.\n\nPlease check your internet connection and try again.";
       }
     }
-    return "An unexpected error occurred: $e";
+    return l10n?.errorUnexpected ?? "An unexpected error occurred: $e";
   }
 }

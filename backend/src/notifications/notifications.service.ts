@@ -69,10 +69,12 @@ export class NotificationsService {
     }
 
     // Remove a device token
-    async removeToken(token: string) {
-        await this.prisma.deviceToken.deleteMany({
-            where: { token },
-        });
+    async removeToken(token: string, userId?: string) {
+        const where: any = { token };
+        if (userId) {
+            where.userId = userId;
+        }
+        await this.prisma.deviceToken.deleteMany({ where });
     }
 
     // Send notification to a specific user

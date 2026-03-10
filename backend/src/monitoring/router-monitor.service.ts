@@ -144,11 +144,11 @@ export class RouterMonitorService implements OnModuleInit {
         try {
             const algorithm = 'aes-256-cbc';
             // Must match the key used for encryption in routers.service.ts
-            const key = crypto.scryptSync(process.env.JWT_SECRET || 'secret', 'salt', 32);
+            const key = crypto.scryptSync(process.env.JWT_SECRET, 'salt', 32);
 
             const parts = encryptedPassword.split(':');
             if (parts.length !== 2) {
-                return encryptedPassword;
+                throw new Error('Invalid encrypted password format');
             }
 
             const iv = Buffer.from(parts[0], 'hex');
@@ -159,7 +159,7 @@ export class RouterMonitorService implements OnModuleInit {
             return decrypted;
         } catch (error) {
             this.logger.error(`Failed to decrypt password: ${error.message}`);
-            return encryptedPassword;
+            throw error;
         }
     }
 }

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../constants/app_constants.dart';
@@ -6,7 +7,7 @@ class ApiInterceptor extends Interceptor {
   final FlutterSecureStorage _secureStorage;
   final Dio _dio;
   bool _isRefreshing = false;
-  final List<_RetryRequest> _pendingRequests = [];
+  Completer<bool>? _refreshCompleter;
 
   ApiInterceptor(this._secureStorage)
       : _dio = Dio(BaseOptions(
@@ -20,9 +21,8 @@ class ApiInterceptor extends Interceptor {
     RequestOptions options,
     RequestInterceptorHandler handler,
   ) async {
-    // Add authorization token to requests
     final token = await _secureStorage.read(key: AppConstants.accessTokenKey);
-    
+
     if (token != null) {
       options.headers['Authorization'] = 'Bearer $token';
     }
@@ -32,27 +32,23 @@ class ApiInterceptor extends Interceptor {
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) async {
-    // Only try to refresh on 401 and if this isn't already a refresh request
     if (err.response?.statusCode == 401 &&
         !err.requestOptions.path.contains('/auth/refresh') &&
         !err.requestOptions.path.contains('/auth/login')) {
-      
-      // Try to refresh the token
-      final refreshed = await _tryRefreshToken(err.requestOptions);
+      final refreshed = await _tryRefreshToken();
       if (refreshed) {
-        // Retry the original request with the new token
         try {
-          final newToken = await _secureStorage.read(key: AppConstants.accessTokenKey);
+          final newToken =
+              await _secureStorage.read(key: AppConstants.accessTokenKey);
           err.requestOptions.headers['Authorization'] = 'Bearer $newToken';
 
           final response = await _dio.fetch(err.requestOptions);
           return handler.resolve(response);
-        } catch (retryError) {
+        } catch (_) {
           // Retry failed, fall through to clear tokens
         }
       }
 
-      // Refresh failed — clear all tokens
       await _secureStorage.delete(key: AppConstants.accessTokenKey);
       await _secureStorage.delete(key: AppConstants.refreshTokenKey);
       await _secureStorage.delete(key: AppConstants.userDataKey);
@@ -63,23 +59,24 @@ class ApiInterceptor extends Interceptor {
 
   @override
   void onResponse(Response response, ResponseInterceptorHandler handler) {
-    // Handle successful responses
     super.onResponse(response, handler);
   }
 
-  /// Attempt to refresh the access token using the stored refresh token.
-  /// Returns true if refresh succeeded.
-  Future<bool> _tryRefreshToken(RequestOptions failedRequest) async {
-    // If already refreshing, wait for result
+  /// Attempt to refresh the access token.
+  /// Concurrent callers share the same in-flight refresh via [_refreshCompleter].
+  Future<bool> _tryRefreshToken() async {
     if (_isRefreshing) {
-      return false;
+      return _refreshCompleter!.future;
     }
 
     _isRefreshing = true;
+    _refreshCompleter = Completer<bool>();
 
     try {
-      final refreshToken = await _secureStorage.read(key: AppConstants.refreshTokenKey);
+      final refreshToken =
+          await _secureStorage.read(key: AppConstants.refreshTokenKey);
       if (refreshToken == null) {
+        _refreshCompleter!.complete(false);
         return false;
       }
 
@@ -89,27 +86,31 @@ class ApiInterceptor extends Interceptor {
       );
 
       if (response.statusCode == 200) {
-        final newAccessToken = response.data['accessToken'] as String;
-        final newRefreshToken = response.data['refreshToken'] as String;
+        final newAccessToken = response.data['accessToken'] as String?;
+        final newRefreshToken = response.data['refreshToken'] as String?;
 
-        // Store the new tokens
-        await _secureStorage.write(key: AppConstants.accessTokenKey, value: newAccessToken);
-        await _secureStorage.write(key: AppConstants.refreshTokenKey, value: newRefreshToken);
+        if (newAccessToken == null || newRefreshToken == null) {
+          _refreshCompleter!.complete(false);
+          return false;
+        }
 
+        await _secureStorage.write(
+            key: AppConstants.accessTokenKey, value: newAccessToken);
+        await _secureStorage.write(
+            key: AppConstants.refreshTokenKey, value: newRefreshToken);
+
+        _refreshCompleter!.complete(true);
         return true;
       }
+
+      _refreshCompleter!.complete(false);
       return false;
     } catch (e) {
+      _refreshCompleter!.complete(false);
       return false;
     } finally {
       _isRefreshing = false;
+      _refreshCompleter = null;
     }
   }
-}
-
-class _RetryRequest {
-  final RequestOptions requestOptions;
-  final ErrorInterceptorHandler handler;
-
-  _RetryRequest({required this.requestOptions, required this.handler});
 }

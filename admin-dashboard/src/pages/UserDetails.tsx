@@ -11,18 +11,19 @@ export function UserDetailsPage() {
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
-    const fetchUser = async () => {
-        try {
-            const { data } = await api.get(`/admin/users/${id}`);
-            setUser(data);
-        } catch (error) {
-            console.error(error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
     useEffect(() => {
+        const fetchUser = async () => {
+            if (!id) return;
+            try {
+                const { data } = await api.get(`/admin/users/${id}`);
+                setUser(data);
+            } catch (error) {
+                console.error(error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        setLoading(true);
         fetchUser();
     }, [id]);
 
@@ -34,7 +35,8 @@ export function UserDetailsPage() {
         if (confirm(`Are you sure you want to ${action} this user?`)) {
             try {
                 await api.patch(`/admin/users/${user.id}/status`, { isActive: newStatus });
-                fetchUser();
+                const { data } = await api.get(`/admin/users/${id}`);
+                setUser(data);
             } catch (error) {
                 alert(`Failed to ${action} user`);
             }
@@ -106,7 +108,7 @@ export function UserDetailsPage() {
                             <div className="bg-gradient-to-r from-indigo-50 to-blue-50 rounded-lg p-5 border border-indigo-100">
                                 <div className="flex justify-between items-start">
                                     <div>
-                                        <h4 className="font-bold text-indigo-900 text-lg">{user.subscription.plan.name}</h4>
+                                        <h4 className="font-bold text-indigo-900 text-lg">{user.subscription?.plan?.name ?? 'Unknown Plan'}</h4>
                                         <p className="text-sm text-indigo-600">Expires: {new Date(user.subscription.expiresAt).toLocaleDateString()}</p>
                                     </div>
                                     <div className="flex flex-col items-end gap-2">
@@ -116,7 +118,8 @@ export function UserDetailsPage() {
                                                 if (confirm('Are you sure you want to cancel this subscription?')) {
                                                     try {
                                                         await api.patch(`/admin/subscriptions/${user.subscription.id}/cancel`);
-                                                        fetchUser();
+                                                        const { data } = await api.get(`/admin/users/${id}`);
+                                                        setUser(data);
                                                     } catch (e) {
                                                         alert('Failed to cancel subscription');
                                                     }
@@ -132,12 +135,7 @@ export function UserDetailsPage() {
                         ) : (
                             <div className="text-center py-6 bg-gray-50 rounded-lg border border-dashed border-gray-200 flex flex-col items-center justify-center gap-2">
                                 <p className="text-gray-500">No active subscription</p>
-                                <button
-                                    onClick={toggleStatus}
-                                    className={`text-xs font-medium underline ${user.isActive ? 'text-red-500 hover:text-red-700' : 'text-green-600 hover:text-green-800'}`}
-                                >
-                                    {user.isActive ? 'Ban User' : 'Activate User'}
-                                </button>
+                                <p className="text-xs text-gray-400">Use &quot;Assign Plan&quot; above to add a subscription.</p>
                             </div>
                         )}
                     </div>
@@ -191,7 +189,8 @@ export function UserDetailsPage() {
                                                     if (confirm('Are you sure you want to delete this router?')) {
                                                         try {
                                                             await api.delete(`/admin/users/${user.id}/routers/${router.id}`);
-                                                            fetchUser();
+                                                            const { data } = await api.get(`/admin/users/${id}`);
+                                                            setUser(data);
                                                         } catch (e) {
                                                             alert('Failed to delete router');
                                                         }
@@ -249,7 +248,7 @@ export function UserDetailsPage() {
                                 user.payments.slice(0, 5).map((pay: any) => (
                                     <div key={pay.id} className="flex justify-between items-center text-sm">
                                         <div>
-                                            <p className="font-medium text-gray-900">${pay.amount}</p>
+                                            <p className="font-medium text-gray-900">{pay.amount} SDG</p>
                                             <p className="text-xs text-gray-500">{new Date(pay.createdAt).toLocaleDateString()}</p>
                                         </div>
                                         <Badge variant={pay.status === 'APPROVED' ? 'success' : pay.status === 'PENDING' ? 'warning' : 'error'}>
@@ -274,7 +273,10 @@ export function UserDetailsPage() {
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 userId={user.id}
-                onSuccess={fetchUser}
+                onSuccess={async () => {
+                    const { data } = await api.get(`/admin/users/${id}`);
+                    setUser(data);
+                }}
             />
         </div>
     );

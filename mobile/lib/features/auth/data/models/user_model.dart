@@ -13,22 +13,30 @@ class UserModel extends User {
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
-    print("DEBUG: Parsing User JSON: $json"); // Debug log
+    final sub = json['subscription'] as Map<String, dynamic>?;
+    UserSubscription? subscription;
+    if (sub != null) {
+      final plan = sub['plan'] as Map<String, dynamic>?;
+      subscription = UserSubscription(
+        status: sub['status'] as String? ?? 'UNKNOWN',
+        planName: plan?['name'] as String? ?? 'Unknown Plan',
+        expiresAt: sub['expiresAt'] != null
+            ? DateTime.parse(sub['expiresAt'] as String)
+            : DateTime.now(),
+      );
+    }
+
     return UserModel(
-      id: json['id'] as String,
-      email: json['email'] as String,
+      id: json['id'] as String? ?? '',
+      email: json['email'] as String? ?? '',
       name: (json['name'] as String?) ?? '',
       networkName: json['networkName'] as String?,
-      role: json['role'] as String,
+      role: json['role'] as String? ?? 'USER',
       isActive: json['isActive'] as bool? ?? true,
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      subscription: json['subscription'] != null
-          ? UserSubscription(
-              status: json['subscription']['status'] as String,
-              planName: json['subscription']['plan']['name'] as String,
-              expiresAt: DateTime.parse(json['subscription']['expiresAt'] as String),
-            )
-          : null,
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'] as String)
+          : DateTime.now(),
+      subscription: subscription,
     );
   }
 

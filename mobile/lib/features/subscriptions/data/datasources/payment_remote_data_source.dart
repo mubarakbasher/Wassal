@@ -22,8 +22,9 @@ class PaymentRemoteDataSourceImpl implements PaymentRemoteDataSource {
     try {
       final response = await apiClient.get(ApiEndpoints.myPayments);
       if (response.statusCode == 200) {
-        final List<dynamic> data = response.data as List<dynamic>;
-        return data
+        final rawData = response.data;
+        if (rawData is! List) throw Exception('Unexpected response format');
+        return rawData
             .map((json) => PaymentModel.fromJson(json as Map<String, dynamic>))
             .toList();
       }
@@ -41,7 +42,9 @@ class PaymentRemoteDataSourceImpl implements PaymentRemoteDataSource {
     try {
       final response = await apiClient.get(ApiEndpoints.bankInfo);
       if (response.statusCode == 200) {
-        return BankInfo.fromJson(response.data as Map<String, dynamic>);
+        final rawData = response.data;
+        if (rawData is! Map<String, dynamic>) throw Exception('Unexpected response format');
+        return BankInfo.fromJson(rawData);
       }
       throw const ServerException('Failed to load bank info');
     } on DioException catch (e) {

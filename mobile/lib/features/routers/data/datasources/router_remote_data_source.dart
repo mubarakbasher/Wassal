@@ -31,8 +31,10 @@ class RouterRemoteDataSourceImpl implements RouterRemoteDataSource {
       final response = await apiClient.get(endpoint);
 
       if (response.statusCode == 200) {
-        final List<dynamic> data = response.data as List<dynamic>;
-        return data.map((json) => RouterModel.fromJson(json)).toList();
+        final data = response.data;
+        if (data is! List) throw Exception('Unexpected response format');
+        final List<dynamic> list = data;
+        return list.map((json) => RouterModel.fromJson(json)).toList();
       } else {
         throw ServerException('Failed to load routers');
       }
@@ -121,7 +123,9 @@ class RouterRemoteDataSourceImpl implements RouterRemoteDataSource {
       final response = await apiClient.get(ApiEndpoints.routerHealth(id));
 
       if (response.statusCode == 200) {
-        return response.data as Map<String, dynamic>;
+        final data = response.data;
+        if (data is! Map<String, dynamic>) throw Exception('Unexpected response format');
+        return data;
       } else {
         throw ServerException('Failed to check router health');
       }
@@ -138,7 +142,9 @@ class RouterRemoteDataSourceImpl implements RouterRemoteDataSource {
       final response = await apiClient.get(ApiEndpoints.routerSystemInfo(id));
 
       if (response.statusCode == 200) {
-        return response.data as Map<String, dynamic>;
+        final data = response.data;
+        if (data is! Map<String, dynamic>) throw Exception('Unexpected response format');
+        return data;
       } else {
         throw ServerException('Failed to get system info');
       }
@@ -155,7 +161,9 @@ class RouterRemoteDataSourceImpl implements RouterRemoteDataSource {
       final response = await apiClient.get(ApiEndpoints.routerStats(id));
 
       if (response.statusCode == 200) {
-        return response.data as Map<String, dynamic>;
+        final data = response.data;
+        if (data is! Map<String, dynamic>) throw Exception('Unexpected response format');
+        return data;
       } else {
         throw ServerException('Failed to get router stats');
       }
@@ -172,7 +180,10 @@ class RouterRemoteDataSourceImpl implements RouterRemoteDataSource {
       final response = await apiClient.get(ApiEndpoints.routerHotspotProfiles(id));
 
       if (response.statusCode == 200) {
-        return response.data as List<dynamic>;
+        final data = response.data;
+        if (data is! List) throw Exception('Unexpected response format');
+        final List<dynamic> list = data;
+        return list;
       } else {
         throw ServerException('Failed to get hotspot profiles');
       }

@@ -31,7 +31,7 @@ export class RoutersService {
      */
     private encryptPassword(password: string): string {
         const algorithm = 'aes-256-cbc';
-        const key = crypto.scryptSync(process.env.JWT_SECRET || 'secret', 'salt', 32);
+        const key = crypto.scryptSync(process.env.JWT_SECRET, 'salt', 32);
         const iv = crypto.randomBytes(16);
 
         const cipher = crypto.createCipheriv(algorithm, key, iv);
@@ -45,18 +45,28 @@ export class RoutersService {
      * Decrypt router password
      */
     private decryptPassword(encryptedPassword: string): string {
-        const algorithm = 'aes-256-cbc';
-        const key = crypto.scryptSync(process.env.JWT_SECRET || 'secret', 'salt', 32);
+        try {
+            const algorithm = 'aes-256-cbc';
+            const key = crypto.scryptSync(process.env.JWT_SECRET, 'salt', 32);
 
-        const parts = encryptedPassword.split(':');
-        const iv = Buffer.from(parts[0], 'hex');
-        const encrypted = parts[1];
+            const parts = encryptedPassword.split(':');
+            if (parts.length !== 2) {
+                this.logger.warn('Malformed encrypted password (missing iv:data format)');
+                throw new Error('Invalid encrypted password format');
+            }
 
-        const decipher = crypto.createDecipheriv(algorithm, key, iv);
-        let decrypted = decipher.update(encrypted, 'hex', 'utf8');
-        decrypted += decipher.final('utf8');
+            const iv = Buffer.from(parts[0], 'hex');
+            const encrypted = parts[1];
 
-        return decrypted;
+            const decipher = crypto.createDecipheriv(algorithm, key, iv);
+            let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+            decrypted += decipher.final('utf8');
+
+            return decrypted;
+        } catch (error) {
+            this.logger.error(`Password decryption failed: ${error.message}`);
+            throw new BadRequestException('Failed to decrypt router credentials. The router may need to be re-added.');
+        }
     }
 
     /**
@@ -611,7 +621,7 @@ export class RoutersService {
             }),
             this.prisma.sale.aggregate({
                 _sum: { amount: true },
-                where: { soldAt: { gte: startOfDay, lt: endOfDay } }
+                where: { voucher: { routerId: id }, soldAt: { gte: startOfDay, lt: endOfDay } }
             }),
         ]);
 
@@ -763,7 +773,7 @@ export class RoutersService {
             host: connectHost,
             port: 8728,
             username: 'wassal_auto',
-            password: 'WassalAuto2026',
+            password: process.env.MIKROTIK_AUTO_PASSWORD || 'WassalAuto2026',
         };
 
         // 1. Validate connection
@@ -982,7 +992,7 @@ export class RoutersService {
                 ipAddress: vpnIp,
                 apiPort: 8728,
                 username: 'wassal_auto',
-                password: this.encryptPassword('WassalAuto2026'),
+                password: this.encryptPassword(process.env.MIKROTIK_AUTO_PASSWORD || 'WassalAuto2026'),
                 description: 'Pending WireGuard setup — waiting for router callback',
                 vpnIp,
                 wgPublicKey: keyPair.publicKey,

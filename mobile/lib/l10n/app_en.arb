@@ -487,5 +487,56 @@
   },
   "noSetupSteps": "No setup steps available.",
   "needSubscriptionAddRouters": "You need an active subscription to add routers. Please subscribe to a plan to continue.",
-  "needSubscriptionFeature": "You need an active subscription to use this feature. Would you like to view available plans?"
+  "needSubscriptionFeature": "You need an active subscription to use this feature. Would you like to view available plans?",
+
+  "errorConnectionTimeout": "Connection timed out.\n\nThe server may be busy or unreachable. Please try again in a moment.",
+  "errorConnectionFailed": "Unable to connect to the server.\n\nPlease check your internet connection and try again.",
+  "errorAuthFailed": "Authentication failed.\n\nYour session may have expired. Please log in again.",
+  "errorPermissionDenied": "Permission denied.\n\nYou do not have access to this resource.",
+  "errorNotFound": "Resource not found.\n\nThe requested data could not be located.",
+  "errorServerGeneric": "Server error ({statusCode}).\n\nPlease try again later.",
+  "@errorServerGeneric": {
+    "placeholders": {
+      "statusCode": { "type": "int" }
+    }
+  },
+  "errorRequestCancelled": "Request cancelled.",
+  "errorNetwork": "Network error.\n\nPlease check your internet connection and try again.",
+  "errorUnexpected": "An unexpected error occurred.",
+  "ok": "OK",
+  "dismiss": "Dismiss",
+
+  "sessions": "Sessions",
+  "activeSessions": "Active Sessions",
+  "allSessions": "All Sessions",
+  "sessionDetails": "Session Details",
+  "terminateSession": "Terminate Session",
+  "sessionTerminated": "Session terminated successfully",
+  "noSessionsFound": "No sessions found",
+
+  "hotspotProfiles": "Hotspot Profiles",
+  "createProfile": "Create Profile",
+  "profileName": "Profile Name",
+  "rateLimit": "Rate Limit",
+  "sharedUsers": "Shared Users",
+  "sessionTimeout": "Session Timeout",
+  "idleTimeout": "Idle Timeout",
+  "keepaliveTimeout": "Keepalive Timeout",
+
+  "deleteRouter": "Delete Router",
+  "deleteRouterConfirm": "Are you sure you want to delete this router? This action cannot be undone.",
+  "routerDeleted": "Router deleted successfully",
+  "editRouter": "Edit Router",
+  "routerUpdated": "Router updated successfully",
+  "failedDeleteRouter": "Failed to delete router",
+  "failedUpdateRouter": "Failed to update router",
+  "rebootRouter": "Reboot Router",
+  "rebootRouterConfirm": "Are you sure you want to reboot this router?",
+  "rebootSuccess": "Router reboot initiated",
+
+  "splashConnecting": "Connecting to server...",
+  "splashCheckingAuth": "Checking authentication...",
+  "splashLoadingProfile": "Loading profile...",
+  "splashReady": "Ready!",
+  "splashFailed": "Connection failed"
 }

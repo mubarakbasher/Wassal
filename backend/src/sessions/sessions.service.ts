@@ -14,35 +14,8 @@ export interface SessionStatistics {
 export class SessionsService {
     constructor(private prisma: PrismaService) { }
 
-    async findAll(isActive?: boolean): Promise<Session[]> {
-        const where = isActive !== undefined ? { isActive } : {};
-
-        return this.prisma.session.findMany({
-            where,
-            include: {
-                router: {
-                    select: {
-                        id: true,
-                        name: true,
-                        ipAddress: true,
-                    },
-                },
-                voucher: {
-                    select: {
-                        id: true,
-                        username: true,
-                        planName: true,
-                    },
-                },
-            },
-            orderBy: {
-                startTime: 'desc',
-            },
-        });
-    }
-
-    async findByRouter(routerId: string, isActive?: boolean): Promise<Session[]> {
-        const where: any = { routerId };
+    async findAll(userId: string, isActive?: boolean): Promise<Session[]> {
+        const where: any = { router: { userId } };
         if (isActive !== undefined) {
             where.isActive = isActive;
         }
@@ -71,9 +44,39 @@ export class SessionsService {
         });
     }
 
-    async findOne(id: string): Promise<Session> {
-        const session = await this.prisma.session.findUnique({
-            where: { id },
+    async findByRouter(userId: string, routerId: string, isActive?: boolean): Promise<Session[]> {
+        const where: any = { routerId, router: { userId } };
+        if (isActive !== undefined) {
+            where.isActive = isActive;
+        }
+
+        return this.prisma.session.findMany({
+            where,
+            include: {
+                router: {
+                    select: {
+                        id: true,
+                        name: true,
+                        ipAddress: true,
+                    },
+                },
+                voucher: {
+                    select: {
+                        id: true,
+                        username: true,
+                        planName: true,
+                    },
+                },
+            },
+            orderBy: {
+                startTime: 'desc',
+            },
+        });
+    }
+
+    async findOne(userId: string, id: string): Promise<Session> {
+        const session = await this.prisma.session.findFirst({
+            where: { id, router: { userId } },
             include: {
                 router: {
                     select: {
@@ -99,8 +102,11 @@ export class SessionsService {
         return session;
     }
 
-    async getStatistics(routerId?: string): Promise<SessionStatistics> {
-        const where = routerId ? { routerId } : {};
+    async getStatistics(userId: string, routerId?: string): Promise<SessionStatistics> {
+        const where: any = { router: { userId } };
+        if (routerId) {
+            where.routerId = routerId;
+        }
 
         const [totalSessions, activeSessions, aggregations] = await Promise.all([
             this.prisma.session.count({ where }),
@@ -132,8 +138,8 @@ export class SessionsService {
         };
     }
 
-    async terminateSession(id: string): Promise<Session> {
-        const session = await this.findOne(id);
+    async terminateSession(userId: string, id: string): Promise<Session> {
+        const session = await this.findOne(userId, id);
 
         // Update session to inactive
         return this.prisma.session.update({

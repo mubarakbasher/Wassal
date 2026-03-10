@@ -28,12 +28,12 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   }
 
   Future<void> _onSubmit() async {
-    if (_formKey.currentState!.validate()) {
-      setState(() {
-        _isLoading = true;
-      });
+    if (_formKey.currentState?.validate() != true) return;
+    setState(() {
+      _isLoading = true;
+    });
 
-      try {
+    try {
         final apiClient = ApiClient();
         await apiClient.post(
           ApiEndpoints.forgotPassword,
@@ -84,7 +84,6 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
           });
         }
       }
-    }
   }
 
   @override

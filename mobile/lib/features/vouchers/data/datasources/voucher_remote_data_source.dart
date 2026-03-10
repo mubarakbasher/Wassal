@@ -54,7 +54,9 @@ class VoucherRemoteDataSourceImpl implements VoucherRemoteDataSource {
       );
       // Map Mikrotik response to HotspotProfileModel
       // Mikrotik returns [{ ".id": "*1", "name": "default", ... }]
-      return (response.data as List).map((e) {
+      final rawData = response.data;
+      if (rawData is! List) throw Exception('Unexpected response format');
+      return rawData.map((e) {
         return HotspotProfileModel(
           id: e['.id'] ?? e['id'] ?? 'unknown',
           name: e['name'] ?? 'Unknown',
@@ -105,7 +107,10 @@ class VoucherRemoteDataSourceImpl implements VoucherRemoteDataSource {
       );
 
       // Response wrapper: { count: 1, vouchers: [...] }
-      final vouchersList = response.data['vouchers'] as List;
+      final rawData = response.data;
+      if (rawData is! Map<String, dynamic>) throw Exception('Unexpected response format');
+      final vouchersList = rawData['vouchers'];
+      if (vouchersList is! List) throw Exception('Unexpected response format');
       return vouchersList.map((e) => VoucherModel.fromJson(e)).toList();
     } on DioException catch (e) {
       throw ServerException(ErrorHandler.mapDioErrorToMessage(e));
@@ -129,7 +134,9 @@ class VoucherRemoteDataSourceImpl implements VoucherRemoteDataSource {
         queryParameters: queryParams,
       );
 
-      return (response.data as List)
+      final rawData = response.data;
+      if (rawData is! List) throw Exception('Unexpected response format');
+      return rawData
           .map((e) => VoucherModel.fromJson(e))
           .toList();
     } on DioException catch (e) {
@@ -150,7 +157,9 @@ class VoucherRemoteDataSourceImpl implements VoucherRemoteDataSource {
         queryParameters: queryParams,
       );
 
-      return response.data as Map<String, dynamic>;
+      final rawData = response.data;
+      if (rawData is! Map<String, dynamic>) throw Exception('Unexpected response format');
+      return rawData;
     } on DioException catch (e) {
       throw ServerException(ErrorHandler.mapDioErrorToMessage(e));
     } catch (e) {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Users, DollarSign, Activity, Clock } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import api from '../lib/axios';
@@ -35,12 +35,10 @@ export function Dashboard() {
     const [logs, setLogs] = useState<any[]>([]);
     const [revenueData, setRevenueData] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        fetchDashboardData();
-    }, []);
-
-    const fetchDashboardData = async () => {
+    const fetchDashboardData = useCallback(async () => {
+        setError(null);
         try {
             const [statsRes, logsRes, revenueRes] = await Promise.all([
                 api.get('/admin/system/stats'),
@@ -50,15 +48,34 @@ export function Dashboard() {
             setStats(statsRes.data);
             setLogs(logsRes.data.data);
             setRevenueData(revenueRes.data);
-        } catch (error) {
-            console.error('Failed to fetch dashboard data', error);
+        } catch (err) {
+            console.error('Failed to fetch dashboard data', err);
+            setError('Failed to load dashboard data. Please try again.');
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        fetchDashboardData();
+    }, [fetchDashboardData]);
 
     if (loading) {
         return <div className="p-8 text-center text-gray-500">Loading dashboard data...</div>;
+    }
+
+    if (error) {
+        return (
+            <div className="p-8 text-center">
+                <p className="text-red-600 mb-4">{error}</p>
+                <button
+                    onClick={() => { setLoading(true); fetchDashboardData(); }}
+                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                >
+                    Retry
+                </button>
+            </div>
+        );
     }
 
     return (
@@ -77,7 +94,7 @@ export function Dashboard() {
                 />
                 <StatCard
                     title="Total Revenue"
-                    value={`$${Number(stats.totalRevenue).toLocaleString()}`}
+                    value={`${Number(stats.totalRevenue).toLocaleString()} SDG`}
                     change="+0%"
                     icon={DollarSign}
                     color="bg-green-500"
@@ -116,7 +133,7 @@ export function Dashboard() {
                                         tick={{ fontSize: 12, fill: '#9ca3af' }}
                                         axisLine={false}
                                         tickLine={false}
-                                        tickFormatter={(v) => `$${v}`}
+                                        tickFormatter={(v) => `${v} SDG`}
                                     />
                                     <Tooltip
                                         contentStyle={{
@@ -126,7 +143,7 @@ export function Dashboard() {
                                             fontSize: '13px',
                                         }}
                                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                        formatter={(value: any) => [`$${Number(value).toLocaleString()}`, 'Revenue']}
+                                        formatter={(value: any) => [`${Number(value).toLocaleString()} SDG`, 'Revenue']}
                                     />
                                     <Area
                                         type="monotone"

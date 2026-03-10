@@ -32,14 +32,13 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _onLogin() {
-    if (_formKey.currentState!.validate()) {
-      context.read<AuthBloc>().add(
-            LoginEvent(
-              email: _emailController.text.trim(),
-              password: _passwordController.text,
-            ),
-          );
-    }
+    if (_formKey.currentState?.validate() != true) return;
+    context.read<AuthBloc>().add(
+          LoginEvent(
+            email: _emailController.text.trim(),
+            password: _passwordController.text,
+          ),
+        );
   }
 
   @override

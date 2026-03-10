@@ -1158,4 +1158,136 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get needSubscriptionFeature =>
       'تحتاج إلى اشتراك نشط لاستخدام هذه الميزة. هل تريد عرض الخطط المتاحة؟';
+
+  @override
+  String get errorConnectionTimeout =>
+      'انتهت مهلة الاتصال.\n\nقد يكون الخادم مشغولاً أو غير متاح. يرجى المحاولة بعد قليل.';
+
+  @override
+  String get errorConnectionFailed =>
+      'تعذر الاتصال بالخادم.\n\nيرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى.';
+
+  @override
+  String get errorAuthFailed =>
+      'فشلت المصادقة.\n\nربما انتهت صلاحية جلستك. يرجى تسجيل الدخول مرة أخرى.';
+
+  @override
+  String get errorPermissionDenied =>
+      'تم رفض الإذن.\n\nليس لديك صلاحية الوصول إلى هذا المورد.';
+
+  @override
+  String get errorNotFound =>
+      'المورد غير موجود.\n\nلم يتم العثور على البيانات المطلوبة.';
+
+  @override
+  String errorServerGeneric(int statusCode) {
+    return 'خطأ في الخادم ($statusCode).\n\nيرجى المحاولة لاحقاً.';
+  }
+
+  @override
+  String get errorRequestCancelled => 'تم إلغاء الطلب.';
+
+  @override
+  String get errorNetwork =>
+      'خطأ في الشبكة.\n\nيرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى.';
+
+  @override
+  String get errorUnexpected => 'حدث خطأ غير متوقع.';
+
+  @override
+  String get ok => 'حسناً';
+
+  @override
+  String get dismiss => 'تجاهل';
+
+  @override
+  String get sessions => 'الجلسات';
+
+  @override
+  String get activeSessions => 'الجلسات النشطة';
+
+  @override
+  String get allSessions => 'جميع الجلسات';
+
+  @override
+  String get sessionDetails => 'تفاصيل الجلسة';
+
+  @override
+  String get terminateSession => 'إنهاء الجلسة';
+
+  @override
+  String get sessionTerminated => 'تم إنهاء الجلسة بنجاح';
+
+  @override
+  String get noSessionsFound => 'لم يتم العثور على جلسات';
+
+  @override
+  String get hotspotProfiles => 'ملفات نقاط الاتصال';
+
+  @override
+  String get createProfile => 'إنشاء ملف';
+
+  @override
+  String get profileName => 'اسم الملف';
+
+  @override
+  String get rateLimit => 'حد السرعة';
+
+  @override
+  String get sharedUsers => 'المستخدمون المشتركون';
+
+  @override
+  String get sessionTimeout => 'مهلة الجلسة';
+
+  @override
+  String get idleTimeout => 'مهلة الخمول';
+
+  @override
+  String get keepaliveTimeout => 'مهلة البقاء متصلاً';
+
+  @override
+  String get deleteRouter => 'حذف الراوتر';
+
+  @override
+  String get deleteRouterConfirm =>
+      'هل أنت متأكد من حذف هذا الراوتر؟ لا يمكن التراجع عن هذا الإجراء.';
+
+  @override
+  String get routerDeleted => 'تم حذف الراوتر بنجاح';
+
+  @override
+  String get editRouter => 'تعديل الراوتر';
+
+  @override
+  String get routerUpdated => 'تم تحديث الراوتر بنجاح';
+
+  @override
+  String get failedDeleteRouter => 'فشل حذف الراوتر';
+
+  @override
+  String get failedUpdateRouter => 'فشل تحديث الراوتر';
+
+  @override
+  String get rebootRouter => 'إعادة تشغيل الراوتر';
+
+  @override
+  String get rebootRouterConfirm => 'هل أنت متأكد من إعادة تشغيل هذا الراوتر؟';
+
+  @override
+  String get rebootSuccess => 'تم بدء إعادة تشغيل الراوتر';
+
+  @override
+  String get splashConnecting => 'جاري الاتصال بالخادم...';
+
+  @override
+  String get splashCheckingAuth => 'جاري التحقق من المصادقة...';
+
+  @override
+  String get splashLoadingProfile => 'جاري تحميل الملف الشخصي...';
+
+  @override
+  String get splashReady => 'جاهز!';
+
+  @override
+  String get splashFailed => 'فشل الاتصال';
 }

@@ -463,7 +463,7 @@ export function VoucherGenerator({ onClose, onSuccess }: VoucherGeneratorProps) 
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1.5">Price ($)</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1.5">Price (SDG)</label>
                             <input
                                 type="number"
                                 min="0"
@@ -552,7 +552,7 @@ export function VoucherGenerator({ onClose, onSuccess }: VoucherGeneratorProps) 
                                 {quantity}x <strong className="text-gray-900">{planName || '—'}</strong>
                             </span>
                             <span className="font-semibold text-gray-900">
-                                {Number(price) > 0 ? `$${Number(price).toFixed(2)} each` : 'Free'}
+                                {Number(price) > 0 ? `${Number(price).toFixed(2)} SDG each` : 'Free'}
                             </span>
                         </div>
                         <div className="text-xs text-gray-400 mt-1">

@@ -37,6 +37,13 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 
 async function bootstrap() {
+  const requiredEnvVars = ['JWT_SECRET', 'JWT_REFRESH_SECRET', 'DATABASE_URL'];
+  const missing = requiredEnvVars.filter(v => !process.env[v]);
+  if (missing.length > 0) {
+    console.error(`FATAL: Missing required environment variables: ${missing.join(', ')}`);
+    process.exit(1);
+  }
+
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   app.useStaticAssets(join(process.cwd(), 'uploads'), { prefix: '/uploads' });
@@ -54,8 +61,11 @@ async function bootstrap() {
   );
 
   // Enable CORS for admin dashboard and mobile app
+  const allowedOrigins = process.env.CORS_ORIGINS
+    ? process.env.CORS_ORIGINS.split(',').map(o => o.trim())
+    : true;
   app.enableCors({
-    origin: true, // Allow all origins in development
+    origin: allowedOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],

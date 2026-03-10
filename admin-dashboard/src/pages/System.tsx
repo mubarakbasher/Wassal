@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Activity, Settings, FileText, Save, AlertTriangle, Landmark, CheckCircle } from 'lucide-react';
+import { Activity, Settings, FileText, Save, Landmark, CheckCircle } from 'lucide-react';
 import api from '../lib/axios';
 
 const Tabs = ({ active, onChange, items }: any) => (
@@ -29,6 +29,19 @@ export function SystemPage() {
     const [bank, setBank] = useState({ bank_name: '', bank_account_name: '', bank_account_number: '' });
     const [bankLoading, setBankLoading] = useState(false);
     const [bankMsg, setBankMsg] = useState('');
+    const [apiStatus, setApiStatus] = useState<'online' | 'offline' | 'loading'>('loading');
+
+    useEffect(() => {
+        const checkHealth = async () => {
+            try {
+                await api.get('/admin/system/config');
+                setApiStatus('online');
+            } catch {
+                setApiStatus('offline');
+            }
+        };
+        if (activeTab === 'status') checkHealth();
+    }, [activeTab]);
 
     useEffect(() => {
         if (activeTab === 'logs') fetchLogs();
@@ -110,21 +123,15 @@ export function SystemPage() {
                     <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
                         <div>
                             <h3 className="text-lg font-semibold text-gray-900">API Health</h3>
-                            <p className="text-sm text-gray-500 mt-1">Status: <span className="text-green-600 font-bold">ONLINE</span></p>
-                            <p className="text-xs text-gray-400 mt-1">Uptime: 99.98%</p>
+                            <p className="text-sm text-gray-500 mt-1">
+                                Status:{' '}
+                                <span className={`font-bold ${apiStatus === 'online' ? 'text-green-600' : apiStatus === 'offline' ? 'text-red-600' : 'text-gray-500'}`}>
+                                    {apiStatus === 'loading' ? 'Checking...' : apiStatus === 'online' ? 'ONLINE' : 'OFFLINE'}
+                                </span>
+                            </p>
                         </div>
-                        <div className="p-3 bg-green-50 rounded-full">
-                            <Activity className="w-6 h-6 text-green-600" />
-                        </div>
-                    </div>
-
-                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
-                        <div>
-                            <h3 className="text-lg font-semibold text-gray-900">Maintenance Mode</h3>
-                            <p className="text-sm text-gray-500 mt-1">Current: <span className="text-gray-600 font-bold">OFF</span></p>
-                        </div>
-                        <div className="p-3 bg-gray-50 rounded-full">
-                            <AlertTriangle className="w-6 h-6 text-gray-600" />
+                        <div className={`p-3 rounded-full ${apiStatus === 'online' ? 'bg-green-50' : apiStatus === 'offline' ? 'bg-red-50' : 'bg-gray-50'}`}>
+                            <Activity className={`w-6 h-6 ${apiStatus === 'online' ? 'text-green-600' : apiStatus === 'offline' ? 'text-red-600' : 'text-gray-500'}`} />
                         </div>
                     </div>
                 </div>
@@ -195,27 +202,30 @@ export function SystemPage() {
                         </div>
                     </div>
 
-                    {/* Feature Flags */}
+                    {/* Feature Flags - Coming Soon: no backend support yet */}
                     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                        <h3 className="text-lg font-semibold text-gray-800 mb-4">Global Feature Flags</h3>
+                        <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                            Global Feature Flags
+                            <span className="text-xs px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full font-medium">Coming Soon</span>
+                        </h3>
                         <div className="space-y-4">
-                            <div className="flex items-center justify-between p-4 border rounded-lg">
+                            <div className="flex items-center justify-between p-4 border rounded-lg opacity-75">
                                 <div>
                                     <p className="font-medium text-gray-900">Allow User Registration</p>
                                     <p className="text-sm text-gray-500">Enable or disable new user signups globally</p>
                                 </div>
-                                <input type="checkbox" defaultChecked className="toggle" />
+                                <input type="checkbox" defaultChecked disabled className="toggle" />
                             </div>
-                            <div className="flex items-center justify-between p-4 border rounded-lg">
+                            <div className="flex items-center justify-between p-4 border rounded-lg opacity-75">
                                 <div>
                                     <p className="font-medium text-gray-900">Emergency Read-Only Mode</p>
                                     <p className="text-sm text-gray-500">Disable all write operations during maintenance</p>
                                 </div>
-                                <input type="checkbox" className="toggle" />
+                                <input type="checkbox" disabled className="toggle" />
                             </div>
                         </div>
                         <div className="mt-6 flex justify-end">
-                            <button className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+                            <button disabled className="flex items-center px-4 py-2 bg-indigo-400 text-white rounded-lg cursor-not-allowed">
                                 <Save className="w-4 h-4 mr-2" />
                                 Save Changes
                             </button>

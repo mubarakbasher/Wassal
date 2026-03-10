@@ -2,6 +2,7 @@ import { Controller, Get, Param, Query, Patch, Post, Body, UseGuards, Delete, Re
 import type { Response } from 'express';
 import { AdminUsersService } from './admin-users.service';
 import { AdminJwtAuthGuard } from '../auth/guards/admin-jwt-auth.guard';
+import { CreateUserDto } from './dto/admin-user.dto';
 
 @Controller('admin/users')
 @UseGuards(AdminJwtAuthGuard)
@@ -9,7 +10,7 @@ export class AdminUsersController {
     constructor(private readonly usersService: AdminUsersService) { }
 
     @Post()
-    create(@Body() data: any) {
+    create(@Body() data: CreateUserDto) {
         return this.usersService.createUser(data);
     }
 

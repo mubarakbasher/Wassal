@@ -6,6 +6,7 @@ services:
     image: postgres:14-alpine
     container_name: wassal-db
     environment:
+      # DEV ONLY - must override in production
       POSTGRES_USER: ${DB_USER:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
       POSTGRES_DB: ${DB_NAME:-mikrotik_hotspot}
@@ -30,9 +31,11 @@ services:
         condition: service_healthy
     environment:
       ENV_RADIUS_DB_HOST: postgres
+      # DEV ONLY - must override in production
       ENV_RADIUS_DB_USER: ${DB_USER:-postgres}
       ENV_RADIUS_DB_PASS: ${DB_PASSWORD:-postgres}
       ENV_RADIUS_DB_NAME: ${DB_NAME:-mikrotik_hotspot}
+      RADIUS_SECRET: ${RADIUS_SECRET:-testing123}
     ports:
       - "1812:1812/udp"
       - "1813:1813/udp"
@@ -50,6 +53,7 @@ services:
       freeradius:
         condition: service_started
     environment:
+      # DEV ONLY - must override in production
       DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@postgres:5432/${DB_NAME:-mikrotik_hotspot}
       JWT_SECRET: ${JWT_SECRET:-wassal-jwt-secret-change-in-production}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-wassal-refresh-secret-change-in-production}

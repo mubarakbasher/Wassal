@@ -123,8 +123,7 @@ export class AuthService {
     async refreshTokens(refreshToken: string) {
         try {
             // Verify the refresh token
-            const refreshSecret = this.configService.get<string>('JWT_REFRESH_SECRET')
-                || 'your-refresh-secret-key-change-this-in-production';
+            const refreshSecret = this.configService.get<string>('JWT_REFRESH_SECRET');
 
             const payload = await this.jwtService.verifyAsync(refreshToken, {
                 secret: refreshSecret,
@@ -240,8 +239,7 @@ export class AuthService {
     private async generateTokens(userId: string, email: string, role: UserRole) {
         const payload = { sub: userId, email, role };
 
-        const refreshSecret = this.configService.get<string>('JWT_REFRESH_SECRET')
-            || 'your-refresh-secret-key-change-this-in-production';
+        const refreshSecret = this.configService.get<string>('JWT_REFRESH_SECRET');
 
         const [accessToken, refreshToken] = await Promise.all([
             this.jwtService.signAsync(payload),

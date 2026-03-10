@@ -561,7 +561,7 @@ class _GenerateVoucherViewState extends State<GenerateVoucherView>
             _buildContinueButton(
               enabled: true,
               onPressed: () {
-                if (_formKey.currentState!.validate()) {
+                if (_formKey.currentState?.validate() == true) {
                   _nextStep();
                 }
               },
@@ -696,7 +696,7 @@ class _GenerateVoucherViewState extends State<GenerateVoucherView>
             ),
             hintText: '0',
           ),
-          validator: (v) => v!.isEmpty ? AppLocalizations.of(context)!.required : null,
+          validator: (v) => (v ?? '').isEmpty ? AppLocalizations.of(context)!.required : null,
         ),
       ],
     );
@@ -715,7 +715,7 @@ class _GenerateVoucherViewState extends State<GenerateVoucherView>
           decoration: const InputDecoration(
             hintText: '1',
           ),
-          validator: (v) => v!.isEmpty ? AppLocalizations.of(context)!.required : null,
+          validator: (v) => (v ?? '').isEmpty ? AppLocalizations.of(context)!.required : null,
         ),
       ],
     );
@@ -802,7 +802,7 @@ class _GenerateVoucherViewState extends State<GenerateVoucherView>
             decoration: const InputDecoration(
               hintText: 'Time',
             ),
-            validator: (v) => v!.isEmpty ? AppLocalizations.of(context)!.required : null,
+            validator: (v) => (v ?? '').isEmpty ? AppLocalizations.of(context)!.required : null,
           ),
         ),
         const SizedBox(width: 12),
@@ -825,7 +825,7 @@ class _GenerateVoucherViewState extends State<GenerateVoucherView>
                   child: Text(u),
                 )).toList(),
                 onChanged: (value) {
-                  setState(() => _wallClockUnit = value!);
+                  setState(() => _wallClockUnit = value ?? _wallClockUnit);
                 },
               ),
             ),
@@ -904,7 +904,7 @@ class _GenerateVoucherViewState extends State<GenerateVoucherView>
             decoration: const InputDecoration(
               hintText: 'Value',
             ),
-            validator: (v) => v!.isEmpty ? AppLocalizations.of(context)!.required : null,
+            validator: (v) => (v ?? '').isEmpty ? AppLocalizations.of(context)!.required : null,
           ),
         ),
         const SizedBox(width: 12),
@@ -929,9 +929,9 @@ class _GenerateVoucherViewState extends State<GenerateVoucherView>
                 onChanged: (value) {
                   setState(() {
                     if (_limitType == 'Time') {
-                      _timeUnit = value!;
+                      _timeUnit = value ?? _timeUnit;
                     } else {
-                      _dataUnit = value!;
+                      _dataUnit = value ?? _dataUnit;
                     }
                   });
                 },
@@ -957,7 +957,7 @@ class _GenerateVoucherViewState extends State<GenerateVoucherView>
             'ALPHANUMERIC': 'Numbers & Letters (e.g., AB12CD34)',
             'ALPHA': 'Letters Only (e.g., ABCDEFGH)',
           },
-          (v) => setState(() => _charset = v!),
+          (v) => setState(() => _charset = v ?? _charset),
         ),
       ],
     );
@@ -1311,7 +1311,7 @@ class _GenerateVoucherViewState extends State<GenerateVoucherView>
     final effectiveCountType = _countType;
 
     context.read<VoucherBloc>().add(GenerateVoucherEvent(
-      routerId: formData.selectedRouterId!,
+      routerId: formData.selectedRouterId ?? '',
       profileId: null,
       mikrotikProfile: null,
       planName: _selectedPlanName ?? 'Standard',
