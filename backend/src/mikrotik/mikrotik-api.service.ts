@@ -89,7 +89,7 @@ export class MikroTikApiService {
         command: string,
         params?: any[],
     ): Promise<MikroTikCommandResult> {
-        const api = this.createApi(connection, 20);
+        const api = this.createApi(connection, 8);
 
         try {
             await api.connect();
@@ -470,7 +470,7 @@ export class MikroTikApiService {
      * Get system logs
      */
     async getSystemLogs(connection: MikroTikConnection, limit: number = 50): Promise<any[]> {
-        const api = this.createApi(connection, 30);
+        const api = this.createApi(connection, 10);
 
         try {
             await api.connect();

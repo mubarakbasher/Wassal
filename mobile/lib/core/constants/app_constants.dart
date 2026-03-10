@@ -18,7 +18,7 @@ class AppConstants {
   
   // Timeouts
   static const Duration connectTimeout = Duration(seconds: 30);
-  static const Duration receiveTimeout = Duration(seconds: 30);
+  static const Duration receiveTimeout = Duration(seconds: 45);
   
   // Pagination
   static const int defaultPageSize = 20;
