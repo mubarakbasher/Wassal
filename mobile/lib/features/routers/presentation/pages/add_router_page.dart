@@ -155,7 +155,7 @@ class _ScriptAddRouterViewState extends State<ScriptAddRouterView> {
       );
     }
 
-    if (_steps == null || _steps.isEmpty) {
+    if (_steps == null || _steps!.isEmpty) {
       return Center(child: Text(AppLocalizations.of(context)!.noSetupSteps));
     }
 
