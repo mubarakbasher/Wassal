@@ -34,7 +34,7 @@ export class RadiusSyncService {
     private decryptPassword(encryptedPassword: string): string {
         try {
             const algorithm = 'aes-256-cbc';
-            const key = crypto.scryptSync(process.env.JWT_SECRET, 'salt', 32);
+            const key = crypto.scryptSync(process.env.JWT_SECRET!, 'salt', 32);
 
             const parts = encryptedPassword.split(':');
             if (parts.length !== 2) {

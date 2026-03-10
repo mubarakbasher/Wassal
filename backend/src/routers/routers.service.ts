@@ -31,7 +31,7 @@ export class RoutersService {
      */
     private encryptPassword(password: string): string {
         const algorithm = 'aes-256-cbc';
-        const key = crypto.scryptSync(process.env.JWT_SECRET, 'salt', 32);
+        const key = crypto.scryptSync(process.env.JWT_SECRET!, 'salt', 32);
         const iv = crypto.randomBytes(16);
 
         const cipher = crypto.createCipheriv(algorithm, key, iv);
@@ -47,7 +47,7 @@ export class RoutersService {
     private decryptPassword(encryptedPassword: string): string {
         try {
             const algorithm = 'aes-256-cbc';
-            const key = crypto.scryptSync(process.env.JWT_SECRET, 'salt', 32);
+            const key = crypto.scryptSync(process.env.JWT_SECRET!, 'salt', 32);
 
             const parts = encryptedPassword.split(':');
             if (parts.length !== 2) {

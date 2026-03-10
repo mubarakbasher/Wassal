@@ -144,7 +144,7 @@ export class RouterMonitorService implements OnModuleInit {
         try {
             const algorithm = 'aes-256-cbc';
             // Must match the key used for encryption in routers.service.ts
-            const key = crypto.scryptSync(process.env.JWT_SECRET, 'salt', 32);
+            const key = crypto.scryptSync(process.env.JWT_SECRET!, 'salt', 32);
 
             const parts = encryptedPassword.split(':');
             if (parts.length !== 2) {

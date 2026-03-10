@@ -161,7 +161,7 @@ export class PublicRoutersController {
             throw new BadRequestException('Missing userId parameter');
         }
 
-        const secret = process.env.JWT_SECRET;
+        const secret = process.env.JWT_SECRET!;
         if (secret) {
             if (!sig) {
                 throw new BadRequestException('Missing callback signature');
