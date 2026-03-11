@@ -89,38 +89,37 @@ export class MikroTikApiService {
         command: string,
         params?: any[],
     ): Promise<MikroTikCommandResult> {
+        const HARD_TIMEOUT_MS = 10_000;
         const api = this.createApi(connection, 8);
 
         try {
-            await api.connect();
+            const connectTimeout = new Promise<never>((_, reject) =>
+                setTimeout(() => reject(new Error(`Connect to ${connection.host} timed out after ${HARD_TIMEOUT_MS}ms`)), HARD_TIMEOUT_MS),
+            );
+            await Promise.race([api.connect(), connectTimeout]);
 
-            // Write command with parameters
-            let response;
-            if (params && params.length > 0) {
-                response = await api.write(command, params);
-            } else {
-                response = await api.write(command);
-            }
+            const writePromise = (params && params.length > 0)
+                ? api.write(command, params)
+                : api.write(command);
 
-            await api.close();
+            const writeTimeout = new Promise<never>((_, reject) =>
+                setTimeout(() => reject(new Error(`Command ${command} timed out after ${HARD_TIMEOUT_MS}ms`)), HARD_TIMEOUT_MS),
+            );
+            const response = await Promise.race([writePromise, writeTimeout]);
+
+            api.close().catch(() => {});
 
             return {
                 success: true,
                 data: response || [],
             };
         } catch (error) {
-            // Handle known edge cases that shouldn't crash the server
             const errorMessage = error.message || '';
             const errorErrno = error.errno || '';
 
-            // Handle !empty replies (no data returned) - this is not really an error
             if (errorErrno === 'UNKNOWNREPLY' || errorMessage.includes('!empty') || errorMessage.includes('unknown reply')) {
                 this.logger.debug(`Command ${command} returned empty/unknown reply - treating as empty result`);
-                try {
-                    await api.close();
-                } catch (e) {
-                    // Ignore close errors
-                }
+                api.close().catch(() => {});
                 return {
                     success: true,
                     data: [],
@@ -128,11 +127,7 @@ export class MikroTikApiService {
             }
 
             this.logger.error(`Command execution failed on ${connection.host}: ${error.message}`);
-            try {
-                await api.close();
-            } catch (e) {
-                // Ignore close errors
-            }
+            api.close().catch(() => {});
 
             return {
                 success: false,
@@ -635,6 +630,54 @@ export class MikroTikApiService {
             ]);
         }
         return lastResult;
+    }
+
+    /**
+     * Fetch all stats needed for the monitoring page using a SINGLE API connection.
+     * Eliminates the 4-connection overhead (quickTest + 3 parallel executeCommands).
+     * A successful connect() proves the router is online.
+     */
+    async getRouterStatsBundle(connection: MikroTikConnection): Promise<{
+        isOnline: boolean;
+        activeSessions: any[];
+        hotspotUsers: any[];
+        uptime: string;
+    }> {
+        const api = this.createApi(connection, 10);
+        try {
+            await Promise.race([
+                api.connect(),
+                new Promise<never>((_, rej) =>
+                    setTimeout(() => rej(new Error('Stats bundle connect timeout')), 10_000),
+                ),
+            ]);
+
+            const [sessionsResult, usersResult, uptimeResult] = await Promise.all([
+                this.writeCommand(api, '/ip/hotspot/active/print'),
+                this.writeCommand(api, '/ip/hotspot/user/print'),
+                this.writeCommand(api, '/system/resource/print'),
+            ]);
+
+            api.close().catch(() => {});
+
+            this.logger.log(
+                `[getRouterStatsBundle] ${connection.host}: sessions=${(sessionsResult.data || []).length}, ` +
+                `users=${(usersResult.data || []).length}, uptime=${uptimeResult.data?.[0]?.uptime ?? '?'}`,
+            );
+
+            return {
+                isOnline: true,
+                activeSessions: sessionsResult.success ? sessionsResult.data || [] : [],
+                hotspotUsers: usersResult.success ? usersResult.data || [] : [],
+                uptime: uptimeResult.success && uptimeResult.data?.[0]?.uptime
+                    ? uptimeResult.data[0].uptime
+                    : '0s',
+            };
+        } catch (error) {
+            this.logger.warn(`[getRouterStatsBundle] ${connection.host} failed: ${error.message}`);
+            api.close().catch(() => {});
+            return { isOnline: false, activeSessions: [], hotspotUsers: [], uptime: '0s' };
+        }
     }
 
     /**

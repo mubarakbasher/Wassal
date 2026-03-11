@@ -82,9 +82,8 @@ class _MonitoringPageState extends State<MonitoringPage> {
                   return RefreshIndicator(
                     color: AppColors.primary,
                     onRefresh: () async {
-                      context.read<RouterBloc>().add(const LoadRoutersEvent());
-                      await Future.delayed(const Duration(milliseconds: 500));
                       _fetchStats();
+                      await Future.delayed(const Duration(milliseconds: 300));
                     },
                     child: ListView(
                       padding: const EdgeInsets.all(20),

@@ -625,38 +625,34 @@ export class RoutersService {
             }),
         ]);
 
-        // Run MikroTik calls in PARALLEL with overall timeout
+        // Fetch all MikroTik stats using a single API connection (avoids 4 separate TCP handshakes)
         let isOnline = router.status === RouterStatus.ONLINE;
         let activeSessions: any[] = [];
         let hotspotUsers: any[] = [];
         let uptime = '0s';
 
-
-
+        const STATS_TIMEOUT_MS = 20_000;
         try {
-            const testResult = await this.mikrotikApi.quickTestConnection(connection);
+            const overallTimeout = new Promise<never>((_, reject) =>
+                setTimeout(() => reject(new Error('MikroTik stats overall timeout')), STATS_TIMEOUT_MS),
+            );
+            const statsBundle = await Promise.race([
+                this.mikrotikApi.getRouterStatsBundle(connection),
+                overallTimeout,
+            ]) as Awaited<ReturnType<typeof this.mikrotikApi.getRouterStatsBundle>>;
 
-            if (testResult) {
-                isOnline = true;
-                try {
-                    const [sessions, users, uptimeVal] = await Promise.all([
-                        this.mikrotikApi.getActiveSessions(connection).catch(() => []),
-                        this.mikrotikApi.getHotspotUsers(connection).catch(() => []),
-                        this.mikrotikApi.getUptime(connection).catch(() => '0s'),
-                    ]);
-                    activeSessions = sessions;
-                    hotspotUsers = users;
-                    uptime = uptimeVal;
-                } catch (dataErr) {
-                    this.logger.warn(`MikroTik stats failed for ${connection.host}: ${dataErr.message}`);
-                }
-            } else if (!isPending) {
-                isOnline = false;
+            isOnline = statsBundle.isOnline;
+            activeSessions = statsBundle.activeSessions;
+            hotspotUsers = statsBundle.hotspotUsers;
+            uptime = statsBundle.uptime;
+
+            if (!statsBundle.isOnline && isPending) {
+                isOnline = router.status === RouterStatus.ONLINE;
             }
         } catch (error) {
-            this.logger.error(`Failed to get MikroTik stats: ${error.message}`);
+            this.logger.warn(`MikroTik stats for ${connection.host}: ${error.message}`);
             if (!isPending) {
-                isOnline = false;
+                isOnline = router.status === RouterStatus.ONLINE;
             }
         }
 
