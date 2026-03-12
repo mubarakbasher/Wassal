@@ -34,7 +34,7 @@ export function Sidebar() {
         return () => clearInterval(interval);
     }, []);
 
-    const navItems = [
+    const navItems: { icon: typeof LayoutDashboard; label: string; path: string; badge?: number }[] = [
         { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
         { icon: Router, label: 'Routers', path: '/routers' },
         { icon: Ticket, label: 'Vouchers', path: '/vouchers' },
@@ -71,7 +71,7 @@ export function Sidebar() {
                     >
                         <item.icon className="w-5 h-5 mr-3" />
                         {item.label}
-                        {'badge' in item && item.badge > 0 && (
+                        {item.badge != null && item.badge > 0 && (
                             <span className="ml-auto inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-500 rounded-full">
                                 {item.badge > 9 ? '9+' : item.badge}
                             </span>
