@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 100">
+  <defs>
+    <linearGradient id="brand" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0EA5E9"/>
+      <stop offset="100%" stop-color="#06B6D4"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Icon: W + WiFi signal -->
+  <g fill="none" stroke="url(#brand)" stroke-linecap="round">
+    <!-- WiFi arcs (fading outward) -->
+    <path d="M 40 33.6 A 13 13 0 0 1 60 33.6" stroke-width="3.2"/>
+    <path d="M 33.2 27.9 A 22 22 0 0 1 66.8 27.9" stroke-width="3.2" opacity="0.7"/>
+    <path d="M 26.3 22.1 A 31 31 0 0 1 73.7 22.1" stroke-width="3.2" opacity="0.4"/>
+
+    <!-- Connection point -->
+    <circle cx="50" cy="42" r="3.2" fill="url(#brand)" stroke="none"/>
+
+    <!-- Stylized W -->
+    <path d="M 14 48 L 30 90 L 50 60 L 70 90 L 86 48" stroke-width="6.5" stroke-linejoin="round"/>
+  </g>
+
+  <!-- Wordmark -->
+  <text x="110" y="69"
+        font-family="'Inter','Segoe UI','Helvetica Neue',Arial,sans-serif"
+        font-size="42" font-weight="600" letter-spacing="6"
+        fill="#1E293B">WASSAL</text>
+</svg>
