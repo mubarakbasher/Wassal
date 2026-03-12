@@ -10,6 +10,7 @@ import { PaymentsPage } from './pages/Payments';
 import { SettingsPage } from './pages/Settings';
 import { RoutersPage } from './pages/Routers';
 import { VouchersPage } from './pages/Vouchers';
+import { MessagesPage } from './pages/Messages';
 
 const isTokenValid = (token: string): boolean => {
   try {
@@ -47,6 +48,7 @@ function App() {
           <Route path="subscriptions" element={<SubscriptionsPage />} />
           <Route path="system" element={<SystemPage />} />
           <Route path="payments" element={<PaymentsPage />} />
+          <Route path="messages" element={<MessagesPage />} />
           <Route path="settings" element={<SettingsPage />} />
         </Route>
       </Routes>

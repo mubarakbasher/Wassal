@@ -428,5 +428,20 @@
   "splashCheckingAuth": "جاري التحقق من المصادقة...",
   "splashLoadingProfile": "جاري تحميل الملف الشخصي...",
   "splashReady": "جاهز!",
-  "splashFailed": "فشل الاتصال"
+  "splashFailed": "فشل الاتصال",
+
+  "contactUs": "اتصل بنا",
+  "contactUsSubtitle": "أرسل رسالة إلى فريق الإدارة",
+  "subject": "الموضوع",
+  "message": "الرسالة",
+  "sendMessage": "إرسال الرسالة",
+  "messageSent": "تم إرسال الرسالة بنجاح!",
+  "myMessages": "رسائلي",
+  "noMessages": "لا توجد رسائل بعد",
+  "replied": "تمت الإجابة",
+  "unread": "غير مقروءة",
+  "read": "مقروءة",
+  "adminReply": "رد الإدارة",
+  "subjectRequired": "يرجى إدخال الموضوع",
+  "messageRequired": "يرجى إدخال الرسالة"
 }

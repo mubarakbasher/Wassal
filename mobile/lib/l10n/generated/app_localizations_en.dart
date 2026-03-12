@@ -1293,4 +1293,46 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get splashFailed => 'Connection failed';
+
+  @override
+  String get contactUs => 'Contact Us';
+
+  @override
+  String get contactUsSubtitle => 'Send a message to the admin team';
+
+  @override
+  String get subject => 'Subject';
+
+  @override
+  String get message => 'Message';
+
+  @override
+  String get sendMessage => 'Send Message';
+
+  @override
+  String get messageSent => 'Message sent successfully!';
+
+  @override
+  String get myMessages => 'My Messages';
+
+  @override
+  String get noMessages => 'No messages yet';
+
+  @override
+  String get replied => 'Replied';
+
+  @override
+  String get unread => 'Unread';
+
+  @override
+  String get read => 'Read';
+
+  @override
+  String get adminReply => 'Admin Reply';
+
+  @override
+  String get subjectRequired => 'Please enter a subject';
+
+  @override
+  String get messageRequired => 'Please enter a message';
 }

@@ -38,4 +38,7 @@ class ApiEndpoints {
   static const String myPayments = '/subscriptions/payments';
   static const String bankInfo = '/subscriptions/bank-info';
   static String uploadProof(String id) => '/subscriptions/payments/$id/proof';
+
+  // Contact Messages
+  static const String contactMessages = '/contact-messages';
 }

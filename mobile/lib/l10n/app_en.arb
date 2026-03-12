@@ -538,5 +538,20 @@
   "splashCheckingAuth": "Checking authentication...",
   "splashLoadingProfile": "Loading profile...",
   "splashReady": "Ready!",
-  "splashFailed": "Connection failed"
+  "splashFailed": "Connection failed",
+
+  "contactUs": "Contact Us",
+  "contactUsSubtitle": "Send a message to the admin team",
+  "subject": "Subject",
+  "message": "Message",
+  "sendMessage": "Send Message",
+  "messageSent": "Message sent successfully!",
+  "myMessages": "My Messages",
+  "noMessages": "No messages yet",
+  "replied": "Replied",
+  "unread": "Unread",
+  "read": "Read",
+  "adminReply": "Admin Reply",
+  "subjectRequired": "Please enter a subject",
+  "messageRequired": "Please enter a message"
 }

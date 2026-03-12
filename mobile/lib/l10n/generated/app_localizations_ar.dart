@@ -1290,4 +1290,46 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get splashFailed => 'فشل الاتصال';
+
+  @override
+  String get contactUs => 'اتصل بنا';
+
+  @override
+  String get contactUsSubtitle => 'أرسل رسالة إلى فريق الإدارة';
+
+  @override
+  String get subject => 'الموضوع';
+
+  @override
+  String get message => 'الرسالة';
+
+  @override
+  String get sendMessage => 'إرسال الرسالة';
+
+  @override
+  String get messageSent => 'تم إرسال الرسالة بنجاح!';
+
+  @override
+  String get myMessages => 'رسائلي';
+
+  @override
+  String get noMessages => 'لا توجد رسائل بعد';
+
+  @override
+  String get replied => 'تمت الإجابة';
+
+  @override
+  String get unread => 'غير مقروءة';
+
+  @override
+  String get read => 'مقروءة';
+
+  @override
+  String get adminReply => 'رد الإدارة';
+
+  @override
+  String get subjectRequired => 'يرجى إدخال الموضوع';
+
+  @override
+  String get messageRequired => 'يرجى إدخال الرسالة';
 }

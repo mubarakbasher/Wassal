@@ -12,6 +12,7 @@ import '../../../../features/auth/presentation/bloc/auth_bloc.dart';
 import '../../../../features/auth/presentation/bloc/auth_event.dart';
 import '../../../../features/auth/presentation/bloc/auth_state.dart';
 import '../../../../features/notifications/presentation/pages/notification_settings_page.dart';
+import 'contact_page.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -177,6 +178,18 @@ class _SettingsPageState extends State<SettingsPage> {
             subtitle: AppLocalizations.of(context)!.languageSubtitle,
             onTap: () {
               _showLanguageDialog(context);
+            },
+          ),
+          _buildSettingsTile(
+            context,
+            icon: Icons.support_agent,
+            title: AppLocalizations.of(context)!.contactUs,
+            subtitle: AppLocalizations.of(context)!.contactUsSubtitle,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ContactPage()),
+              );
             },
           ),
            _buildSettingsTile(

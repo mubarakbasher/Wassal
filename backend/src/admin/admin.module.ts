@@ -6,6 +6,7 @@ import { AdminSystemModule } from './system/admin-system.module';
 import { AdminPaymentsModule } from './payments/admin-payments.module';
 import { AdminRoutersModule } from './routers/admin-routers.module';
 import { AdminVouchersModule } from './vouchers/admin-vouchers.module';
+import { AdminMessagesModule } from './messages/admin-messages.module';
 
 @Module({
     imports: [
@@ -16,6 +17,7 @@ import { AdminVouchersModule } from './vouchers/admin-vouchers.module';
         AdminPaymentsModule,
         AdminRoutersModule,
         AdminVouchersModule,
+        AdminMessagesModule,
     ],
 })
 export class AdminModule { }
