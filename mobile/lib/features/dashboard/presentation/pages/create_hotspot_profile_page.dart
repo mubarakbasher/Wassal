@@ -161,7 +161,7 @@ class _CreateHotspotProfilePageState extends State<CreateHotspotProfilePage> {
     try {
       final profileData = _generateProfileData();
       
-      final response = await ApiClient().post(
+      final response = await context.read<ApiClient>().post(
         ApiEndpoints.routerHotspotProfiles(_selectedRouter?.id ?? ''),
         data: profileData,
       );

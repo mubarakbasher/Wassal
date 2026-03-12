@@ -10,7 +10,7 @@ export class AdminSystemController {
 
     @Get('audit-logs')
     getAuditLogs(@Query('page') page: string = '1') {
-        return this.systemService.getAuditLogs(+page);
+        return this.systemService.getAuditLogs(+page || 1);
     }
 
     @Get('config')

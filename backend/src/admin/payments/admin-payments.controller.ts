@@ -21,7 +21,7 @@ export class AdminPaymentsController {
         @Query('page') page: string = '1',
         @Query('status') status: string
     ) {
-        return this.paymentsService.findAll(+page, 10, status);
+        return this.paymentsService.findAll(+page || 1, 10, status);
     }
 
     @Patch(':id/review')

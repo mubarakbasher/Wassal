@@ -25,6 +25,7 @@ interface User {
 export function UsersPage() {
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
     const [search, setSearch] = useState('');
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
@@ -33,14 +34,16 @@ export function UsersPage() {
     useEffect(() => {
         const fetchUsers = async () => {
             setLoading(true);
+            setError('');
             try {
                 const { data } = await api.get('/admin/users', {
                     params: { page, limit: 10, search }
                 });
                 setUsers(data.data);
                 setTotalPages(data.meta.lastPage);
-            } catch (error) {
-                console.error('Failed to fetch users', error);
+            } catch (err) {
+                setError('Failed to load users. Please try again.');
+                console.error('Failed to fetch users', err);
             } finally {
                 setLoading(false);
             }
@@ -133,6 +136,13 @@ export function UsersPage() {
                     </button>
                 </div>
             </div>
+
+            {error && (
+                <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex justify-between items-center">
+                    <span className="text-sm text-red-700">{error}</span>
+                    <button onClick={refreshUsers} className="text-sm font-medium text-red-700 hover:text-red-900 underline">Retry</button>
+                </div>
+            )}
 
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                 <div className="overflow-x-auto">

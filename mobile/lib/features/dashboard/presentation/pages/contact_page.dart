@@ -78,9 +78,12 @@ class _ContactPageState extends State<ContactPage>
       }
     } catch (e) {
       if (mounted) {
+        final errorMsg = (e is Exception)
+            ? AppLocalizations.of(context)!.sendMessageFailed
+            : AppLocalizations.of(context)!.sendMessageFailed;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.toString()),
+            content: Text(errorMsg),
             backgroundColor: AppColors.error,
           ),
         );
@@ -176,10 +179,7 @@ class _ContactPageState extends State<ContactPage>
               controller: _messageController,
               decoration: InputDecoration(
                 labelText: l10n.message,
-                prefixIcon: const Padding(
-                  padding: EdgeInsets.only(bottom: 80),
-                  child: Icon(Icons.message_outlined),
-                ),
+                prefixIcon: const Icon(Icons.message_outlined),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),

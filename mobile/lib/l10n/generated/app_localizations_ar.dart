@@ -1058,7 +1058,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get reports => 'التقارير';
 
   @override
-  String get noRoutersYet => 'لا توجد راوترات بعد';
+  String get noRoutersYet => 'لا توجد أجهزة توجيه بعد';
 
   @override
   String get noRoutersMessage =>
@@ -1222,7 +1222,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get noSessionsFound => 'لم يتم العثور على جلسات';
 
   @override
-  String get hotspotProfiles => 'ملفات نقاط الاتصال';
+  String get hotspotProfiles => 'ملفات تعريف الهوت سبوت';
 
   @override
   String get createProfile => 'إنشاء ملف';
@@ -1332,4 +1332,45 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get messageRequired => 'يرجى إدخال الرسالة';
+
+  @override
+  String get sendMessageFailed => 'فشل إرسال الرسالة. يرجى المحاولة مرة أخرى.';
+
+  @override
+  String get myRouters => 'أجهزة التوجيه';
+
+  @override
+  String get addFirstRouterHint => 'أضف أول راوتر MikroTik للبدء.';
+
+  @override
+  String get errorLoadingRouters => 'خطأ في تحميل أجهزة التوجيه';
+
+  @override
+  String get deleteRouterTitle => 'حذف الراوتر';
+
+  @override
+  String deleteRouterMsg(String routerName) {
+    return 'هل أنت متأكد من حذف \'\'$routerName\'\'؟';
+  }
+
+  @override
+  String get addProfile => 'إضافة ملف تعريف';
+
+  @override
+  String get failedLoadProfiles => 'فشل تحميل الملفات';
+
+  @override
+  String get noProfilesFound => 'لا توجد ملفات تعريف';
+
+  @override
+  String get noProfilesHint => 'اضغط على الزر أدناه لإنشاء أول ملف تعريف';
+
+  @override
+  String get aboutTitle => 'حول وصّال';
+
+  @override
+  String get aboutDescription => 'منصة إدارة هوت سبوت MikroTik';
+
+  @override
+  String get version => 'الإصدار';
 }

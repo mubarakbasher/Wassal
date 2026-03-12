@@ -9,6 +9,7 @@ export function UserDetailsPage() {
     const { id } = useParams<{ id: string }>();
     const [user, setUser] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     useEffect(() => {
@@ -17,8 +18,9 @@ export function UserDetailsPage() {
             try {
                 const { data } = await api.get(`/admin/users/${id}`);
                 setUser(data);
-            } catch (error) {
-                console.error(error);
+            } catch (err) {
+                setError('Failed to load user details.');
+                console.error(err);
             } finally {
                 setLoading(false);
             }
@@ -44,6 +46,12 @@ export function UserDetailsPage() {
     };
 
     if (loading) return <div className="p-8 text-center text-gray-500">Loading user details...</div>;
+    if (error) return (
+        <div className="p-8 text-center">
+            <p className="text-red-500 mb-4">{error}</p>
+            <Link to="/users" className="text-indigo-600 hover:underline">Back to Users</Link>
+        </div>
+    );
     if (!user) return <div className="p-8 text-center text-red-500">User not found.</div>;
 
     return (
@@ -148,11 +156,11 @@ export function UserDetailsPage() {
                                 Connected Routers
                             </h3>
                             <span className="text-sm bg-gray-100 px-2 py-1 rounded text-gray-600">
-                                {user.routers.length} Total
+                                {user.routers?.length || 0} Total
                             </span>
                         </div>
 
-                        {user.routers.length > 0 ? (
+                        {user.routers?.length > 0 ? (
                             <div className="space-y-3">
                                 {user.routers.map((router: any) => (
                                     <div key={router.id} className="flex justify-between items-center p-3 hover:bg-gray-50 rounded-lg border border-gray-100 transition-colors group">

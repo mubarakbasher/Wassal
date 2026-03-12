@@ -1,6 +1,7 @@
 import { Controller, Get, Patch, Param, Body, Query, UseGuards } from '@nestjs/common';
 import { AdminMessagesService } from './admin-messages.service';
 import { AdminJwtAuthGuard } from '../auth/guards/admin-jwt-auth.guard';
+import { ReplyMessageDto } from './dto/reply-message.dto';
 
 @Controller('admin/messages')
 @UseGuards(AdminJwtAuthGuard)
@@ -18,7 +19,7 @@ export class AdminMessagesController {
         @Query('status') status?: string,
         @Query('search') search?: string,
     ) {
-        return this.messagesService.findAll(+page, 10, status, search);
+        return this.messagesService.findAll(+page || 1, 10, status, search);
     }
 
     @Get(':id')
@@ -32,7 +33,7 @@ export class AdminMessagesController {
     }
 
     @Patch(':id/reply')
-    reply(@Param('id') id: string, @Body() body: { reply: string }) {
-        return this.messagesService.reply(id, body.reply);
+    reply(@Param('id') id: string, @Body() dto: ReplyMessageDto) {
+        return this.messagesService.reply(id, dto.reply);
     }
 }

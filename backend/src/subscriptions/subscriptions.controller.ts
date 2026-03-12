@@ -7,6 +7,7 @@ import {
     UseGuards,
     UseInterceptors,
     UploadedFile,
+    BadRequestException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
@@ -83,6 +84,9 @@ export class SubscriptionsController {
         @Param('id') paymentId: string,
         @UploadedFile() file: Express.Multer.File,
     ) {
+        if (!file) {
+            throw new BadRequestException('Proof file is required');
+        }
         const proofUrl = `/uploads/proofs/${file.filename}`;
         return this.subscriptionsService.uploadProof(user.id, paymentId, proofUrl);
     }

@@ -2087,7 +2087,7 @@ abstract class AppLocalizations {
   /// No description provided for @noRoutersYet.
   ///
   /// In en, this message translates to:
-  /// **'No Routers Yet'**
+  /// **'No routers yet'**
   String get noRoutersYet;
 
   /// No description provided for @noRoutersMessage.
@@ -2587,6 +2587,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Please enter a message'**
   String get messageRequired;
+
+  /// No description provided for @sendMessageFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to send message. Please try again.'**
+  String get sendMessageFailed;
+
+  /// No description provided for @myRouters.
+  ///
+  /// In en, this message translates to:
+  /// **'My Routers'**
+  String get myRouters;
+
+  /// No description provided for @addFirstRouterHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Add your first MikroTik router to get started.'**
+  String get addFirstRouterHint;
+
+  /// No description provided for @errorLoadingRouters.
+  ///
+  /// In en, this message translates to:
+  /// **'Error loading routers'**
+  String get errorLoadingRouters;
+
+  /// No description provided for @deleteRouterTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Router'**
+  String get deleteRouterTitle;
+
+  /// No description provided for @deleteRouterMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete \'\'{routerName}\'\'?'**
+  String deleteRouterMsg(String routerName);
+
+  /// No description provided for @addProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Profile'**
+  String get addProfile;
+
+  /// No description provided for @failedLoadProfiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to Load Profiles'**
+  String get failedLoadProfiles;
+
+  /// No description provided for @noProfilesFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No Profiles Found'**
+  String get noProfilesFound;
+
+  /// No description provided for @noProfilesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the button below to create your first profile'**
+  String get noProfilesHint;
+
+  /// No description provided for @aboutTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'About Wassal'**
+  String get aboutTitle;
+
+  /// No description provided for @aboutDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'MikroTik hotspot management platform'**
+  String get aboutDescription;
+
+  /// No description provided for @version.
+  ///
+  /// In en, this message translates to:
+  /// **'Version'**
+  String get version;
 }
 
 class _AppLocalizationsDelegate

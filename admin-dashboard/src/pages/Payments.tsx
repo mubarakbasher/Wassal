@@ -8,6 +8,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:3001';
 export function PaymentsPage() {
     const [payments, setPayments] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
     const [filter, setFilter] = useState('ALL');
 
     useEffect(() => {
@@ -16,12 +17,14 @@ export function PaymentsPage() {
 
     const fetchPayments = async () => {
         setLoading(true);
+        setError('');
         try {
             const { data } = await api.get('/admin/payments', {
                 params: { status: filter }
             });
             setPayments(data.data);
         } catch (e) {
+            setError('Failed to load payments. Please try again.');
             console.error(e);
         } finally {
             setLoading(false);
@@ -79,6 +82,13 @@ export function PaymentsPage() {
                     ))}
                 </div>
             </div>
+
+            {error && (
+                <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex justify-between items-center">
+                    <span className="text-sm text-red-700">{error}</span>
+                    <button onClick={fetchPayments} className="text-sm font-medium text-red-700 hover:text-red-900 underline">Retry</button>
+                </div>
+            )}
 
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                 <table className="w-full text-left">

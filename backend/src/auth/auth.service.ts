@@ -2,6 +2,7 @@ import { Injectable, ConflictException, UnauthorizedException, BadRequestExcepti
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
+import { randomInt } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
 import { RegisterDto, LoginDto } from './dto/auth.dto';
@@ -160,8 +161,7 @@ export class AuthService {
             throw new NotFoundException('No account found with this email');
         }
 
-        // Generate a 6-digit reset code
-        const code = Math.floor(100000 + Math.random() * 900000).toString();
+        const code = randomInt(100000, 999999).toString();
         const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
         this.resetCodes.set(email, { code, expiresAt });
@@ -216,6 +216,7 @@ export class AuthService {
                 networkName: true,
                 role: true,
                 isActive: true,
+                notifyRouterStatus: true,
                 createdAt: true,
                 updatedAt: true,
                 subscription: {

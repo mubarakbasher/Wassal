@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/l10n/generated/app_localizations.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/api/api_client.dart';
+import '../../../../core/api/api_endpoints.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
 
@@ -22,37 +24,62 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
     _loadSettings();
   }
 
-  void _loadSettings() {
-    // Load current notification settings from user profile
+  Future<void> _loadSettings() async {
     final authState = context.read<AuthBloc>().state;
     if (authState is AuthAuthenticated) {
-      setState(() {
-        // TODO: Add notifyRouterStatus to User entity
-        _routerStatusEnabled = true; // Default to enabled
-        _isLoading = false;
-      });
-    } else {
-      setState(() => _isLoading = false);
+      try {
+        final response = await context.read<ApiClient>().get(ApiEndpoints.profile);
+        if (response.statusCode == 200 && response.data != null) {
+          setState(() {
+            _routerStatusEnabled = response.data['notifyRouterStatus'] ?? true;
+            _isLoading = false;
+          });
+          return;
+        }
+      } catch (_) {}
     }
+    setState(() => _isLoading = false);
   }
 
   Future<void> _updateRouterStatusNotification(bool value) async {
+    final oldValue = _routerStatusEnabled;
     setState(() => _routerStatusEnabled = value);
-    
-    // TODO: Implement API call to update notification setting
-    // await _updateNotificationSetting('notifyRouterStatus', value);
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          value 
-            ? AppLocalizations.of(context)!.routerStatusEnabled
-            : AppLocalizations.of(context)!.routerStatusDisabled,
+
+    final authState = context.read<AuthBloc>().state;
+    if (authState is AuthAuthenticated) {
+      try {
+        await context.read<ApiClient>().patch(
+          '${ApiEndpoints.users}/${authState.user.id}',
+          data: {'notifyRouterStatus': value},
+        );
+      } catch (_) {
+        setState(() => _routerStatusEnabled = oldValue);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(AppLocalizations.of(context)!.sendMessageFailed),
+              backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+        return;
+      }
+    }
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            value
+                ? AppLocalizations.of(context)!.routerStatusEnabled
+                : AppLocalizations.of(context)!.routerStatusDisabled,
+          ),
+          backgroundColor: AppColors.primary,
+          behavior: SnackBarBehavior.floating,
         ),
-        backgroundColor: AppColors.primary,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+      );
+    }
   }
 
   @override

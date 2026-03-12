@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/l10n/generated/app_localizations.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../../routers/presentation/bloc/router_bloc.dart';
@@ -70,10 +71,9 @@ class _HomeRoutersPageState extends State<HomeRoutersPage> {
               child: ListView(
                 padding: const EdgeInsets.all(20),
                 children: [
-                  // Title
-                  const Text(
-                    'My Routers',
-                    style: TextStyle(
+                  Text(
+                    AppLocalizations.of(context)!.myRouters,
+                    style: const TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
                       color: Colors.black87,
@@ -117,10 +117,10 @@ class _HomeRoutersPageState extends State<HomeRoutersPage> {
                  children: [
                    const Icon(Icons.error_outline, size: 48, color: Colors.red),
                    const SizedBox(height: 16),
-                   Text("Error loading routers: ${state.message}"),
+                   Text("${AppLocalizations.of(context)!.errorLoadingRouters}: ${state.message}"),
                    TextButton(
                      onPressed: () => context.read<RouterBloc>().add(const LoadRoutersEvent()),
-                     child: const Text("Retry"),
+                     child: Text(AppLocalizations.of(context)!.retry),
                    )
                  ],
                ),
@@ -143,12 +143,13 @@ class _HomeRoutersPageState extends State<HomeRoutersPage> {
         },
         backgroundColor: AppColors.primary,
         icon: const Icon(Icons.add),
-        label: const Text("Add Router"),
+        label: Text(AppLocalizations.of(context)!.addRouter),
       ),
     );
   }
 
   Widget _buildEmptyState(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -162,14 +163,14 @@ class _HomeRoutersPageState extends State<HomeRoutersPage> {
             child: const Icon(Icons.router, size: 64, color: AppColors.primary),
           ),
           const SizedBox(height: 24),
-          const Text(
-            "No routers yet",
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          Text(
+            l10n.noRoutersYet,
+            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
-          const Text(
-            "Add your first MikroTik router to get started.",
-            style: TextStyle(color: Colors.grey),
+          Text(
+            l10n.addFirstRouterHint,
+            style: const TextStyle(color: Colors.grey),
           ),
           const SizedBox(height: 32),
           ElevatedButton.icon(
@@ -190,7 +191,7 @@ class _HomeRoutersPageState extends State<HomeRoutersPage> {
                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
              ),
              icon: const Icon(Icons.add),
-             label: const Text("Add Router"),
+             label: Text(l10n.addRouter),
           ),
         ],
       ),
@@ -198,15 +199,16 @@ class _HomeRoutersPageState extends State<HomeRoutersPage> {
   }
 
   void _showDeleteConfirmation(BuildContext context, String routerId, String routerName) {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("Delete Router"),
-        content: Text("Are you sure you want to delete '$routerName'?"),
+        title: Text(l10n.deleteRouterTitle),
+        content: Text(l10n.deleteRouterMsg(routerName)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
+            child: Text(l10n.cancel),
           ),
           TextButton(
             onPressed: () {
@@ -214,7 +216,7 @@ class _HomeRoutersPageState extends State<HomeRoutersPage> {
                context.read<RouterBloc>().add(DeleteRouterEvent(routerId));
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text("Delete"),
+            child: Text(l10n.delete),
           ),
         ],
       ),

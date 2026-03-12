@@ -75,6 +75,11 @@ export class AdminPaymentsService {
         return updatedPayment;
     }
 
+    private escapeCsv(val: string): string {
+        const str = (val ?? '').toString();
+        return `"${str.replace(/"/g, '""')}"`;
+    }
+
     async exportPaymentsCsv(): Promise<string> {
         const payments = await this.prisma.payment.findMany({
             orderBy: { createdAt: 'desc' },
@@ -83,7 +88,8 @@ export class AdminPaymentsService {
 
         const header = 'User,Email,Amount,Method,Status,Date,Notes\n';
         const rows = payments.map(p =>
-            `"${p.user?.name || ''}","${p.user?.email || ''}","${p.amount}","${p.method}","${p.status}","${p.createdAt.toISOString()}","${p.notes || ''}"`
+            [p.user?.name || '', p.user?.email || '', `${p.amount}`, p.method, p.status, p.createdAt.toISOString(), p.notes || '']
+                .map(v => this.escapeCsv(v)).join(',')
         ).join('\n');
 
         return header + rows;

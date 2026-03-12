@@ -7,7 +7,8 @@ import { PlanModal } from '../components/subscriptions/PlanModal';
 export function SubscriptionsPage() {
     const [plans, setPlans] = useState<any[]>([]);
     const [subscriptions, setSubscriptions] = useState<any[]>([]);
-    const [, setLoading] = useState(true);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
 
     // Modal State
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -18,15 +19,17 @@ export function SubscriptionsPage() {
     }, []);
 
     const fetchData = async () => {
+        setError('');
         try {
             const [plansRes, subsRes] = await Promise.all([
                 api.get('/admin/subscriptions/plans'),
-                api.get('/admin/subscriptions?limit=5') // Recent subs
+                api.get('/admin/subscriptions?limit=5')
             ]);
             setPlans(plansRes.data);
             setSubscriptions(subsRes.data.data);
-        } catch (error) {
-            console.error(error);
+        } catch (err) {
+            setError('Failed to load subscriptions. Please try again.');
+            console.error(err);
         } finally {
             setLoading(false);
         }
@@ -71,6 +74,17 @@ export function SubscriptionsPage() {
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold text-gray-800">Subscriptions & Plans</h1>
             </div>
+
+            {error && (
+                <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex justify-between items-center">
+                    <span className="text-sm text-red-700">{error}</span>
+                    <button onClick={fetchData} className="text-sm font-medium text-red-700 hover:text-red-900 underline">Retry</button>
+                </div>
+            )}
+
+            {loading && plans.length === 0 && !error && (
+                <div className="text-center py-8 text-gray-500">Loading...</div>
+            )}
 
             {/* Plans Section */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
@@ -158,7 +172,7 @@ export function SubscriptionsPage() {
                                         <div className="font-medium text-gray-900">{sub.user?.name || 'Unknown'}</div>
                                         <div className="text-sm text-gray-500">{sub.user?.email}</div>
                                     </td>
-                                    <td className="px-6 py-4 text-sm text-gray-600">{sub.plan.name}</td>
+                                    <td className="px-6 py-4 text-sm text-gray-600">{sub.plan?.name || 'N/A'}</td>
                                     <td className="px-6 py-4">
                                         <Badge variant={sub.status === 'ACTIVE' ? 'success' : 'warning'}>{sub.status}</Badge>
                                     </td>

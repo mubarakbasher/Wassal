@@ -52,6 +52,7 @@ export class AdminSubscriptionsService {
     }
 
     async extendSubscription(id: string, days: number) {
+        if (!days || days < 1) throw new BadRequestException('Days must be a positive number');
         const sub = await this.prisma.userSubscription.findUnique({ where: { id } });
         if (!sub) throw new NotFoundException('Subscription not found');
 

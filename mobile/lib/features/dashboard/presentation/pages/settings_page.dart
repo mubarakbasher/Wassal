@@ -197,7 +197,18 @@ class _SettingsPageState extends State<SettingsPage> {
             icon: Icons.info_outline,
             title: AppLocalizations.of(context)!.about,
             subtitle: AppLocalizations.of(context)!.appVersion,
-            onTap: () {},
+            onTap: () {
+              final l10n = AppLocalizations.of(context)!;
+              showAboutDialog(
+                context: context,
+                applicationName: l10n.aboutTitle,
+                applicationVersion: '1.0.0',
+                applicationIcon: const Icon(Icons.router, size: 48, color: AppColors.primary),
+                children: [
+                  Text(l10n.aboutDescription),
+                ],
+              );
+            },
           ),
         ],
       ),

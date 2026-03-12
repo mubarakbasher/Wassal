@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { User, Lock, Save, CheckCircle } from 'lucide-react';
+import { User, Lock, Save, CheckCircle, AlertCircle } from 'lucide-react';
 import api from '../lib/axios';
 
 export function SettingsPage() {
@@ -8,6 +8,7 @@ export function SettingsPage() {
     const [profileLoading, setProfileLoading] = useState(false);
     const [passwordLoading, setPasswordLoading] = useState(false);
     const [profileMsg, setProfileMsg] = useState('');
+    const [profileError, setProfileError] = useState('');
     const [passwordMsg, setPasswordMsg] = useState('');
     const [passwordError, setPasswordError] = useState('');
 
@@ -28,22 +29,24 @@ export function SettingsPage() {
         e.preventDefault();
         setProfileLoading(true);
         setProfileMsg('');
+        setProfileError('');
         try {
             await api.patch('/admin/system/profile', {
                 name: profile.name,
                 email: profile.email,
             });
             setProfileMsg('Profile updated successfully');
-            // Update stored admin info
             const stored = localStorage.getItem('admin_user');
             if (stored) {
-                const admin = JSON.parse(stored);
-                admin.name = profile.name;
-                admin.email = profile.email;
-                localStorage.setItem('admin_user', JSON.stringify(admin));
+                try {
+                    const admin = JSON.parse(stored);
+                    admin.name = profile.name;
+                    admin.email = profile.email;
+                    localStorage.setItem('admin_user', JSON.stringify(admin));
+                } catch { /* ignore malformed stored data */ }
             }
         } catch (err: any) {
-            setProfileMsg(err.response?.data?.message || 'Failed to update profile');
+            setProfileError(err.response?.data?.message || 'Failed to update profile');
         } finally {
             setProfileLoading(false);
         }
@@ -126,6 +129,13 @@ export function SettingsPage() {
                             <div className="flex items-center text-sm text-green-600 bg-green-50 p-3 rounded-lg">
                                 <CheckCircle className="w-4 h-4 mr-2" />
                                 {profileMsg}
+                            </div>
+                        )}
+
+                        {profileError && (
+                            <div className="flex items-center text-sm text-red-600 bg-red-50 p-3 rounded-lg">
+                                <AlertCircle className="w-4 h-4 mr-2" />
+                                {profileError}
                             </div>
                         )}
 

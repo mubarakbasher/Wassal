@@ -1060,7 +1060,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get reports => 'Reports';
 
   @override
-  String get noRoutersYet => 'No Routers Yet';
+  String get noRoutersYet => 'No routers yet';
 
   @override
   String get noRoutersMessage =>
@@ -1335,4 +1335,47 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get messageRequired => 'Please enter a message';
+
+  @override
+  String get sendMessageFailed => 'Failed to send message. Please try again.';
+
+  @override
+  String get myRouters => 'My Routers';
+
+  @override
+  String get addFirstRouterHint =>
+      'Add your first MikroTik router to get started.';
+
+  @override
+  String get errorLoadingRouters => 'Error loading routers';
+
+  @override
+  String get deleteRouterTitle => 'Delete Router';
+
+  @override
+  String deleteRouterMsg(String routerName) {
+    return 'Are you sure you want to delete \'\'$routerName\'\'?';
+  }
+
+  @override
+  String get addProfile => 'Add Profile';
+
+  @override
+  String get failedLoadProfiles => 'Failed to Load Profiles';
+
+  @override
+  String get noProfilesFound => 'No Profiles Found';
+
+  @override
+  String get noProfilesHint =>
+      'Tap the button below to create your first profile';
+
+  @override
+  String get aboutTitle => 'About Wassal';
+
+  @override
+  String get aboutDescription => 'MikroTik hotspot management platform';
+
+  @override
+  String get version => 'Version';
 }

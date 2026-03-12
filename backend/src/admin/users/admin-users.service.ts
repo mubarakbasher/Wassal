@@ -111,6 +111,11 @@ export class AdminUsersService {
         });
     }
 
+    private escapeCsv(val: string): string {
+        const str = (val ?? '').toString();
+        return `"${str.replace(/"/g, '""')}"`;
+    }
+
     async exportUsersCsv(): Promise<string> {
         const users = await this.prisma.user.findMany({
             orderBy: { createdAt: 'desc' },
@@ -119,7 +124,8 @@ export class AdminUsersService {
 
         const header = 'Name,Email,Role,Status,Routers,Joined\n';
         const rows = users.map(u =>
-            `"${u.name || ''}","${u.email}","${u.role}","${u.isActive ? 'Active' : 'Banned'}","${u._count.routers}","${u.createdAt.toISOString()}"`
+            [u.name || '', u.email, u.role, u.isActive ? 'Active' : 'Banned', `${u._count.routers}`, u.createdAt.toISOString()]
+                .map(v => this.escapeCsv(v)).join(',')
         ).join('\n');
 
         return header + rows;

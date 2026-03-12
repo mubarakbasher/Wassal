@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/l10n/generated/app_localizations.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/api/api_client.dart';
@@ -41,7 +42,7 @@ class _HotspotProfilesPageState extends State<HotspotProfilesPage> {
     });
 
     try {
-      final response = await ApiClient().get(
+      final response = await context.read<ApiClient>().get(
         ApiEndpoints.routerHotspotProfiles(_selectedRouter!.id),
       );
       
@@ -84,7 +85,7 @@ class _HotspotProfilesPageState extends State<HotspotProfilesPage> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Text('Hotspot Profiles', style: AppTextStyles.headlineMedium),
+        title: Text(AppLocalizations.of(context)!.hotspotProfiles, style: AppTextStyles.headlineMedium),
         backgroundColor: Colors.white,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
@@ -101,7 +102,7 @@ class _HotspotProfilesPageState extends State<HotspotProfilesPage> {
               onPressed: _navigateToCreateProfile,
               backgroundColor: AppColors.primary,
               icon: const Icon(Icons.add, color: Colors.white),
-              label: const Text('Add Profile', style: TextStyle(color: Colors.white)),
+              label: Text(AppLocalizations.of(context)!.addProfile, style: const TextStyle(color: Colors.white)),
             )
           : null,
       body: BlocListener<RouterBloc, RouterState>(
@@ -211,13 +212,13 @@ class _HotspotProfilesPageState extends State<HotspotProfilesPage> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
       ),
-      child: const Center(
+      child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 16),
-            Text('Loading profiles...'),
+            const CircularProgressIndicator(),
+            const SizedBox(height: 16),
+            Text(AppLocalizations.of(context)!.loadingProfiles),
           ],
         ),
       ),
@@ -248,7 +249,7 @@ class _HotspotProfilesPageState extends State<HotspotProfilesPage> {
             child: const Icon(Icons.error_outline, size: 48, color: Colors.red),
           ),
           const SizedBox(height: 16),
-          Text('Failed to Load Profiles', style: AppTextStyles.titleLarge),
+          Text(AppLocalizations.of(context)!.failedLoadProfiles, style: AppTextStyles.titleLarge),
           const SizedBox(height: 8),
           Text(
             _error ?? 'Unknown error',
@@ -262,7 +263,7 @@ class _HotspotProfilesPageState extends State<HotspotProfilesPage> {
               backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
             ),
-            child: const Text('Retry'),
+            child: Text(AppLocalizations.of(context)!.retry),
           ),
         ],
       ),
@@ -288,10 +289,10 @@ class _HotspotProfilesPageState extends State<HotspotProfilesPage> {
             child: Icon(Icons.person_off, size: 48, color: Colors.grey[400]),
           ),
           const SizedBox(height: 16),
-          Text('No Profiles Found', style: AppTextStyles.titleLarge),
+          Text(AppLocalizations.of(context)!.noProfilesFound, style: AppTextStyles.titleLarge),
           const SizedBox(height: 8),
           Text(
-            'Tap the button below to create your first profile',
+            AppLocalizations.of(context)!.noProfilesHint,
             style: AppTextStyles.bodySmall,
             textAlign: TextAlign.center,
           ),
@@ -357,14 +358,17 @@ class _HotspotProfilesPageState extends State<HotspotProfilesPage> {
           // Properties
           Padding(
             padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                _buildPropertyRow(Icons.speed, 'Rate Limit', rateLimit.toString()),
-                _buildPropertyRow(Icons.timer, 'Session Timeout', sessionTimeout.toString()),
-                _buildPropertyRow(Icons.people, 'Shared Users', sharedUsers.toString()),
-                _buildPropertyRow(Icons.hourglass_empty, 'Idle Timeout', idleTimeout.toString()),
-              ],
-            ),
+            child: Builder(builder: (context) {
+              final l10n = AppLocalizations.of(context)!;
+              return Column(
+                children: [
+                  _buildPropertyRow(Icons.speed, l10n.rateLimit, rateLimit.toString()),
+                  _buildPropertyRow(Icons.timer, l10n.sessionTimeout, sessionTimeout.toString()),
+                  _buildPropertyRow(Icons.people, l10n.sharedUsers, sharedUsers.toString()),
+                  _buildPropertyRow(Icons.hourglass_empty, l10n.idleTimeout, idleTimeout.toString()),
+                ],
+              );
+            }),
           ),
         ],
       ),

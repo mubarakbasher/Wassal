@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, IsNumber, IsIn, Min } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsNumber, IsIn, Min, Max } from 'class-validator';
 
 export class CreateVoucherDto {
     @IsString()
@@ -40,5 +40,6 @@ export class CreateVoucherDto {
     @IsNumber()
     @IsOptional()
     @Min(1)
+    @Max(500)
     quantity?: number;
 }
