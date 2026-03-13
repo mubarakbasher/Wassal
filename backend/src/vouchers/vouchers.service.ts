@@ -4,7 +4,7 @@ import { MikroTikApiService } from '../mikrotik/mikrotik-api.service';
 import { RoutersService } from '../routers/routers.service';
 import { RadiusService } from '../radius/radius.service';
 import { CreateVoucherDto, VoucherFilterDto, VoucherCharset, VoucherAuthType } from './dto/voucher.dto';
-import { PlanType, VoucherStatus } from '@prisma/client';
+import { PlanType, CountType, VoucherStatus } from '@prisma/client';
 import * as crypto from 'crypto';
 
 @Injectable()
@@ -78,6 +78,7 @@ export class VouchersService {
             profileId,
             mikrotikProfile,
             planType,
+            countType = CountType.WALL_CLOCK,
             planName,
             duration,
             dataLimit,
@@ -193,14 +194,12 @@ export class VouchersService {
                     await this.radiusService.createRadiusUser(username, password, groupName, routerId);
                 }
 
-                // Set Max-All-Session so FreeRADIUS sqlcounter tracks total
-                // uptime across all sessions. Time only counts while connected.
-                if (planType === PlanType.TIME_BASED && duration) {
+                // ONLINE_ONLY: set Max-All-Session so FreeRADIUS sqlcounter
+                // tracks total connected time. WALL_CLOCK skips this —
+                // its Expiration is set on first login by the activation cron.
+                if (planType === PlanType.TIME_BASED && duration && countType === CountType.ONLINE_ONLY) {
                     const seconds = duration * 60;
                     await this.radiusService.setMaxAllSession(username, seconds);
-                    // Also set Session-Timeout reply directly so MikroTik disconnects
-                    // the user after the allotted time. The sqlcounter will override
-                    // this with the dynamic remaining time on subsequent logins.
                     await this.radiusService.setSessionTimeout(username, seconds);
                 }
 
@@ -222,6 +221,7 @@ export class VouchersService {
                     username,
                     password,
                     planType,
+                    countType,
                     planName,
                     duration,
                     dataLimit: dataLimit ? BigInt(dataLimit) : null,
@@ -418,19 +418,31 @@ export class VouchersService {
             await this.radiusService.createRadiusUser(voucher.username, voucher.password, groupName, voucher.routerId);
         }
 
-        // Set Max-All-Session for uptime-based time tracking
+        const now = new Date();
         if (voucher.planType === PlanType.TIME_BASED && voucher.duration) {
             const seconds = voucher.duration * 60;
-            await this.radiusService.setMaxAllSession(voucher.username, seconds);
-            await this.radiusService.setSessionTimeout(voucher.username, seconds);
+
+            if (voucher.countType === CountType.ONLINE_ONLY) {
+                await this.radiusService.setMaxAllSession(voucher.username, seconds);
+                await this.radiusService.setSessionTimeout(voucher.username, seconds);
+            } else {
+                // WALL_CLOCK: set absolute Expiration so FreeRADIUS auto-rejects after this date
+                const expiresAt = new Date(now.getTime() + seconds * 1000);
+                await this.radiusService.setExpiration(voucher.username, expiresAt);
+                await this.radiusService.setSessionTimeout(voucher.username, seconds);
+            }
         }
 
-        // Update voucher status — no absolute expiresAt, time is tracked via radacct
+        const expiresAt = (voucher.countType === CountType.WALL_CLOCK && voucher.duration)
+            ? new Date(now.getTime() + voucher.duration * 60 * 1000)
+            : undefined;
+
         const updatedVoucher = await this.prisma.voucher.update({
             where: { id },
             data: {
                 status: VoucherStatus.ACTIVE,
-                activatedAt: new Date(),
+                activatedAt: now,
+                ...(expiresAt && { expiresAt }),
             },
         });
 

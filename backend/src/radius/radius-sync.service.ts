@@ -3,7 +3,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import { RadiusService } from './radius.service';
 import { MikroTikApiService } from '../mikrotik/mikrotik-api.service';
-import { VoucherStatus } from '@prisma/client';
+import { VoucherStatus, CountType } from '@prisma/client';
 import * as crypto from 'crypto';
 
 /**
@@ -211,13 +211,13 @@ export class RadiusSyncService {
     @Cron('*/30 * * * * *') // Every 30 seconds
     async activateUsedVouchers() {
         try {
-            // Find UNUSED vouchers that have RADIUS credentials
             const unusedVouchers = await this.prisma.voucher.findMany({
                 where: { status: VoucherStatus.UNUSED },
                 select: {
                     id: true,
                     username: true,
                     planType: true,
+                    countType: true,
                     duration: true,
                 },
             });
@@ -225,8 +225,6 @@ export class RadiusSyncService {
             if (unusedVouchers.length === 0) return;
 
             for (const voucher of unusedVouchers) {
-                // Check if this user has authenticated via RADIUS
-                // (radpostauth logs every auth attempt)
                 const authRecord = await this.prisma.radPostAuth.findFirst({
                     where: {
                         username: voucher.username,
@@ -234,22 +232,36 @@ export class RadiusSyncService {
                     },
                 });
 
-                if (!authRecord) continue; // Not yet used
+                if (!authRecord) continue;
 
-                // Voucher was used! Mark as ACTIVE.
-                // No absolute expiresAt — time is tracked via radacct uptime.
                 this.logger.log(`First use detected for voucher ${voucher.username} — marking ACTIVE`);
+
+                const now = new Date();
+                let expiresAt: Date | undefined;
+
+                if (voucher.countType === CountType.WALL_CLOCK && voucher.duration) {
+                    const seconds = voucher.duration * 60;
+                    expiresAt = new Date(now.getTime() + seconds * 1000);
+
+                    await this.radiusService.setExpiration(voucher.username, expiresAt);
+                    await this.radiusService.setSessionTimeout(voucher.username, seconds);
+
+                    this.logger.log(
+                        `WALL_CLOCK voucher ${voucher.username}: expires at ${expiresAt.toISOString()}`,
+                    );
+                }
 
                 await this.prisma.voucher.update({
                     where: { id: voucher.id },
                     data: {
                         status: VoucherStatus.ACTIVE,
-                        activatedAt: new Date(),
+                        activatedAt: now,
+                        ...(expiresAt && { expiresAt }),
                     },
                 });
 
                 this.logger.log(
-                    `Voucher ${voucher.username} activated (uptime-based, duration: ${voucher.duration}min)`,
+                    `Voucher ${voucher.username} activated (${voucher.countType}, duration: ${voucher.duration}min)`,
                 );
             }
         } catch (error) {
@@ -266,7 +278,6 @@ export class RadiusSyncService {
     @Cron(CronExpression.EVERY_MINUTE)
     async expireVouchers() {
         try {
-            // Find ACTIVE time-based vouchers with a duration limit
             const activeVouchers = await this.prisma.voucher.findMany({
                 where: {
                     status: VoucherStatus.ACTIVE,
@@ -276,6 +287,9 @@ export class RadiusSyncService {
                     id: true,
                     username: true,
                     duration: true,
+                    countType: true,
+                    activatedAt: true,
+                    expiresAt: true,
                     routerId: true,
                     router: {
                         select: {
@@ -292,28 +306,47 @@ export class RadiusSyncService {
 
             if (activeVouchers.length === 0) return;
 
+            const now = new Date();
             const expired: string[] = [];
 
             for (const voucher of activeVouchers) {
-                // Query radacct for total session time used across all sessions
-                const totalUsed = await this.prisma.radAcct.aggregate({
-                    where: { username: voucher.username },
-                    _sum: { acctsessiontime: true },
-                });
+                let shouldExpire = false;
 
-                const usedSeconds = totalUsed._sum.acctsessiontime || 0;
-                const allowedSeconds = (voucher.duration || 0) * 60;
+                if (voucher.countType === CountType.WALL_CLOCK) {
+                    // Wall-clock: expire when real time has passed
+                    const deadline = voucher.expiresAt
+                        ?? (voucher.activatedAt
+                            ? new Date(voucher.activatedAt.getTime() + (voucher.duration || 0) * 60 * 1000)
+                            : null);
 
-                if (usedSeconds < allowedSeconds) continue; // Still has time left
+                    if (deadline && now >= deadline) {
+                        shouldExpire = true;
+                        this.logger.log(
+                            `WALL_CLOCK voucher ${voucher.username} expired (deadline: ${deadline.toISOString()})`,
+                        );
+                    }
+                } else {
+                    // ONLINE_ONLY: expire when total connected time reaches the limit
+                    const totalUsed = await this.prisma.radAcct.aggregate({
+                        where: { username: voucher.username },
+                        _sum: { acctsessiontime: true },
+                    });
 
-                this.logger.log(
-                    `Voucher ${voucher.username} used ${usedSeconds}s / ${allowedSeconds}s — expiring`,
-                );
+                    const usedSeconds = totalUsed._sum.acctsessiontime || 0;
+                    const allowedSeconds = (voucher.duration || 0) * 60;
 
-                // Remove RADIUS user so FreeRADIUS rejects logins
+                    if (usedSeconds >= allowedSeconds) {
+                        shouldExpire = true;
+                        this.logger.log(
+                            `ONLINE_ONLY voucher ${voucher.username} used ${usedSeconds}s / ${allowedSeconds}s — expiring`,
+                        );
+                    }
+                }
+
+                if (!shouldExpire) continue;
+
                 await this.radiusService.removeRadiusUser(voucher.username);
 
-                // Disconnect user from MikroTik hotspot
                 try {
                     const decryptedPassword = this.decryptPassword(voucher.router.password);
                     const connection = {
@@ -338,12 +371,11 @@ export class RadiusSyncService {
                     );
                 }
 
-                // Mark voucher as expired
                 await this.prisma.voucher.update({
                     where: { id: voucher.id },
                     data: {
                         status: VoucherStatus.EXPIRED,
-                        expiresAt: new Date(), // Record when it actually expired
+                        expiresAt: voucher.expiresAt ?? now,
                     },
                 });
 
