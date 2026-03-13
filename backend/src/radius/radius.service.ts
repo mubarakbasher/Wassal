@@ -52,6 +52,35 @@ export class RadiusService {
     }
 
     /**
+     * Create a passwordless RADIUS user (USERNAME_ONLY vouchers).
+     * Uses Auth-Type := Accept so FreeRADIUS skips password verification.
+     */
+    async createRadiusUserPasswordless(
+        username: string,
+        groupName: string,
+        routerId?: string,
+    ): Promise<void> {
+        await this.prisma.radCheck.create({
+            data: {
+                username,
+                attribute: 'Auth-Type',
+                op: ':=',
+                value: 'Accept',
+            },
+        });
+
+        await this.prisma.radUserGroup.create({
+            data: {
+                username,
+                groupname: groupName,
+                priority: 1,
+            },
+        });
+
+        this.logger.log(`Created passwordless RADIUS user: ${username} in group: ${groupName}`);
+    }
+
+    /**
      * Remove a RADIUS user and all associated data.
      */
     async removeRadiusUser(username: string): Promise<void> {
@@ -66,11 +95,14 @@ export class RadiusService {
     }
 
     /**
-     * Check if a RADIUS user exists.
+     * Check if a RADIUS user exists (password-based or passwordless).
      */
     async userExists(username: string): Promise<boolean> {
         const count = await this.prisma.radCheck.count({
-            where: { username, attribute: 'Cleartext-Password' },
+            where: {
+                username,
+                attribute: { in: ['Cleartext-Password', 'Auth-Type'] },
+            },
         });
         return count > 0;
     }

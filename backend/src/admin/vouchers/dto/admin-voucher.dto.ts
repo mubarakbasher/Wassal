@@ -20,6 +20,11 @@ export class CreateVoucherDto {
     countType?: string;
 
     @IsString()
+    @IsOptional()
+    @IsIn(['USERNAME_ONLY', 'USER_SAME_PASS', 'USER_PASS'])
+    authType?: string = 'USERNAME_ONLY';
+
+    @IsString()
     @IsNotEmpty()
     planName: string;
 

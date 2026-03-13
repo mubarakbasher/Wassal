@@ -178,17 +178,20 @@ export class VouchersService {
             const username = this.generateRandomString(8, charset);
             let password = '';
 
-            if (authType === VoucherAuthType.USER_SAME_PASS) {
-                password = username;
-            } else if (authType === VoucherAuthType.USERNAME_ONLY) {
+            if (authType === VoucherAuthType.USERNAME_ONLY) {
+                password = '';
+            } else if (authType === VoucherAuthType.USER_SAME_PASS) {
                 password = username;
             } else {
                 password = this.generateRandomString(8, charset);
             }
 
             try {
-                // Create RADIUS user in database (replaces MikroTik hotspot user)
-                await this.radiusService.createRadiusUser(username, password, groupName, routerId);
+                if (authType === VoucherAuthType.USERNAME_ONLY) {
+                    await this.radiusService.createRadiusUserPasswordless(username, groupName, routerId);
+                } else {
+                    await this.radiusService.createRadiusUser(username, password, groupName, routerId);
+                }
 
                 // Set Max-All-Session so FreeRADIUS sqlcounter tracks total
                 // uptime across all sessions. Time only counts while connected.
@@ -408,7 +411,12 @@ export class VouchersService {
         // Create RADIUS user with profile group
         const profileName = voucher.profile?.name ?? 'default';
         const groupName = `${profileName}_${voucher.routerId.substring(0, 8)}`;
-        await this.radiusService.createRadiusUser(voucher.username, voucher.password, groupName, voucher.routerId);
+        const isPasswordless = voucher.password === '';
+        if (isPasswordless) {
+            await this.radiusService.createRadiusUserPasswordless(voucher.username, groupName, voucher.routerId);
+        } else {
+            await this.radiusService.createRadiusUser(voucher.username, voucher.password, groupName, voucher.routerId);
+        }
 
         // Set Max-All-Session for uptime-based time tracking
         if (voucher.planType === PlanType.TIME_BASED && voucher.duration) {

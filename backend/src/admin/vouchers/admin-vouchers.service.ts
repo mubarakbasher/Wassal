@@ -64,6 +64,7 @@ export class AdminVouchersService {
             mikrotikProfile,
             planType,
             countType = 'WALL_CLOCK',
+            authType = 'USERNAME_ONLY',
             planName,
             duration,
             dataLimit,
@@ -118,10 +119,15 @@ export class AdminVouchersService {
 
         for (let i = 0; i < count; i++) {
             const username = this.generateRandomString(8);
-            const password = username; // username-only: MikroTik sends username as password
+            let password = '';
 
-            // Create RADIUS user
-            await this.radiusService.createRadiusUser(username, password, groupName, routerId);
+            if (authType === 'USERNAME_ONLY') {
+                password = '';
+                await this.radiusService.createRadiusUserPasswordless(username, groupName, routerId);
+            } else {
+                password = authType === 'USER_SAME_PASS' ? username : this.generateRandomString(8);
+                await this.radiusService.createRadiusUser(username, password, groupName, routerId);
+            }
 
             // Only set Max-All-Session for ONLINE_ONLY count type
             if (planType === 'TIME_BASED' && duration && countType === 'ONLINE_ONLY') {

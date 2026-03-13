@@ -55,6 +55,8 @@ authenticate {
     Auth-Type MS-CHAP {
         mschap
     }
+    Auth-Type Accept {
+    }
 }
 
 preacct {
