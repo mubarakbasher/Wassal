@@ -448,9 +448,23 @@ export class VouchersService {
             data: {
                 status: VoucherStatus.ACTIVE,
                 activatedAt: now,
+                soldAt: now,
                 ...(expiresAt && { expiresAt }),
             },
         });
+
+        const existingSale = await this.prisma.sale.findFirst({
+            where: { voucherId: id },
+        });
+        if (!existingSale) {
+            await this.prisma.sale.create({
+                data: {
+                    amount: voucher.price,
+                    voucherId: id,
+                    userId,
+                },
+            });
+        }
 
         // Log activity
         await this.prisma.activityLog.create({

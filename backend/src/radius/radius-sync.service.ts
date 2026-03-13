@@ -219,6 +219,8 @@ export class RadiusSyncService {
                     planType: true,
                     countType: true,
                     duration: true,
+                    price: true,
+                    router: { select: { userId: true } },
                 },
             });
 
@@ -256,9 +258,23 @@ export class RadiusSyncService {
                     data: {
                         status: VoucherStatus.ACTIVE,
                         activatedAt: now,
+                        soldAt: now,
                         ...(expiresAt && { expiresAt }),
                     },
                 });
+
+                const existingSale = await this.prisma.sale.findFirst({
+                    where: { voucherId: voucher.id },
+                });
+                if (!existingSale) {
+                    await this.prisma.sale.create({
+                        data: {
+                            amount: voucher.price,
+                            voucherId: voucher.id,
+                            userId: voucher.router.userId,
+                        },
+                    });
+                }
 
                 this.logger.log(
                     `Voucher ${voucher.username} activated (${voucher.countType}, duration: ${voucher.duration}min)`,
