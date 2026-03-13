@@ -433,6 +433,12 @@ export class VouchersService {
             }
         }
 
+        if (voucher.dataLimit) {
+            await this.radiusService.setUserReplyAttribute(
+                voucher.username, 'Mikrotik-Total-Limit', voucher.dataLimit.toString(),
+            );
+        }
+
         const expiresAt = (voucher.countType === CountType.WALL_CLOCK && voucher.duration)
             ? new Date(now.getTime() + voucher.duration * 60 * 1000)
             : undefined;

@@ -281,12 +281,17 @@ export class RadiusSyncService {
             const activeVouchers = await this.prisma.voucher.findMany({
                 where: {
                     status: VoucherStatus.ACTIVE,
-                    duration: { not: null },
+                    OR: [
+                        { duration: { not: null } },
+                        { dataLimit: { not: null } },
+                    ],
                 },
                 select: {
                     id: true,
                     username: true,
+                    planType: true,
                     duration: true,
+                    dataLimit: true,
                     countType: true,
                     activatedAt: true,
                     expiresAt: true,
@@ -312,33 +317,47 @@ export class RadiusSyncService {
             for (const voucher of activeVouchers) {
                 let shouldExpire = false;
 
-                if (voucher.countType === CountType.WALL_CLOCK) {
-                    // Wall-clock: expire when real time has passed
-                    const deadline = voucher.expiresAt
-                        ?? (voucher.activatedAt
-                            ? new Date(voucher.activatedAt.getTime() + (voucher.duration || 0) * 60 * 1000)
-                            : null);
+                // --- Time-based check ---
+                if (voucher.duration) {
+                    if (voucher.countType === CountType.WALL_CLOCK) {
+                        const deadline = voucher.expiresAt
+                            ?? (voucher.activatedAt
+                                ? new Date(voucher.activatedAt.getTime() + voucher.duration * 60 * 1000)
+                                : null);
 
-                    if (deadline && now >= deadline) {
-                        shouldExpire = true;
-                        this.logger.log(
-                            `WALL_CLOCK voucher ${voucher.username} expired (deadline: ${deadline.toISOString()})`,
-                        );
+                        if (deadline && now >= deadline) {
+                            shouldExpire = true;
+                            this.logger.log(
+                                `WALL_CLOCK voucher ${voucher.username} expired (deadline: ${deadline.toISOString()})`,
+                            );
+                        }
+                    } else {
+                        const totalUsed = await this.prisma.radAcct.aggregate({
+                            where: { username: voucher.username },
+                            _sum: { acctsessiontime: true },
+                        });
+
+                        const usedSeconds = totalUsed._sum.acctsessiontime || 0;
+                        const allowedSeconds = voucher.duration * 60;
+
+                        if (usedSeconds >= allowedSeconds) {
+                            shouldExpire = true;
+                            this.logger.log(
+                                `ONLINE_ONLY voucher ${voucher.username} used ${usedSeconds}s / ${allowedSeconds}s — expiring`,
+                            );
+                        }
                     }
-                } else {
-                    // ONLINE_ONLY: expire when total connected time reaches the limit
-                    const totalUsed = await this.prisma.radAcct.aggregate({
-                        where: { username: voucher.username },
-                        _sum: { acctsessiontime: true },
-                    });
+                }
 
-                    const usedSeconds = totalUsed._sum.acctsessiontime || 0;
-                    const allowedSeconds = (voucher.duration || 0) * 60;
+                // --- Data-based check ---
+                if (!shouldExpire && voucher.dataLimit) {
+                    const totalBytes = await this.radiusService.getTotalBytes(voucher.username);
+                    const usedBytes = totalBytes.bytesIn + totalBytes.bytesOut;
 
-                    if (usedSeconds >= allowedSeconds) {
+                    if (usedBytes >= voucher.dataLimit) {
                         shouldExpire = true;
                         this.logger.log(
-                            `ONLINE_ONLY voucher ${voucher.username} used ${usedSeconds}s / ${allowedSeconds}s — expiring`,
+                            `DATA voucher ${voucher.username} used ${usedBytes} / ${voucher.dataLimit} bytes — expiring`,
                         );
                     }
                 }
