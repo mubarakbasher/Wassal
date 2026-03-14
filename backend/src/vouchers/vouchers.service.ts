@@ -187,11 +187,12 @@ export class VouchersService {
                 password = this.generateRandomString(8, charset);
             }
 
+            const nasIp = router.vpnIp || router.ipAddress;
             try {
                 if (authType === VoucherAuthType.USERNAME_ONLY) {
-                    await this.radiusService.createRadiusUserPasswordless(username, groupName, routerId);
+                    await this.radiusService.createRadiusUserPasswordless(username, groupName, nasIp);
                 } else {
-                    await this.radiusService.createRadiusUser(username, password, groupName, routerId);
+                    await this.radiusService.createRadiusUser(username, password, groupName, nasIp);
                 }
 
                 // ONLINE_ONLY: set Max-All-Session so FreeRADIUS sqlcounter
@@ -411,11 +412,12 @@ export class VouchersService {
         // Create RADIUS user with profile group
         const profileName = voucher.profile?.name ?? 'default';
         const groupName = `${profileName}_${voucher.routerId.substring(0, 8)}`;
+        const activateNasIp = voucher.router.vpnIp || voucher.router.ipAddress;
         const isPasswordless = voucher.password === '';
         if (isPasswordless) {
-            await this.radiusService.createRadiusUserPasswordless(voucher.username, groupName, voucher.routerId);
+            await this.radiusService.createRadiusUserPasswordless(voucher.username, groupName, activateNasIp);
         } else {
-            await this.radiusService.createRadiusUser(voucher.username, voucher.password, groupName, voucher.routerId);
+            await this.radiusService.createRadiusUser(voucher.username, voucher.password, groupName, activateNasIp);
         }
 
         const now = new Date();

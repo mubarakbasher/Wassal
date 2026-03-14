@@ -27,9 +27,8 @@ export class RadiusService {
         username: string,
         password: string,
         groupName: string,
-        routerId?: string,
+        nasIpAddress?: string,
     ): Promise<void> {
-        // Insert password into radcheck
         await this.prisma.radCheck.create({
             data: {
                 username,
@@ -39,7 +38,17 @@ export class RadiusService {
             },
         });
 
-        // Assign user to group (for group-level attributes like speed)
+        if (nasIpAddress) {
+            await this.prisma.radCheck.create({
+                data: {
+                    username,
+                    attribute: 'NAS-IP-Address',
+                    op: '==',
+                    value: nasIpAddress,
+                },
+            });
+        }
+
         await this.prisma.radUserGroup.create({
             data: {
                 username,
@@ -48,7 +57,7 @@ export class RadiusService {
             },
         });
 
-        this.logger.log(`Created RADIUS user: ${username} in group: ${groupName}`);
+        this.logger.log(`Created RADIUS user: ${username} in group: ${groupName}${nasIpAddress ? ` (NAS: ${nasIpAddress})` : ''}`);
     }
 
     /**
@@ -58,7 +67,7 @@ export class RadiusService {
     async createRadiusUserPasswordless(
         username: string,
         groupName: string,
-        routerId?: string,
+        nasIpAddress?: string,
     ): Promise<void> {
         await this.prisma.radCheck.create({
             data: {
@@ -69,6 +78,17 @@ export class RadiusService {
             },
         });
 
+        if (nasIpAddress) {
+            await this.prisma.radCheck.create({
+                data: {
+                    username,
+                    attribute: 'NAS-IP-Address',
+                    op: '==',
+                    value: nasIpAddress,
+                },
+            });
+        }
+
         await this.prisma.radUserGroup.create({
             data: {
                 username,
@@ -77,7 +97,7 @@ export class RadiusService {
             },
         });
 
-        this.logger.log(`Created passwordless RADIUS user: ${username} in group: ${groupName}`);
+        this.logger.log(`Created passwordless RADIUS user: ${username} in group: ${groupName}${nasIpAddress ? ` (NAS: ${nasIpAddress})` : ''}`);
     }
 
     /**

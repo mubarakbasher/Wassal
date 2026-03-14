@@ -117,16 +117,17 @@ export class AdminVouchersService {
         const vouchers: any[] = [];
         const count = quantity || 1;
 
+        const adminNasIp = router.vpnIp || router.ipAddress;
         for (let i = 0; i < count; i++) {
             const username = this.generateRandomString(8);
             let password = '';
 
             if (authType === 'USERNAME_ONLY') {
                 password = '';
-                await this.radiusService.createRadiusUserPasswordless(username, groupName, routerId);
+                await this.radiusService.createRadiusUserPasswordless(username, groupName, adminNasIp);
             } else {
                 password = authType === 'USER_SAME_PASS' ? username : this.generateRandomString(8);
-                await this.radiusService.createRadiusUser(username, password, groupName, routerId);
+                await this.radiusService.createRadiusUser(username, password, groupName, adminNasIp);
             }
 
             // Only set Max-All-Session for ONLINE_ONLY count type
