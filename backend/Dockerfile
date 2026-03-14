@@ -1,6 +1,6 @@
 FROM node:20-alpine
 
-RUN apk add --no-cache openssl wireguard-tools
+RUN apk add --no-cache openssl wireguard-tools docker-cli
 
 WORKDIR /app
 

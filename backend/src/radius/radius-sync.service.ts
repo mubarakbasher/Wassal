@@ -62,9 +62,9 @@ export class RadiusSyncService implements OnModuleInit {
                 this.logger.log(`Registered ${registered} missing VPN NAS entries`);
                 try {
                     const { exec } = require('child_process');
-                    exec('docker exec wassal-freeradius kill -HUP 1', (err) => {
-                        if (err) this.logger.warn(`FreeRADIUS reload failed: ${err.message}`);
-                        else this.logger.log('FreeRADIUS reloaded after VPN NAS sync');
+                    exec('docker restart wassal-freeradius', (err) => {
+                        if (err) this.logger.warn(`FreeRADIUS restart failed: ${err.message}`);
+                        else this.logger.log('FreeRADIUS restarted after VPN NAS sync');
                     });
                 } catch { }
             }

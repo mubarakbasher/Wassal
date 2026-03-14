@@ -115,15 +115,14 @@ export class RoutersService {
                 this.logger.log(`NAS client registered for VPN IP ${vpnIp}`);
             }
 
-            // Reload FreeRADIUS so it picks up the new NAS entry immediately
-            // FreeRADIUS only reads the nas table at startup/reload
+            // Restart FreeRADIUS so it re-reads the nas table
             try {
                 const { exec } = require('child_process');
-                exec('docker exec wassal-freeradius kill -HUP 1', (err) => {
+                exec('docker restart wassal-freeradius', (err) => {
                     if (err) {
-                        this.logger.warn(`FreeRADIUS reload failed: ${err.message}`);
+                        this.logger.warn(`FreeRADIUS restart failed: ${err.message}`);
                     } else {
-                        this.logger.log('FreeRADIUS reloaded to pick up new NAS client');
+                        this.logger.log('FreeRADIUS restarted to pick up new NAS client');
                     }
                 });
             } catch (reloadErr) {

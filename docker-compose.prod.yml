@@ -67,6 +67,7 @@ services:
     volumes:
       - /opt/wassal/wireguard/peers:/opt/wassal/wireguard/peers
       - /opt/wassal/uploads:/app/uploads
+      - /var/run/docker.sock:/var/run/docker.sock
     restart: unless-stopped
 
   admin-dashboard:
