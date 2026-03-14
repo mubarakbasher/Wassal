@@ -409,8 +409,11 @@ export class AdminRoutersService {
             throw new NotFoundException('Router not found');
         }
 
-        // Remove NAS from RADIUS
+        // Remove NAS from RADIUS (both public IP and VPN IP)
         await this.radiusService.removeNas(router.ipAddress);
+        if (router.vpnIp && router.vpnIp !== router.ipAddress) {
+            await this.radiusService.removeNas(router.vpnIp);
+        }
 
         await this.prisma.router.delete({ where: { id } });
 

@@ -86,6 +86,7 @@ export class RoutersService {
         routerName: string,
         description?: string,
         existingSecret?: string,
+        vpnIp?: string,
     ): Promise<{ radiusSecret: string; radiusConfigured: boolean; warnings: string[] }> {
         const warnings: string[] = [];
         let radiusConfigured = false;
@@ -102,6 +103,17 @@ export class RoutersService {
                 description || undefined,
             );
             this.logger.log(`NAS client registered for ${routerName} (${ipAddress})`);
+
+            // VPN routers send RADIUS requests from their vpnIp, so register that too
+            if (vpnIp && vpnIp !== ipAddress) {
+                await this.radiusService.registerNas(
+                    vpnIp,
+                    radiusSecret,
+                    routerName ? `${routerName}-vpn` : undefined,
+                    description || undefined,
+                );
+                this.logger.log(`NAS client registered for VPN IP ${vpnIp}`);
+            }
 
             // Reload FreeRADIUS so it picks up the new NAS entry immediately
             // FreeRADIUS only reads the nas table at startup/reload
@@ -461,8 +473,11 @@ export class RoutersService {
             }
         }
 
-        // Unregister NAS from RADIUS
+        // Unregister NAS from RADIUS (both public IP and VPN IP)
         await this.radiusService.removeNas(router.ipAddress);
+        if (router.vpnIp && router.vpnIp !== router.ipAddress) {
+            await this.radiusService.removeNas(router.vpnIp);
+        }
 
         // Remove WireGuard peer if this router had a VPN IP
         if (router.vpnIp) {
@@ -846,6 +861,8 @@ export class RoutersService {
                     decryptedPw,
                     existing.name,
                     existing.description || undefined,
+                    undefined,
+                    existing.vpnIp || vpnIp,
                 );
                 return {
                     message: 'Router already registered - RADIUS configured',
@@ -938,6 +955,8 @@ export class RoutersService {
             credentials.password,
             router.name,
             vpnIp ? 'Added via WireGuard Auto-Discovery' : 'Added via Script Auto-Discovery',
+            undefined,
+            vpnIp,
         );
 
         // Log activity
@@ -1232,6 +1251,7 @@ export class RoutersService {
             router.name,
             router.description || undefined,
             router.radiusSecret || undefined,
+            router.vpnIp || undefined,
         );
 
         this.logger.log(`RADIUS setup triggered for ${router.name}: configured=${result.radiusConfigured}`);

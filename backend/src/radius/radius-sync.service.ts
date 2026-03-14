@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import { RadiusService } from './radius.service';
@@ -19,7 +19,7 @@ import * as crypto from 'crypto';
  *    RADIUS credentials, and disconnects active sessions from MikroTik.
  */
 @Injectable()
-export class RadiusSyncService {
+export class RadiusSyncService implements OnModuleInit {
     private readonly logger = new Logger(RadiusSyncService.name);
 
     constructor(
@@ -27,6 +27,51 @@ export class RadiusSyncService {
         private radiusService: RadiusService,
         private mikrotikApi: MikroTikApiService,
     ) { }
+
+    /**
+     * On startup, ensure every router with a vpnIp has its VPN IP
+     * registered in the FreeRADIUS NAS table. Without this, RADIUS
+     * requests arriving from the VPN IP are rejected as unknown NAS.
+     */
+    async onModuleInit() {
+        try {
+            const vpnRouters = await this.prisma.router.findMany({
+                where: { vpnIp: { not: null }, radiusSecret: { not: null } },
+                select: { id: true, name: true, ipAddress: true, vpnIp: true, radiusSecret: true },
+            });
+
+            let registered = 0;
+            for (const router of vpnRouters) {
+                if (!router.vpnIp || !router.radiusSecret) continue;
+                if (router.vpnIp === router.ipAddress) continue;
+
+                const existing = await this.prisma.nas.findFirst({
+                    where: { nasname: router.vpnIp },
+                });
+                if (existing) continue;
+
+                await this.radiusService.registerNas(
+                    router.vpnIp,
+                    router.radiusSecret,
+                    router.name ? `${router.name}-vpn` : undefined,
+                );
+                registered++;
+            }
+
+            if (registered > 0) {
+                this.logger.log(`Registered ${registered} missing VPN NAS entries`);
+                try {
+                    const { exec } = require('child_process');
+                    exec('docker exec wassal-freeradius kill -HUP 1', (err) => {
+                        if (err) this.logger.warn(`FreeRADIUS reload failed: ${err.message}`);
+                        else this.logger.log('FreeRADIUS reloaded after VPN NAS sync');
+                    });
+                } catch { }
+            }
+        } catch (error) {
+            this.logger.warn(`VPN NAS startup sync failed: ${error.message}`);
+        }
+    }
 
     /**
      * Decrypt router password (same logic as RoutersService)
