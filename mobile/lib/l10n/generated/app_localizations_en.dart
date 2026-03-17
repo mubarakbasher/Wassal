@@ -1170,6 +1170,22 @@ class AppLocalizationsEn extends AppLocalizations {
       'Unable to connect to the server.\n\nPlease check your internet connection and try again.';
 
   @override
+  String get errorDnsFailure =>
+      'DNS resolution failed.\n\nYour network may be blocking this domain. Try switching to a different network.';
+
+  @override
+  String get errorConnectionRefused =>
+      'Connection refused.\n\nThe server is not accepting connections. Please try again later.';
+
+  @override
+  String get errorTlsFailure =>
+      'Secure connection failed.\n\nYour network may be intercepting traffic. Try a different network.';
+
+  @override
+  String get errorNetworkUnreachable =>
+      'Network is unreachable.\n\nPlease check your internet connection.';
+
+  @override
   String get errorAuthFailed =>
       'Authentication failed.\n\nYour session may have expired. Please log in again.';
 
@@ -1378,4 +1394,90 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get version => 'Version';
+
+  @override
+  String get networkDiagnostics => 'Network Diagnostics';
+
+  @override
+  String get diagnoseNetwork => 'Diagnose Network';
+
+  @override
+  String get runningDiagnostics => 'Running diagnostics...';
+
+  @override
+  String get diagWifiConnectivity => 'WiFi / Cellular';
+
+  @override
+  String get diagDnsApi => 'DNS: api.wassal.tech';
+
+  @override
+  String get diagDnsGoogle => 'DNS: google.com';
+
+  @override
+  String get diagHttpHealth => 'HTTP: Server Health';
+
+  @override
+  String get diagIpVersion => 'IP Version';
+
+  @override
+  String get diagResponseTime => 'Response Time';
+
+  @override
+  String get diagPassed => 'Passed';
+
+  @override
+  String get diagFailed => 'Failed';
+
+  @override
+  String get diagSkipped => 'Skipped';
+
+  @override
+  String get diagRunAgain => 'Run Again';
+
+  @override
+  String diagResolvedTo(String ip) {
+    return 'Resolved to $ip';
+  }
+
+  @override
+  String diagResponseMs(int ms) {
+    return '${ms}ms';
+  }
+
+  @override
+  String get diagNoConnection => 'No network connection detected';
+
+  @override
+  String get diagDnsFailed => 'Could not resolve hostname';
+
+  @override
+  String get diagServerOk => 'Server is reachable';
+
+  @override
+  String get diagServerUnreachable => 'Server is unreachable';
+
+  @override
+  String get diagIpv4 => 'IPv4';
+
+  @override
+  String get diagIpv6 => 'IPv6';
+
+  @override
+  String get diagIpv4And6 => 'IPv4 + IPv6';
+
+  @override
+  String get diagSummaryAllGood =>
+      'All checks passed. Your connection to the server is working.';
+
+  @override
+  String get diagSummaryDnsIssue =>
+      'DNS resolution failed. Your network may be blocking this domain.';
+
+  @override
+  String get diagSummaryServerDown =>
+      'DNS works but the server is unreachable. The server may be down.';
+
+  @override
+  String get diagSummaryNoInternet =>
+      'No internet connection detected. Check your WiFi or mobile data.';
 }

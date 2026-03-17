@@ -2270,6 +2270,30 @@ abstract class AppLocalizations {
   /// **'Unable to connect to the server.\n\nPlease check your internet connection and try again.'**
   String get errorConnectionFailed;
 
+  /// No description provided for @errorDnsFailure.
+  ///
+  /// In en, this message translates to:
+  /// **'DNS resolution failed.\n\nYour network may be blocking this domain. Try switching to a different network.'**
+  String get errorDnsFailure;
+
+  /// No description provided for @errorConnectionRefused.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection refused.\n\nThe server is not accepting connections. Please try again later.'**
+  String get errorConnectionRefused;
+
+  /// No description provided for @errorTlsFailure.
+  ///
+  /// In en, this message translates to:
+  /// **'Secure connection failed.\n\nYour network may be intercepting traffic. Try a different network.'**
+  String get errorTlsFailure;
+
+  /// No description provided for @errorNetworkUnreachable.
+  ///
+  /// In en, this message translates to:
+  /// **'Network is unreachable.\n\nPlease check your internet connection.'**
+  String get errorNetworkUnreachable;
+
   /// No description provided for @errorAuthFailed.
   ///
   /// In en, this message translates to:
@@ -2665,6 +2689,162 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Version'**
   String get version;
+
+  /// No description provided for @networkDiagnostics.
+  ///
+  /// In en, this message translates to:
+  /// **'Network Diagnostics'**
+  String get networkDiagnostics;
+
+  /// No description provided for @diagnoseNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'Diagnose Network'**
+  String get diagnoseNetwork;
+
+  /// No description provided for @runningDiagnostics.
+  ///
+  /// In en, this message translates to:
+  /// **'Running diagnostics...'**
+  String get runningDiagnostics;
+
+  /// No description provided for @diagWifiConnectivity.
+  ///
+  /// In en, this message translates to:
+  /// **'WiFi / Cellular'**
+  String get diagWifiConnectivity;
+
+  /// No description provided for @diagDnsApi.
+  ///
+  /// In en, this message translates to:
+  /// **'DNS: api.wassal.tech'**
+  String get diagDnsApi;
+
+  /// No description provided for @diagDnsGoogle.
+  ///
+  /// In en, this message translates to:
+  /// **'DNS: google.com'**
+  String get diagDnsGoogle;
+
+  /// No description provided for @diagHttpHealth.
+  ///
+  /// In en, this message translates to:
+  /// **'HTTP: Server Health'**
+  String get diagHttpHealth;
+
+  /// No description provided for @diagIpVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'IP Version'**
+  String get diagIpVersion;
+
+  /// No description provided for @diagResponseTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Response Time'**
+  String get diagResponseTime;
+
+  /// No description provided for @diagPassed.
+  ///
+  /// In en, this message translates to:
+  /// **'Passed'**
+  String get diagPassed;
+
+  /// No description provided for @diagFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed'**
+  String get diagFailed;
+
+  /// No description provided for @diagSkipped.
+  ///
+  /// In en, this message translates to:
+  /// **'Skipped'**
+  String get diagSkipped;
+
+  /// No description provided for @diagRunAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Run Again'**
+  String get diagRunAgain;
+
+  /// No description provided for @diagResolvedTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Resolved to {ip}'**
+  String diagResolvedTo(String ip);
+
+  /// No description provided for @diagResponseMs.
+  ///
+  /// In en, this message translates to:
+  /// **'{ms}ms'**
+  String diagResponseMs(int ms);
+
+  /// No description provided for @diagNoConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'No network connection detected'**
+  String get diagNoConnection;
+
+  /// No description provided for @diagDnsFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not resolve hostname'**
+  String get diagDnsFailed;
+
+  /// No description provided for @diagServerOk.
+  ///
+  /// In en, this message translates to:
+  /// **'Server is reachable'**
+  String get diagServerOk;
+
+  /// No description provided for @diagServerUnreachable.
+  ///
+  /// In en, this message translates to:
+  /// **'Server is unreachable'**
+  String get diagServerUnreachable;
+
+  /// No description provided for @diagIpv4.
+  ///
+  /// In en, this message translates to:
+  /// **'IPv4'**
+  String get diagIpv4;
+
+  /// No description provided for @diagIpv6.
+  ///
+  /// In en, this message translates to:
+  /// **'IPv6'**
+  String get diagIpv6;
+
+  /// No description provided for @diagIpv4And6.
+  ///
+  /// In en, this message translates to:
+  /// **'IPv4 + IPv6'**
+  String get diagIpv4And6;
+
+  /// No description provided for @diagSummaryAllGood.
+  ///
+  /// In en, this message translates to:
+  /// **'All checks passed. Your connection to the server is working.'**
+  String get diagSummaryAllGood;
+
+  /// No description provided for @diagSummaryDnsIssue.
+  ///
+  /// In en, this message translates to:
+  /// **'DNS resolution failed. Your network may be blocking this domain.'**
+  String get diagSummaryDnsIssue;
+
+  /// No description provided for @diagSummaryServerDown.
+  ///
+  /// In en, this message translates to:
+  /// **'DNS works but the server is unreachable. The server may be down.'**
+  String get diagSummaryServerDown;
+
+  /// No description provided for @diagSummaryNoInternet.
+  ///
+  /// In en, this message translates to:
+  /// **'No internet connection detected. Check your WiFi or mobile data.'**
+  String get diagSummaryNoInternet;
 }
 
 class _AppLocalizationsDelegate

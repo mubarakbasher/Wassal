@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../../core/api/api_client.dart';
@@ -8,11 +9,13 @@ class ServerHealthResult {
   final bool isHealthy;
   final bool isMaintenance;
   final String? message;
+  final bool isDnsFailure;
 
   const ServerHealthResult({
     required this.isHealthy,
     this.isMaintenance = false,
     this.message,
+    this.isDnsFailure = false,
   });
 }
 
@@ -32,14 +35,25 @@ class StartupService {
   Future<bool> checkInternetConnection() async {
     try {
       final results = await connectivity.checkConnectivity();
-      // connectivity_plus 6.x returns a List<ConnectivityResult>
       return results.isNotEmpty && !results.contains(ConnectivityResult.none);
     } catch (e) {
       return false;
     }
   }
 
-  /// Ping backend health endpoint
+  /// Perform a real DNS lookup to verify the API host is resolvable.
+  /// Returns the resolved addresses or null on failure.
+  Future<List<InternetAddress>?> checkDnsResolution(String hostname) async {
+    try {
+      final addresses = await InternetAddress.lookup(hostname)
+          .timeout(const Duration(seconds: 10));
+      return addresses.isNotEmpty ? addresses : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Ping backend health endpoint with enriched error diagnostics
   Future<ServerHealthResult> pingServerHealth() async {
     try {
       final response = await apiClient.get('/health');
@@ -47,7 +61,6 @@ class StartupService {
       if (response.statusCode == 200) {
         final data = response.data;
         
-        // Check if server is in maintenance mode
         if (data is Map && data['maintenance'] == true) {
           return ServerHealthResult(
             isHealthy: false,
@@ -64,21 +77,33 @@ class StartupService {
         message: 'Server returned error',
       );
     } catch (e) {
-      // Provide user-friendly error messages
       String userMessage = 'Unable to reach our servers. Please check your connection and try again.';
+      bool isDns = false;
       
       final errorString = e.toString().toLowerCase();
-      if (errorString.contains('timeout')) {
+      if (errorString.contains('failed host lookup') || errorString.contains('no address associated')) {
+        isDns = true;
+        // Confirm whether it's a DNS-specific issue or no internet at all
+        final googleDns = await checkDnsResolution('google.com');
+        if (googleDns != null) {
+          userMessage = 'DNS resolution failed for our server. Your network may be blocking this domain. Try switching networks.';
+        } else {
+          userMessage = 'Cannot resolve any domain. Please check your internet connection.';
+        }
+      } else if (errorString.contains('timeout')) {
         userMessage = 'The server is taking too long to respond. Please try again in a moment.';
-      } else if (errorString.contains('connection refused') || errorString.contains('failed host lookup')) {
-        userMessage = 'Cannot connect to the server. Please check your internet connection.';
-      } else if (errorString.contains('socket')) {
+      } else if (errorString.contains('connection refused')) {
+        userMessage = 'Cannot connect to the server. The server may be temporarily down.';
+      } else if (errorString.contains('handshake') || errorString.contains('certificate')) {
+        userMessage = 'Secure connection failed. Your network may be intercepting traffic. Try a different network.';
+      } else if (errorString.contains('socket') || errorString.contains('network is unreachable')) {
         userMessage = 'Network connection lost. Please check your internet and try again.';
       }
       
       return ServerHealthResult(
         isHealthy: false,
         message: userMessage,
+        isDnsFailure: isDns,
       );
     }
   }
@@ -92,7 +117,6 @@ class StartupService {
         return false;
       }
 
-      // Try to fetch profile to validate token
       final response = await apiClient.get('/auth/profile');
       return response.statusCode == 200;
     } catch (e) {
@@ -103,13 +127,7 @@ class StartupService {
   /// Load app configuration and feature flags
   Future<void> loadAppConfiguration() async {
     try {
-      // In a real app, this would fetch feature flags, remote config, etc.
-      // For now, we simulate a brief loading time
       await Future.delayed(const Duration(milliseconds: 200));
-      
-      // You could add actual config loading here:
-      // final response = await apiClient.get('/config');
-      // AppConfig.instance.update(response.data);
     } catch (e) {
       // Configuration loading is non-critical, continue anyway
     }

@@ -59,8 +59,8 @@ class _GenerateVoucherViewState extends State<GenerateVoucherView>
       duration: const Duration(milliseconds: 300),
       vsync: this,
     );
-    // Load form data once on init, not in build() which fires on every rebuild
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       context.read<VoucherBloc>().add(LoadVoucherFormData());
     });
   }

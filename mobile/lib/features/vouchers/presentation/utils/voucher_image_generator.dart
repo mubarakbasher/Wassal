@@ -10,34 +10,41 @@ import '../../../../core/constants/app_colors.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 class VoucherImageGenerator {
+  static const int _maxVouchersForImage = 50;
+
   /// Generate a styled PNG image for a single voucher
   static Future<Uint8List> generateImage(
     Voucher voucher, {
     String? businessName,
     String? loginUrl,
   }) async {
-    // Create a picture recorder to capture the canvas
-    final recorder = ui.PictureRecorder();
-    final canvas = Canvas(recorder);
-    
-    const width = 400.0;
-    const height = 500.0;
-    
-    // Draw the voucher card
-    _drawVoucherCard(
-      canvas, 
-      voucher,
-      width: width,
-      height: height,
-      businessName: businessName ?? 'WASSAL HOTSPOT',
-      loginUrl: loginUrl ?? 'http://mikrotik',
-    );
-    
-    final picture = recorder.endRecording();
-    final image = await picture.toImage(width.toInt(), height.toInt());
-    final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-    
-    return byteData!.buffer.asUint8List();
+    try {
+      final recorder = ui.PictureRecorder();
+      final canvas = Canvas(recorder);
+      
+      const width = 400.0;
+      const height = 500.0;
+      
+      _drawVoucherCard(
+        canvas, 
+        voucher,
+        width: width,
+        height: height,
+        businessName: businessName ?? 'WASSAL HOTSPOT',
+        loginUrl: loginUrl ?? 'http://mikrotik',
+      );
+      
+      final picture = recorder.endRecording();
+      final image = await picture.toImage(width.toInt(), height.toInt());
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      
+      if (byteData == null) {
+        throw Exception('Failed to encode image to PNG — device may be low on memory');
+      }
+      return byteData.buffer.asUint8List();
+    } catch (e) {
+      throw Exception('Image generation failed: $e');
+    }
   }
 
   /// Generate and share voucher as image
@@ -310,24 +317,26 @@ class VoucherImageGenerator {
     required String businessName,
     required String loginUrl,
   }) async {
+    final capped = vouchers.length > _maxVouchersForImage
+        ? vouchers.sublist(0, _maxVouchersForImage)
+        : vouchers;
+
     const cardWidth = 350.0;
     const cardHeight = 180.0;
     const padding = 16.0;
     
-    final columns = 2;
-    final rows = (vouchers.length / columns).ceil();
+    const columns = 2;
+    final rows = (capped.length / columns).ceil();
     
     final totalWidth = (cardWidth * columns) + (padding * (columns + 1));
-    final totalHeight = (cardHeight * rows) + (padding * (rows + 1)) + 80; // Extra for header
+    final totalHeight = (cardHeight * rows) + (padding * (rows + 1)) + 80;
     
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(recorder);
     
-    // Background
     final bgPaint = Paint()..color = const Color(0xFFF8FAFC);
     canvas.drawRect(Rect.fromLTWH(0, 0, totalWidth, totalHeight), bgPaint);
     
-    // Header
     final headerPainter = TextPainter(
       text: TextSpan(
         text: businessName,
@@ -344,7 +353,7 @@ class VoucherImageGenerator {
     
     final subPainter = TextPainter(
       text: TextSpan(
-        text: '${vouchers.length} Vouchers',
+        text: '${capped.length} Vouchers${capped.length < vouchers.length ? ' (showing first $_maxVouchersForImage)' : ''}',
         style: const TextStyle(
           color: Color(0xFF64748B),
           fontSize: 14,
@@ -355,8 +364,7 @@ class VoucherImageGenerator {
     subPainter.layout();
     subPainter.paint(canvas, Offset((totalWidth - subPainter.width) / 2, 50));
     
-    // Draw each voucher card
-    for (int i = 0; i < vouchers.length; i++) {
+    for (int i = 0; i < capped.length; i++) {
       final col = i % columns;
       final row = i ~/ columns;
       
@@ -365,7 +373,7 @@ class VoucherImageGenerator {
       
       _drawCompactVoucherCard(
         canvas,
-        vouchers[i],
+        capped[i],
         Offset(x, y),
         cardWidth,
         cardHeight,
@@ -376,7 +384,10 @@ class VoucherImageGenerator {
     final image = await picture.toImage(totalWidth.toInt(), totalHeight.toInt());
     final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
     
-    return byteData!.buffer.asUint8List();
+    if (byteData == null) {
+      throw Exception('Failed to encode multi-voucher image — device may be low on memory');
+    }
+    return byteData.buffer.asUint8List();
   }
 
   static void _drawCompactVoucherCard(

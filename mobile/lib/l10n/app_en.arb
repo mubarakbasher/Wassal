@@ -491,6 +491,10 @@
 
   "errorConnectionTimeout": "Connection timed out.\n\nThe server may be busy or unreachable. Please try again in a moment.",
   "errorConnectionFailed": "Unable to connect to the server.\n\nPlease check your internet connection and try again.",
+  "errorDnsFailure": "DNS resolution failed.\n\nYour network may be blocking this domain. Try switching to a different network.",
+  "errorConnectionRefused": "Connection refused.\n\nThe server is not accepting connections. Please try again later.",
+  "errorTlsFailure": "Secure connection failed.\n\nYour network may be intercepting traffic. Try a different network.",
+  "errorNetworkUnreachable": "Network is unreachable.\n\nPlease check your internet connection.",
   "errorAuthFailed": "Authentication failed.\n\nYour session may have expired. Please log in again.",
   "errorPermissionDenied": "Permission denied.\n\nYou do not have access to this resource.",
   "errorNotFound": "Resource not found.\n\nThe requested data could not be located.",
@@ -578,5 +582,42 @@
   "idleTimeout": "Idle Timeout",
   "aboutTitle": "About Wassal",
   "aboutDescription": "MikroTik hotspot management platform",
-  "version": "Version"
+  "version": "Version",
+
+  "networkDiagnostics": "Network Diagnostics",
+  "diagnoseNetwork": "Diagnose Network",
+  "runningDiagnostics": "Running diagnostics...",
+  "diagWifiConnectivity": "WiFi / Cellular",
+  "diagDnsApi": "DNS: api.wassal.tech",
+  "diagDnsGoogle": "DNS: google.com",
+  "diagHttpHealth": "HTTP: Server Health",
+  "diagIpVersion": "IP Version",
+  "diagResponseTime": "Response Time",
+  "diagPassed": "Passed",
+  "diagFailed": "Failed",
+  "diagSkipped": "Skipped",
+  "diagRunAgain": "Run Again",
+  "diagResolvedTo": "Resolved to {ip}",
+  "@diagResolvedTo": {
+    "placeholders": {
+      "ip": { "type": "String" }
+    }
+  },
+  "diagResponseMs": "{ms}ms",
+  "@diagResponseMs": {
+    "placeholders": {
+      "ms": { "type": "int" }
+    }
+  },
+  "diagNoConnection": "No network connection detected",
+  "diagDnsFailed": "Could not resolve hostname",
+  "diagServerOk": "Server is reachable",
+  "diagServerUnreachable": "Server is unreachable",
+  "diagIpv4": "IPv4",
+  "diagIpv6": "IPv6",
+  "diagIpv4And6": "IPv4 + IPv6",
+  "diagSummaryAllGood": "All checks passed. Your connection to the server is working.",
+  "diagSummaryDnsIssue": "DNS resolution failed. Your network may be blocking this domain.",
+  "diagSummaryServerDown": "DNS works but the server is unreachable. The server may be down.",
+  "diagSummaryNoInternet": "No internet connection detected. Check your WiFi or mobile data."
 }

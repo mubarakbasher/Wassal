@@ -55,6 +55,7 @@ class VoucherManagementPageState extends State<VoucherManagementPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       final bloc = context.read<VoucherBloc>();
       bloc.add(const LoadVoucherStats());
       bloc.add(const LoadVouchersEvent());

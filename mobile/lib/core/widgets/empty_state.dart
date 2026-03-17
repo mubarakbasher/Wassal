@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/l10n/generated/app_localizations.dart';
+import '../../core/utils/error_handler.dart';
 import '../../features/dashboard/presentation/pages/subscription_page.dart';
+import '../../features/diagnostics/presentation/pages/network_diagnostics_page.dart';
 
 /// Empty state widget with illustration and message
 class EmptyStateWidget extends StatelessWidget {
@@ -198,6 +200,7 @@ class ErrorStateWidget extends StatelessWidget {
   final String message;
   final VoidCallback? onRetry;
   final IconData icon;
+  final bool showDiagnose;
 
   const ErrorStateWidget({
     super.key,
@@ -205,17 +208,20 @@ class ErrorStateWidget extends StatelessWidget {
     required this.message,
     this.onRetry,
     this.icon = Icons.error_outline,
+    this.showDiagnose = true,
   });
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final isNetwork = ErrorHandler.isNetworkErrorMessage(message);
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Error icon
             Container(
               width: 120,
               height: 120,
@@ -231,7 +237,6 @@ class ErrorStateWidget extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             
-            // Title
             Text(
               title,
               style: const TextStyle(
@@ -243,7 +248,6 @@ class ErrorStateWidget extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             
-            // Message
             Text(
               message,
               style: TextStyle(
@@ -254,16 +258,41 @@ class ErrorStateWidget extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             
-            // Retry button
             if (onRetry != null) ...[
               const SizedBox(height: 32),
               ElevatedButton.icon(
                 onPressed: onRetry,
                 icon: const Icon(Icons.refresh),
-                label: Text(AppLocalizations.of(context)!.tryAgain),
+                label: Text(l10n.tryAgain),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red[400],
                   foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ],
+
+            if (isNetwork && showDiagnose) ...[
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const NetworkDiagnosticsPage(),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.network_check),
+                label: Text(l10n.diagnoseNetwork),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.grey[700],
+                  side: BorderSide(color: Colors.grey[400]!),
                   padding: const EdgeInsets.symmetric(
                     horizontal: 24,
                     vertical: 12,

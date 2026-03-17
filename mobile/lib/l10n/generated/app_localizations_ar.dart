@@ -1168,6 +1168,22 @@ class AppLocalizationsAr extends AppLocalizations {
       'تعذر الاتصال بالخادم.\n\nيرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى.';
 
   @override
+  String get errorDnsFailure =>
+      'فشل تحليل DNS.\n\nقد تكون شبكتك تحظر هذا النطاق. جرب التبديل إلى شبكة مختلفة.';
+
+  @override
+  String get errorConnectionRefused =>
+      'تم رفض الاتصال.\n\nالخادم لا يقبل الاتصالات. يرجى المحاولة لاحقاً.';
+
+  @override
+  String get errorTlsFailure =>
+      'فشل الاتصال الآمن.\n\nقد تكون شبكتك تعترض حركة البيانات. جرب شبكة مختلفة.';
+
+  @override
+  String get errorNetworkUnreachable =>
+      'الشبكة غير قابلة للوصول.\n\nيرجى التحقق من اتصالك بالإنترنت.';
+
+  @override
   String get errorAuthFailed =>
       'فشلت المصادقة.\n\nربما انتهت صلاحية جلستك. يرجى تسجيل الدخول مرة أخرى.';
 
@@ -1373,4 +1389,90 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get version => 'الإصدار';
+
+  @override
+  String get networkDiagnostics => 'تشخيص الشبكة';
+
+  @override
+  String get diagnoseNetwork => 'تشخيص الشبكة';
+
+  @override
+  String get runningDiagnostics => 'جاري التشخيص...';
+
+  @override
+  String get diagWifiConnectivity => 'WiFi / بيانات الجوال';
+
+  @override
+  String get diagDnsApi => 'DNS: api.wassal.tech';
+
+  @override
+  String get diagDnsGoogle => 'DNS: google.com';
+
+  @override
+  String get diagHttpHealth => 'HTTP: حالة الخادم';
+
+  @override
+  String get diagIpVersion => 'إصدار IP';
+
+  @override
+  String get diagResponseTime => 'وقت الاستجابة';
+
+  @override
+  String get diagPassed => 'نجح';
+
+  @override
+  String get diagFailed => 'فشل';
+
+  @override
+  String get diagSkipped => 'تم التخطي';
+
+  @override
+  String get diagRunAgain => 'إعادة التشخيص';
+
+  @override
+  String diagResolvedTo(String ip) {
+    return 'تم التحليل إلى $ip';
+  }
+
+  @override
+  String diagResponseMs(int ms) {
+    return '$ms مللي ثانية';
+  }
+
+  @override
+  String get diagNoConnection => 'لم يتم اكتشاف اتصال بالشبكة';
+
+  @override
+  String get diagDnsFailed => 'تعذر تحليل اسم المضيف';
+
+  @override
+  String get diagServerOk => 'الخادم قابل للوصول';
+
+  @override
+  String get diagServerUnreachable => 'الخادم غير قابل للوصول';
+
+  @override
+  String get diagIpv4 => 'IPv4';
+
+  @override
+  String get diagIpv6 => 'IPv6';
+
+  @override
+  String get diagIpv4And6 => 'IPv4 + IPv6';
+
+  @override
+  String get diagSummaryAllGood =>
+      'جميع الفحوصات نجحت. اتصالك بالخادم يعمل بشكل صحيح.';
+
+  @override
+  String get diagSummaryDnsIssue =>
+      'فشل تحليل DNS. قد تكون شبكتك تحظر هذا النطاق.';
+
+  @override
+  String get diagSummaryServerDown =>
+      'DNS يعمل لكن الخادم غير قابل للوصول. قد يكون الخادم معطلاً.';
+
+  @override
+  String get diagSummaryNoInternet =>
+      'لم يتم اكتشاف اتصال بالإنترنت. تحقق من WiFi أو بيانات الجوال.';
 }

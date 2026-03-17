@@ -731,25 +731,36 @@ class _PaymentFlowSheetState extends State<_PaymentFlowSheet> {
   }
 
   Future<void> _pickImage() async {
-    final picker = ImagePicker();
-    final picked = await picker.pickImage(
-      source: ImageSource.gallery,
-      maxWidth: 1920,
-      maxHeight: 1920,
-      imageQuality: 85,
-    );
-    if (picked != null && mounted) {
-      final file = File(picked.path);
-      final fileSize = await file.length();
-      if (fileSize > 5 * 1024 * 1024) { // 5MB
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('File too large. Maximum size is 5MB.')),
-          );
+    try {
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1920,
+        maxHeight: 1920,
+        imageQuality: 85,
+      );
+      if (picked != null && mounted) {
+        final file = File(picked.path);
+        final fileSize = await file.length();
+        if (fileSize > 5 * 1024 * 1024) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('File too large. Maximum size is 5MB.')),
+            );
+          }
+          return;
         }
-        return;
+        setState(() => _proofImage = file);
       }
-      setState(() => _proofImage = file);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to pick image: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 

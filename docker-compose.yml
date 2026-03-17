@@ -80,5 +80,15 @@ services:
       - "5173:80"
     restart: unless-stopped
 
+  # Landing Page
+  landing:
+    build:
+      context: ./landing
+      dockerfile: Dockerfile
+    container_name: wassal-landing
+    ports:
+      - "5174:80"
+    restart: unless-stopped
+
 volumes:
   postgres_data:

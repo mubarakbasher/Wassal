@@ -8,6 +8,9 @@ import 'router_state.dart';
 class RouterBloc extends Bloc<RouterEvent, RouterState> {
   final RouterRepository repository;
 
+  static const int _maxRetries = 3;
+  static const Duration _baseRetryDelay = Duration(seconds: 2);
+
   RouterBloc({required this.repository}) : super(const RouterInitial()) {
     on<LoadRoutersEvent>(_onLoadRouters);
     on<CreateRouterEvent>(_onCreateRouter);
@@ -41,16 +44,32 @@ class RouterBloc extends Bloc<RouterEvent, RouterState> {
       emit(const RouterLoading());
     }
 
-    final result = await repository.getRouters(statusOnly: event.statusOnly);
+    for (int attempt = 1; attempt <= _maxRetries; attempt++) {
+      final result = await repository.getRouters(statusOnly: event.statusOnly);
 
-    result.fold(
-      (failure) => emit(RouterError(failure.message)),
-      (routers) {
-        emit(RouterLoaded(routers: routers));
-        // Auto-trigger background status refresh
-        add(const RefreshRouterStatusesEvent());
-      },
-    );
+      final succeeded = result.fold<bool>(
+        (failure) {
+          if (attempt == _maxRetries ||
+              !ErrorHandler.isNetworkErrorMessage(failure.message)) {
+            emit(RouterError(failure.message));
+            return false;
+          }
+          return false;
+        },
+        (routers) {
+          emit(RouterLoaded(routers: routers));
+          add(const RefreshRouterStatusesEvent());
+          return true;
+        },
+      );
+
+      if (succeeded) return;
+
+      // Don't delay after the last failed attempt
+      if (attempt < _maxRetries) {
+        await Future.delayed(_baseRetryDelay * attempt);
+      }
+    }
   }
 
   /// Fires background health checks for each router and updates status in-place

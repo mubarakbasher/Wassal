@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../constants/app_constants.dart';
 import 'api_interceptor.dart';
+import 'retry_interceptor.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -30,6 +31,7 @@ class ApiClient {
     );
 
     // Add interceptors
+    _dio.interceptors.add(RetryInterceptor(dio: _dio));
     _dio.interceptors.add(ApiInterceptor(_secureStorage));
     
     // Add logger in debug mode

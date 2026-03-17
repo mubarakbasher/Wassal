@@ -61,6 +61,27 @@ class VoucherPdfGenerator {
     return parts.isEmpty ? null : parts.join(' / ');
   }
 
+  static pw.Font? _cachedFontTitle;
+  static pw.Font? _cachedFontBody;
+  static pw.Font? _cachedFontMono;
+
+  static Future<({pw.Font title, pw.Font body, pw.Font mono})> _loadFonts() async {
+    try {
+      _cachedFontTitle ??= await PdfGoogleFonts.nunitoBold();
+      _cachedFontBody ??= await PdfGoogleFonts.nunitoRegular();
+      _cachedFontMono ??= await PdfGoogleFonts.jetBrainsMonoBold();
+      return (title: _cachedFontTitle!, body: _cachedFontBody!, mono: _cachedFontMono!);
+    } catch (_) {
+      final fallback = pw.Font.helvetica();
+      final fallbackBold = pw.Font.helveticaBold();
+      final fallbackMono = pw.Font.courier();
+      _cachedFontTitle = fallbackBold;
+      _cachedFontBody = fallback;
+      _cachedFontMono = fallbackMono;
+      return (title: fallbackBold, body: fallback, mono: fallbackMono);
+    }
+  }
+
   /// Generate PDF with customizable layout and design
   static Future<Uint8List> generate(
     List<Voucher> vouchers, {
@@ -113,10 +134,10 @@ class VoucherPdfGenerator {
   }) async {
     final doc = pw.Document();
     
-    // Load fonts
-    final fontTitle = await PdfGoogleFonts.nunitoBold();
-    final fontBody = await PdfGoogleFonts.nunitoRegular();
-    final fontMono = await PdfGoogleFonts.jetBrainsMonoBold();
+    final fonts = await _loadFonts();
+    final fontTitle = fonts.title;
+    final fontBody = fonts.body;
+    final fontMono = fonts.mono;
 
     // Calculate dimensions
     const pageFormat = PdfPageFormat.a4;
@@ -191,9 +212,10 @@ class VoucherPdfGenerator {
     String? loginUrl,
   }) async {
     final doc = pw.Document();
-    final fontTitle = await PdfGoogleFonts.nunitoBold();
-    final fontBody = await PdfGoogleFonts.nunitoRegular();
-    final fontMono = await PdfGoogleFonts.jetBrainsMonoBold();
+    final fonts = await _loadFonts();
+    final fontTitle = fonts.title;
+    final fontBody = fonts.body;
+    final fontMono = fonts.mono;
 
     final pageWidth = widthMm * PdfPageFormat.mm;
     

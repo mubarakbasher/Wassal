@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:mobile/l10n/generated/app_localizations.dart';
 import 'package:printing/printing.dart';
@@ -23,12 +24,13 @@ class _PrintVoucherPageState extends State<PrintVoucherPage> {
   VoucherDesignTheme _theme = VoucherDesignTheme.classic;
   int _columns = 2;
   String _businessName = "Wassal Hotspot";
+  String? _pdfError;
 
   @override
   void initState() {
     super.initState();
-    // Get network name from AuthBloc after first frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       final authState = context.read<AuthBloc>().state;
       if (authState is AuthAuthenticated && authState.user.networkName != null) {
         setState(() {
@@ -38,11 +40,29 @@ class _PrintVoucherPageState extends State<PrintVoucherPage> {
     });
   }
 
+  Future<Uint8List> _buildPdfSafely(PdfPageFormat format) async {
+    try {
+      return await VoucherPdfGenerator.generate(
+        widget.vouchers,
+        format: _format,
+        theme: _theme,
+        columns: _columns,
+        businessName: _businessName,
+      );
+    } catch (e) {
+      if (mounted) {
+        setState(() => _pdfError = e.toString());
+      }
+      rethrow;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text(AppLocalizations.of(context)!.printVouchers),
+        title: Text(l10n?.printVouchers ?? 'Print Vouchers'),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings),
@@ -52,18 +72,64 @@ class _PrintVoucherPageState extends State<PrintVoucherPage> {
           ),
         ],
       ),
-      body: PdfPreview(
-        maxPageWidth: 700,
-        key: ValueKey('$_format-$_theme-$_columns-$_businessName'),
-        canChangeOrientation: false,
-        canChangePageFormat: false,
-        canDebug: false,
-        build: (format) => VoucherPdfGenerator.generate(
-          widget.vouchers,
-          format: _format,
-          theme: _theme,
-          columns: _columns,
-          businessName: _businessName,
+      body: _pdfError != null
+          ? _buildErrorState()
+          : PdfPreview(
+              maxPageWidth: 700,
+              key: ValueKey('$_format-$_theme-$_columns-$_businessName'),
+              canChangeOrientation: false,
+              canChangePageFormat: false,
+              canDebug: false,
+              build: _buildPdfSafely,
+              onError: (context, error) => _buildPdfErrorWidget(error),
+            ),
+    );
+  }
+
+  Widget _buildErrorState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.picture_as_pdf_outlined, size: 64, color: Colors.red[300]),
+            const SizedBox(height: 16),
+            const Text(
+              'Failed to generate PDF',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _pdfError ?? 'Unknown error',
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 14, color: Colors.grey),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: () => setState(() => _pdfError = null),
+              icon: const Icon(Icons.refresh),
+              label: Text(AppLocalizations.of(context)?.retry ?? 'Retry'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPdfErrorWidget(dynamic error) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.error_outline, size: 48, color: Colors.red[300]),
+            const SizedBox(height: 16),
+            const Text('PDF generation failed', style: TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            Text('$error', textAlign: TextAlign.center, style: const TextStyle(color: Colors.grey)),
+          ],
         ),
       ),
     );

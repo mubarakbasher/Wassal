@@ -348,40 +348,54 @@ class _PaymentDetailSheetState extends State<_PaymentDetailSheet> {
   bool _uploading = false;
 
   Future<void> _uploadProof() async {
-    final picker = ImagePicker();
-    final picked = await picker.pickImage(
-      source: ImageSource.gallery,
-      maxWidth: 1920,
-      maxHeight: 1920,
-      imageQuality: 85,
-    );
-    if (picked == null) return;
-
-    setState(() => _uploading = true);
     try {
-      await widget.apiClient.uploadFile(
-        ApiEndpoints.uploadProof(widget.payment.id),
-        File(picked.path),
-        fieldName: 'proof',
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1920,
+        maxHeight: 1920,
+        imageQuality: 85,
       );
-      if (mounted) {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context)!.proofUploadedSuccess),
-            backgroundColor: AppColors.success,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          ),
+      if (picked == null) return;
+
+      setState(() => _uploading = true);
+      try {
+        await widget.apiClient.uploadFile(
+          ApiEndpoints.uploadProof(widget.payment.id),
+          File(picked.path),
+          fieldName: 'proof',
         );
-        widget.onProofUploaded();
+        if (mounted) {
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(AppLocalizations.of(context)!.proofUploadedSuccess),
+              backgroundColor: AppColors.success,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+          );
+          widget.onProofUploaded();
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() => _uploading = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to upload: $e'),
+              backgroundColor: AppColors.error,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {
         setState(() => _uploading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to upload: $e'),
+            content: Text('Failed to pick image: $e'),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
