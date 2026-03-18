@@ -56,15 +56,18 @@ model User {
   networkName String? // Network name for voucher printing
   role      UserRole @default(OPERATOR)
   isActive  Boolean  @default(true)
+  emailVerified Boolean @default(false)
   notifyRouterStatus Boolean @default(true) // Notify when router goes online/offline
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  deletedAt DateTime? // Soft delete
 
   // Relations
   routers      Router[]
   sales        Sale[]
   activityLogs ActivityLog[]
   deviceTokens DeviceToken[]
+  refreshTokens RefreshToken[]
   
   // Subscription Relation
   subscription   UserSubscription?
@@ -72,7 +75,62 @@ model User {
   contactMessages ContactMessage[]
 
   @@index([email])
+  @@index([deletedAt])
   @@map("users")
+}
+
+// ============================================
+// Password Reset Codes (persistent, replaces in-memory Map)
+// ============================================
+
+model PasswordResetCode {
+  id        String   @id @default(uuid())
+  email     String
+  code      String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([email])
+  @@index([expiresAt])
+  @@map("password_reset_codes")
+}
+
+// ============================================
+// Refresh Tokens (persistent, supports revocation)
+// ============================================
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  revoked   Boolean  @default(false)
+  revokedAt DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+// ============================================
+// Email Verification Tokens
+// ============================================
+
+model EmailVerificationToken {
+  id        String   @id @default(uuid())
+  email     String
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([email])
+  @@index([token])
+  @@map("email_verification_tokens")
 }
 
 // ============================================
@@ -110,6 +168,7 @@ model Router {
   lastSeen    DateTime?
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
+  deletedAt   DateTime?    // Soft delete
 
   // WireGuard VPN
   vpnIp        String?   @unique  // WireGuard VPN IP (e.g., 10.10.10.5)
@@ -127,6 +186,7 @@ model Router {
 
   @@index([userId])
   @@index([status])
+  @@index([deletedAt])
   @@map("routers")
 }
 
@@ -176,6 +236,7 @@ model Voucher {
   activatedAt DateTime?     // When first used
   expiresAt   DateTime?     // Expiration timestamp
   soldAt      DateTime?     // When marked as sold
+  deletedAt   DateTime?     // Soft delete
 
   // Profile reference (optional — vouchers can be created without a profile)
   profileId String?
@@ -193,6 +254,7 @@ model Voucher {
   @@index([routerId])
   @@index([profileId])
   @@index([createdAt])
+  @@index([deletedAt])
   @@map("vouchers")
 }
 
@@ -238,6 +300,7 @@ model Sale {
   customerPhone String?
   notes         String?
   soldAt        DateTime @default(now())
+  deletedAt     DateTime? // Soft delete
 
   // Voucher reference
   voucherId String
@@ -249,6 +312,7 @@ model Sale {
 
   @@index([userId])
   @@index([soldAt])
+  @@index([deletedAt])
   @@map("sales")
 }
 

@@ -97,6 +97,27 @@ export class VouchersService {
             throw new NotFoundException('Router not found');
         }
 
+        // Enforce subscription plan limit: maxHotspotUsers (0 = unlimited)
+        const subscription = await this.prisma.userSubscription.findUnique({
+            where: { userId },
+            include: { plan: true },
+        });
+
+        if (subscription?.plan && subscription.plan.maxHotspotUsers > 0) {
+            const activeVoucherCount = await this.prisma.voucher.count({
+                where: {
+                    router: { userId },
+                    status: { in: ['UNUSED', 'ACTIVE'] },
+                },
+            });
+            const requested = quantity || 1;
+            if (activeVoucherCount + requested > subscription.plan.maxHotspotUsers) {
+                throw new BadRequestException(
+                    `Your plan "${subscription.plan.name}" allows a maximum of ${subscription.plan.maxHotspotUsers} active/unused vouchers. You currently have ${activeVoucherCount}. Please upgrade your plan or delete unused vouchers.`,
+                );
+            }
+        }
+
         let targetProfileId = profileId;
 
         // If mikrotikProfile is provided, try to find it or create a local copy
@@ -164,7 +185,6 @@ export class VouchersService {
             throw new BadRequestException('Data limit is required for data-based plans');
         }
 
-        const vouchers: any[] = [];
         const voucherCount = quantity || 1;
 
         // Ensure the RADIUS group exists for this profile with correct attributes
@@ -174,100 +194,102 @@ export class VouchersService {
             sharedUsers: profile.sharedUsers,
         });
 
-        // Generate vouchers
-        for (let i = 0; i < voucherCount; i++) {
-            const username = this.generateRandomString(8, charset);
-            let password = '';
+        // Generate all vouchers inside a transaction for data consistency
+        const vouchers = await this.prisma.$transaction(async (tx) => {
+            const created: any[] = [];
 
-            if (authType === VoucherAuthType.USERNAME_ONLY) {
-                password = '';
-            } else if (authType === VoucherAuthType.USER_SAME_PASS) {
-                password = username;
-            } else {
-                password = this.generateRandomString(8, charset);
-            }
+            for (let i = 0; i < voucherCount; i++) {
+                const username = this.generateRandomString(8, charset);
+                let password = '';
 
-            const nasIp = router.vpnIp || router.ipAddress;
-            try {
                 if (authType === VoucherAuthType.USERNAME_ONLY) {
-                    await this.radiusService.createRadiusUserPasswordless(username, groupName, nasIp);
+                    password = '';
+                } else if (authType === VoucherAuthType.USER_SAME_PASS) {
+                    password = username;
                 } else {
-                    await this.radiusService.createRadiusUser(username, password, groupName, nasIp);
+                    password = this.generateRandomString(8, charset);
                 }
 
-                // ONLINE_ONLY: set Max-All-Session so FreeRADIUS sqlcounter
-                // tracks total connected time. WALL_CLOCK skips this —
-                // its Expiration is set on first login by the activation cron.
-                if (planType === PlanType.TIME_BASED && duration && countType === CountType.ONLINE_ONLY) {
-                    const seconds = duration * 60;
-                    await this.radiusService.setMaxAllSession(username, seconds);
-                    await this.radiusService.setSessionTimeout(username, seconds);
-                }
-
-                // Set data limit if applicable
-                if (dataLimit) {
-                    await this.radiusService.setUserReplyAttribute(
-                        username, 'Mikrotik-Total-Limit', dataLimit.toString(),
-                    );
-                }
-
-            } catch (e) {
-                this.logger.error(`Error creating RADIUS user ${username}: ${e.message}`);
-                throw new BadRequestException('Failed to create RADIUS user for voucher.');
-            }
-
-            // Create voucher in database as UNUSED — timer starts on first login
-            const voucher = await this.prisma.voucher.create({
-                data: {
-                    username,
-                    password,
-                    planType,
-                    countType,
-                    planName,
-                    duration,
-                    dataLimit: dataLimit ? BigInt(dataLimit) : null,
-                    price,
-                    status: VoucherStatus.UNUSED,
-                    profileId: targetProfileId!,
-                    routerId,
-                },
-                select: {
-                    id: true,
-                    username: true,
-                    password: true,
-                    planType: true,
-                    planName: true,
-                    duration: true,
-                    dataLimit: true,
-                    price: true,
-                    status: true,
-                    createdAt: true,
-                    profile: {
-                        select: {
-                            name: true,
+                // Create voucher in DB first (inside transaction)
+                const voucher = await tx.voucher.create({
+                    data: {
+                        username,
+                        password,
+                        planType,
+                        countType,
+                        planName,
+                        duration,
+                        dataLimit: dataLimit ? BigInt(dataLimit) : null,
+                        price,
+                        status: VoucherStatus.UNUSED,
+                        profileId: targetProfileId!,
+                        routerId,
+                    },
+                    select: {
+                        id: true,
+                        username: true,
+                        password: true,
+                        planType: true,
+                        planName: true,
+                        duration: true,
+                        dataLimit: true,
+                        price: true,
+                        status: true,
+                        createdAt: true,
+                        profile: {
+                            select: {
+                                name: true,
+                            },
                         },
                     },
+                });
+
+                // Create RADIUS user (outside transaction scope — best-effort)
+                const nasIp = router.vpnIp || router.ipAddress;
+                try {
+                    if (authType === VoucherAuthType.USERNAME_ONLY) {
+                        await this.radiusService.createRadiusUserPasswordless(username, groupName, nasIp);
+                    } else {
+                        await this.radiusService.createRadiusUser(username, password, groupName, nasIp);
+                    }
+
+                    if (planType === PlanType.TIME_BASED && duration && countType === CountType.ONLINE_ONLY) {
+                        const seconds = duration * 60;
+                        await this.radiusService.setMaxAllSession(username, seconds);
+                        await this.radiusService.setSessionTimeout(username, seconds);
+                    }
+
+                    if (dataLimit) {
+                        await this.radiusService.setUserReplyAttribute(
+                            username, 'Mikrotik-Total-Limit', dataLimit.toString(),
+                        );
+                    }
+                } catch (e) {
+                    this.logger.error(`Error creating RADIUS user ${username}: ${e.message}`);
+                    throw new BadRequestException('Failed to create RADIUS user for voucher. Transaction rolled back.');
+                }
+
+                created.push({
+                    ...voucher,
+                    dataLimit: voucher.dataLimit ? Number(voucher.dataLimit) : null,
+                });
+            }
+
+            // Log activity inside the transaction
+            await tx.activityLog.create({
+                data: {
+                    userId,
+                    action: 'VOUCHERS_GENERATED',
+                    details: JSON.stringify({
+                        routerId,
+                        count: voucherCount,
+                        planName,
+                        planType,
+                    }),
                 },
             });
 
-            vouchers.push({
-                ...voucher,
-                dataLimit: voucher.dataLimit ? Number(voucher.dataLimit) : null,
-            });
-        }
-
-        // Log activity
-        await this.prisma.activityLog.create({
-            data: {
-                userId,
-                action: 'VOUCHERS_GENERATED',
-                details: JSON.stringify({
-                    routerId,
-                    count: voucherCount,
-                    planName,
-                    planType,
-                }),
-            },
+            return created;
         });
 
         this.logger.log(`Generated ${voucherCount} voucher(s) for router ${routerId} by user ${userId}`);

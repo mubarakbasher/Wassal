@@ -17,8 +17,12 @@ export function Login() {
 
         try {
             const response = await api.post('/admin/auth/login', { email, password });
-            localStorage.setItem('admin_token', response.data.access_token);
+            // Token is now set as httpOnly cookie by the server.
+            // Store only non-sensitive user info and a login flag.
+            localStorage.setItem('admin_logged_in', 'true');
             localStorage.setItem('admin_user', JSON.stringify(response.data.admin));
+            // Remove legacy token if present
+            localStorage.removeItem('admin_token');
             navigate('/');
         } catch (err: any) {
             console.error('Login Error:', err);

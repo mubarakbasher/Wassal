@@ -9,6 +9,7 @@ import {
     UseGuards,
     ForbiddenException,
 } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -18,6 +19,8 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { UserRole } from '@prisma/client';
 
+@ApiTags('Users')
+@ApiBearerAuth('JWT')
 @Controller('users')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class UsersController {
@@ -25,17 +28,20 @@ export class UsersController {
 
     @Post()
     @Roles(UserRole.ADMIN)
+    @ApiOperation({ summary: 'Create a new user (admin only)' })
     create(@Body() createUserDto: CreateUserDto) {
         return this.usersService.create(createUserDto);
     }
 
     @Get()
     @Roles(UserRole.ADMIN)
+    @ApiOperation({ summary: 'List all users (admin only)' })
     findAll() {
         return this.usersService.findAll();
     }
 
     @Get(':id')
+    @ApiOperation({ summary: 'Get a user by ID' })
     findOne(@Param('id') id: string, @CurrentUser() user: any) {
         if (user.role !== UserRole.ADMIN && user.id !== id) {
             throw new ForbiddenException('You can only access your own profile');
@@ -44,6 +50,7 @@ export class UsersController {
     }
 
     @Patch(':id')
+    @ApiOperation({ summary: 'Update a user' })
     update(
         @Param('id') id: string,
         @Body() updateUserDto: UpdateUserDto,
@@ -63,6 +70,7 @@ export class UsersController {
 
     @Delete(':id')
     @Roles(UserRole.ADMIN)
+    @ApiOperation({ summary: 'Delete a user (admin only)' })
     remove(@Param('id') id: string) {
         return this.usersService.remove(id);
     }

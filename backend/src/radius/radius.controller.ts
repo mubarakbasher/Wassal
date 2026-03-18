@@ -5,10 +5,13 @@ import {
     Query,
     UseGuards,
 } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { RadiusService } from './radius.service';
 import { AdminJwtAuthGuard } from '../admin/auth/guards/admin-jwt-auth.guard';
 import { PrismaService } from '../prisma/prisma.service';
 
+@ApiTags('RADIUS')
+@ApiBearerAuth('JWT')
 @Controller('radius')
 @UseGuards(AdminJwtAuthGuard)
 export class RadiusController {
@@ -17,10 +20,8 @@ export class RadiusController {
         private readonly prisma: PrismaService,
     ) { }
 
-    /**
-     * RADIUS status — table counts and health check
-     */
     @Get('status')
+    @ApiOperation({ summary: 'Get RADIUS status and health check' })
     async getStatus() {
         const [
             userCount,
@@ -52,10 +53,8 @@ export class RadiusController {
         };
     }
 
-    /**
-     * List all RADIUS users (from radcheck)
-     */
     @Get('users')
+    @ApiOperation({ summary: 'List all RADIUS users' })
     async getUsers(
         @Query('page') page: string = '1',
         @Query('limit') limit: string = '50',
@@ -116,10 +115,8 @@ export class RadiusController {
         };
     }
 
-    /**
-     * Get a specific RADIUS user's details
-     */
     @Get('users/:username')
+    @ApiOperation({ summary: 'Get RADIUS user details' })
     async getUser(@Param('username') username: string) {
         const exists = await this.radiusService.userExists(username);
         if (!exists) {
@@ -160,10 +157,8 @@ export class RadiusController {
         };
     }
 
-    /**
-     * Get currently online users (active radacct sessions)
-     */
     @Get('online')
+    @ApiOperation({ summary: 'Get currently online RADIUS users' })
     async getOnlineUsers(
         @Query('page') page: string = '1',
         @Query('limit') limit: string = '50',
@@ -210,10 +205,8 @@ export class RadiusController {
         };
     }
 
-    /**
-     * Get session history for a specific user
-     */
     @Get('accounting/:username')
+    @ApiOperation({ summary: 'Get RADIUS accounting history for a user' })
     async getAccountingHistory(
         @Param('username') username: string,
         @Query('limit') limit: string = '50',
@@ -236,10 +229,8 @@ export class RadiusController {
         };
     }
 
-    /**
-     * List all registered NAS clients
-     */
     @Get('nas')
+    @ApiOperation({ summary: 'List all NAS clients' })
     async getNasClients() {
         const clients = await this.prisma.nas.findMany({
             orderBy: { id: 'desc' },

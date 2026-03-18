@@ -194,6 +194,21 @@ export class RoutersService {
     async create(userId: string, createRouterDto: CreateRouterDto) {
         const { name, ipAddress, apiPort, username, password, description, location } = createRouterDto;
 
+        // Enforce subscription plan limit: maxRouters
+        const subscription = await this.prisma.userSubscription.findUnique({
+            where: { userId },
+            include: { plan: true },
+        });
+
+        if (subscription?.plan) {
+            const currentRouterCount = await this.prisma.router.count({ where: { userId } });
+            if (currentRouterCount >= subscription.plan.maxRouters) {
+                throw new BadRequestException(
+                    `Your plan "${subscription.plan.name}" allows a maximum of ${subscription.plan.maxRouters} router(s). Please upgrade your plan or remove an existing router.`,
+                );
+            }
+        }
+
         // Check for duplicate IP address
         const existingRouter = await this.prisma.router.findFirst({
             where: { ipAddress, userId },

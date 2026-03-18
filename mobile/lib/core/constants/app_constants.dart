@@ -5,7 +5,7 @@ class AppConstants {
   // For Physical Device use: Your PC's IP address (e.g., 192.168.1.x)
   // For Android Emulator: http://10.0.2.2:3000
   // For Physical Device: Use your PC's local IP address
-  static const String apiBaseUrl = 'https://api.wassal.tech';
+  static const String apiBaseUrl = 'https://api.wassal.tech/api/v1';
   static const String apiVersion = 'v1';
   
   // Storage Keys

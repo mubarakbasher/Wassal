@@ -1,4 +1,5 @@
 import { Controller, Get, Query, UseGuards, Res } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { SalesService } from './sales.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -6,22 +7,27 @@ import { SubscriptionGuard } from '../auth/guards/subscription.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { SalesChartDto } from './dto/sales.dto';
 
+@ApiTags('Sales')
+@ApiBearerAuth('JWT')
 @Controller('sales')
 @UseGuards(JwtAuthGuard, SubscriptionGuard)
 export class SalesController {
     constructor(private readonly salesService: SalesService) { }
 
     @Get('chart')
+    @ApiOperation({ summary: 'Get sales chart data' })
     getSalesChart(@CurrentUser() user: any, @Query() dto: SalesChartDto) {
         return this.salesService.getSalesChart(user.id, dto);
     }
 
     @Get('history')
+    @ApiOperation({ summary: 'Get recent sales history' })
     getRecentSales(@CurrentUser() user: any, @Query('limit') limit?: number) {
         return this.salesService.getRecentSales(user.id, limit ? Number(limit) : 10);
     }
 
     @Get('export/csv')
+    @ApiOperation({ summary: 'Export sales as CSV' })
     async exportCsv(@CurrentUser() user: any, @Res() res: Response) {
         const sales = await this.salesService.getRecentSales(user.id, 1000);
 

@@ -12,18 +12,14 @@ import { RoutersPage } from './pages/Routers';
 import { VouchersPage } from './pages/Vouchers';
 import { MessagesPage } from './pages/Messages';
 
-const isTokenValid = (token: string): boolean => {
-  try {
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    return payload.exp * 1000 > Date.now();
-  } catch {
-    return false;
-  }
-};
-
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const token = localStorage.getItem('admin_token');
-  if (!token || !isTokenValid(token)) {
+  // Auth token is stored in httpOnly cookie (not accessible from JS).
+  // We use a flag + stored user info for client-side routing.
+  // If the cookie is expired/invalid, the server returns 401 and the
+  // axios interceptor redirects to /login.
+  const isLoggedIn = localStorage.getItem('admin_logged_in') === 'true'
+    || localStorage.getItem('admin_token') !== null; // backward compat
+  if (!isLoggedIn) {
     return <Navigate to="/login" replace />;
   }
   return <>{children}</>;

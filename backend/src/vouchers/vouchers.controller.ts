@@ -12,6 +12,7 @@ import {
     Patch,
     Res,
 } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { VouchersService } from './vouchers.service';
 import { CreateVoucherDto, VoucherFilterDto } from './dto/voucher.dto';
@@ -19,27 +20,33 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { SubscriptionGuard } from '../auth/guards/subscription.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
+@ApiTags('Vouchers')
+@ApiBearerAuth('JWT')
 @Controller('vouchers')
 @UseGuards(JwtAuthGuard, SubscriptionGuard)
 export class VouchersController {
     constructor(private readonly vouchersService: VouchersService) { }
 
     @Post()
+    @ApiOperation({ summary: 'Create vouchers' })
     create(@CurrentUser() user: any, @Body() createVoucherDto: CreateVoucherDto) {
         return this.vouchersService.create(user.id, createVoucherDto);
     }
 
     @Get()
+    @ApiOperation({ summary: 'List all vouchers' })
     findAll(@CurrentUser() user: any, @Query() filter: VoucherFilterDto) {
         return this.vouchersService.findAll(user.id, filter);
     }
 
     @Get('statistics')
+    @ApiOperation({ summary: 'Get voucher statistics' })
     getStatistics(@CurrentUser() user: any, @Query('routerId') routerId?: string) {
         return this.vouchersService.getStatistics(user.id, routerId);
     }
 
     @Get('export/csv')
+    @ApiOperation({ summary: 'Export vouchers as CSV' })
     async exportCsv(
         @CurrentUser() user: any,
         @Query() filter: VoucherFilterDto,
@@ -70,16 +77,19 @@ export class VouchersController {
     }
 
     @Get(':id')
+    @ApiOperation({ summary: 'Get a voucher by ID' })
     findOne(@Param('id') id: string, @CurrentUser() user: any) {
         return this.vouchersService.findOne(id, user.id);
     }
 
     @Patch(':id/activate')
+    @ApiOperation({ summary: 'Activate a voucher' })
     activate(@Param('id') id: string, @CurrentUser() user: any) {
         return this.vouchersService.activate(id, user.id);
     }
 
     @Patch(':id/sell')
+    @ApiOperation({ summary: 'Mark a voucher as sold' })
     markAsSold(
         @Param('id') id: string,
         @CurrentUser() user: any,
@@ -91,6 +101,7 @@ export class VouchersController {
 
     @Delete(':id')
     @HttpCode(HttpStatus.OK)
+    @ApiOperation({ summary: 'Delete a voucher' })
     remove(@Param('id') id: string, @CurrentUser() user: any) {
         return this.vouchersService.remove(id, user.id);
     }
