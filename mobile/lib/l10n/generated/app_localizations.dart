@@ -2246,6 +2246,18 @@ abstract class AppLocalizations {
   /// **'No setup steps available.'**
   String get noSetupSteps;
 
+  /// No description provided for @wireguardSetupDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'This will generate a unique WireGuard VPN configuration and MikroTik commands for your router. A pending router will be created to reserve the VPN IP.'**
+  String get wireguardSetupDescription;
+
+  /// No description provided for @generateSetup.
+  ///
+  /// In en, this message translates to:
+  /// **'Generate Setup'**
+  String get generateSetup;
+
   /// No description provided for @needSubscriptionAddRouters.
   ///
   /// In en, this message translates to:

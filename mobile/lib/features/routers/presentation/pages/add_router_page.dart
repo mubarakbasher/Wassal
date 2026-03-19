@@ -101,12 +101,6 @@ class _ScriptAddRouterViewState extends State<ScriptAddRouterView> {
   String? _error;
   bool _loading = false;
 
-  @override
-  void initState() {
-    super.initState();
-    _fetchWireguardSetup();
-  }
-
   Future<void> _fetchWireguardSetup() async {
     setState(() { _loading = true; _error = null; });
     try {
@@ -155,11 +149,43 @@ class _ScriptAddRouterViewState extends State<ScriptAddRouterView> {
       );
     }
 
-    if (_steps == null || _steps!.isEmpty) {
-      return Center(child: Text(AppLocalizations.of(context)!.noSetupSteps));
+    if (_steps != null && _steps!.isNotEmpty) {
+      return _buildStepsList();
     }
 
-    return _buildStepsList();
+    return _buildGeneratePrompt();
+  }
+
+  Widget _buildGeneratePrompt() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.vpn_lock, size: 72, color: AppColors.primary.withValues(alpha: 0.7)),
+            const SizedBox(height: 24),
+            Text(
+              AppLocalizations.of(context)!.wireguardSetupDescription,
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 15, color: Colors.grey[700]),
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton.icon(
+              onPressed: _fetchWireguardSetup,
+              icon: const Icon(Icons.play_arrow),
+              label: Text(AppLocalizations.of(context)!.generateSetup),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                minimumSize: const Size(220, 50),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildStepsList() {

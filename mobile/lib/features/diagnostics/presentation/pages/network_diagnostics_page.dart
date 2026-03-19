@@ -190,8 +190,9 @@ class _NetworkDiagnosticsPageState extends State<NetworkDiagnosticsPage> {
 
     setState(() => _httpHealth.status = _CheckStatus.running);
 
+    final rootUrl = AppConstants.apiBaseUrl.replaceAll('/api/v1', '');
     final dio = Dio(BaseOptions(
-      baseUrl: AppConstants.apiBaseUrl,
+      baseUrl: rootUrl,
       connectTimeout: const Duration(seconds: 15),
       receiveTimeout: const Duration(seconds: 15),
     ));

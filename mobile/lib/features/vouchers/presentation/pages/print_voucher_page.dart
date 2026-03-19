@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:pdf/pdf.dart';
 import 'package:mobile/l10n/generated/app_localizations.dart';
 import 'package:printing/printing.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';

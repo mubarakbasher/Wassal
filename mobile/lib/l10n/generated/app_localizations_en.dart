@@ -1154,6 +1154,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noSetupSteps => 'No setup steps available.';
 
   @override
+  String get wireguardSetupDescription =>
+      'This will generate a unique WireGuard VPN configuration and MikroTik commands for your router. A pending router will be created to reserve the VPN IP.';
+
+  @override
+  String get generateSetup => 'Generate Setup';
+
+  @override
   String get needSubscriptionAddRouters =>
       'You need an active subscription to add routers. Please subscribe to a plan to continue.';
 

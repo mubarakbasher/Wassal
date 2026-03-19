@@ -381,6 +381,8 @@
   "allCommandsCopied": "تم نسخ جميع الأوامر!",
   "stepCopied": "تم نسخ الخطوة {number}!",
   "noSetupSteps": "لا توجد خطوات إعداد متاحة.",
+  "wireguardSetupDescription": "سيتم إنشاء إعداد WireGuard VPN فريد وأوامر MikroTik لراوترك. سيتم إنشاء راوتر معلق لحجز عنوان VPN IP.",
+  "generateSetup": "إنشاء الإعداد",
   "needSubscriptionAddRouters": "تحتاج إلى اشتراك نشط لإضافة راوترات. يرجى الاشتراك في خطة للمتابعة.",
   "needSubscriptionFeature": "تحتاج إلى اشتراك نشط لاستخدام هذه الميزة. هل تريد عرض الخطط المتاحة؟",
 

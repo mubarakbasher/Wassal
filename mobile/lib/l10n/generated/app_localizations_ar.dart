@@ -1152,6 +1152,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get noSetupSteps => 'لا توجد خطوات إعداد متاحة.';
 
   @override
+  String get wireguardSetupDescription =>
+      'سيتم إنشاء إعداد WireGuard VPN فريد وأوامر MikroTik لراوترك. سيتم إنشاء راوتر معلق لحجز عنوان VPN IP.';
+
+  @override
+  String get generateSetup => 'إنشاء الإعداد';
+
+  @override
   String get needSubscriptionAddRouters =>
       'تحتاج إلى اشتراك نشط لإضافة راوترات. يرجى الاشتراك في خطة للمتابعة.';
 

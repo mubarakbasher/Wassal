@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/constants/app_constants.dart';
@@ -53,10 +54,18 @@ class StartupService {
     }
   }
 
-  /// Ping backend health endpoint with enriched error diagnostics
+  /// Ping backend health endpoint with enriched error diagnostics.
+  /// The /health endpoint is excluded from the /api/v1 prefix on the backend,
+  /// so we hit the root URL directly instead of going through apiClient.
   Future<ServerHealthResult> pingServerHealth() async {
     try {
-      final response = await apiClient.get('/health');
+      final rootUrl = AppConstants.apiBaseUrl.replaceAll('/api/v1', '');
+      final dio = Dio(BaseOptions(
+        baseUrl: rootUrl,
+        connectTimeout: AppConstants.connectTimeout,
+        receiveTimeout: AppConstants.receiveTimeout,
+      ));
+      final response = await dio.get('/health');
       
       if (response.statusCode == 200) {
         final data = response.data;

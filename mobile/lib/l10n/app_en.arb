@@ -486,6 +486,8 @@
     }
   },
   "noSetupSteps": "No setup steps available.",
+  "wireguardSetupDescription": "This will generate a unique WireGuard VPN configuration and MikroTik commands for your router. A pending router will be created to reserve the VPN IP.",
+  "generateSetup": "Generate Setup",
   "needSubscriptionAddRouters": "You need an active subscription to add routers. Please subscribe to a plan to continue.",
   "needSubscriptionFeature": "You need an active subscription to use this feature. Would you like to view available plans?",
 
