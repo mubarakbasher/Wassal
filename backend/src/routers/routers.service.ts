@@ -940,11 +940,13 @@ export class RoutersService {
                 if (!wgPrivateKey && pending.wgPrivateKey) wgPrivateKey = pending.wgPrivateKey;
                 if (!wgPublicKey && pending.wgPublicKey) wgPublicKey = pending.wgPublicKey;
             }
-            // Delete all pending placeholders
+            // Hard-delete pending placeholders (bypasses soft-delete middleware
+            // so the vpnIp unique constraint is truly freed)
             if (pendingRecords.length > 0) {
-                await this.prisma.router.deleteMany({
-                    where: { id: { in: pendingRecords.map(p => p.id) } },
-                });
+                const ids = pendingRecords.map(p => p.id);
+                await this.prisma.$executeRaw`
+                    DELETE FROM "routers" WHERE "id" = ANY(${ids}::text[])
+                `;
                 this.logger.log(`Cleaned up ${pendingRecords.length} pending placeholder(s)`);
             }
         }
@@ -1017,6 +1019,13 @@ export class RoutersService {
         }
 
         await this.enforceRouterLimit(userId);
+
+        // Hard-delete any stale pending records for this user (bypasses soft-delete middleware)
+        await this.prisma.$executeRaw`
+            DELETE FROM "routers"
+            WHERE "userId" = ${userId}
+              AND "description" LIKE 'Pending WireGuard setup%'
+        `;
 
         const keyPair = this.wireguardService.generateKeyPair();
         const vpnIp = await this.wireguardService.allocateVpnIp();

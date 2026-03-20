@@ -48,12 +48,15 @@ export class WireGuardService {
     /**
      * Allocate the next available VPN IP from the 10.10.10.0/16 pool.
      * .1 is reserved for the VPS server. Starts at .2.
+     *
+     * Uses raw SQL to bypass the soft-delete middleware so that IPs held
+     * by soft-deleted records (which still enforce the unique constraint)
+     * are not re-allocated.
      */
     async allocateVpnIp(): Promise<string> {
-        const usedIps = await this.prisma.router.findMany({
-            where: { vpnIp: { not: null } },
-            select: { vpnIp: true },
-        });
+        const usedIps = await this.prisma.$queryRaw<{ vpnIp: string }[]>`
+            SELECT "vpnIp" FROM "routers" WHERE "vpnIp" IS NOT NULL
+        `;
 
         const usedSet = new Set(usedIps.map((r) => r.vpnIp));
 
