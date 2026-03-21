@@ -1051,11 +1051,11 @@ export class RoutersService {
             },
         });
 
-        // Determine the callback URL base
+        // Determine the callback URL base (must include the /api/v1 global prefix)
         const domain = process.env.DOMAIN || 'localhost';
         const callbackBase = process.env.NODE_ENV === 'production'
-            ? `https://api.${domain}`
-            : `http://localhost:${process.env.PORT || 3001}`;
+            ? `https://api.${domain}/api/v1`
+            : `http://localhost:${process.env.PORT || 3001}/api/v1`;
 
         const { steps } = this.wireguardService.generateMikrotikScript(
             keyPair.privateKey,
