@@ -28,6 +28,12 @@ export class AdminRoutersController {
         return this.routersService.findAll();
     }
 
+    @Post('wireguard-setup')
+    @ApiOperation({ summary: 'Generate WireGuard setup for a user' })
+    generateWireguardSetup(@Body('userId') userId: string) {
+        return this.routersService.generateWireguardSetup(userId);
+    }
+
     @Get(':id')
     @ApiOperation({ summary: 'Get a router by ID' })
     findOne(@Param('id') id: string) {

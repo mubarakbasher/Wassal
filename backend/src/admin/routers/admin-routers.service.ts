@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, BadRequestException, Logger } from '@nes
 import { PrismaService } from '../../prisma/prisma.service';
 import { MikroTikApiService } from '../../mikrotik/mikrotik-api.service';
 import { RadiusService } from '../../radius/radius.service';
+import { WireGuardService } from '../../wireguard/wireguard.service';
 import { RouterStatus } from '@prisma/client';
 import * as crypto from 'crypto';
 
@@ -13,6 +14,7 @@ export class AdminRoutersService {
         private prisma: PrismaService,
         private mikrotikApi: MikroTikApiService,
         private radiusService: RadiusService,
+        private wireguardService: WireGuardService,
     ) { }
 
     private encryptPassword(password: string): string {
@@ -484,5 +486,61 @@ export class AdminRoutersService {
             loginPageUploaded: pageResult.success,
             warnings: warnings.length > 0 ? warnings : undefined,
         };
+    }
+
+    async generateWireguardSetup(userId: string) {
+        if (!this.wireguardService.isConfigured()) {
+            throw new BadRequestException('WireGuard is not configured on this server.');
+        }
+
+        const user = await this.prisma.user.findUnique({ where: { id: userId } });
+        if (!user) {
+            throw new NotFoundException('User not found');
+        }
+
+        // Hard-delete any stale pending records for this user
+        await this.prisma.$executeRaw`
+            DELETE FROM "routers"
+            WHERE "userId" = ${userId}
+              AND "description" LIKE 'Pending WireGuard setup%'
+        `;
+
+        const keyPair = this.wireguardService.generateKeyPair();
+        const vpnIp = await this.wireguardService.allocateVpnIp();
+
+        this.wireguardService.addPeer(keyPair.publicKey, vpnIp);
+
+        const encryptedPrivKey = this.encryptPassword(keyPair.privateKey);
+        await this.prisma.router.create({
+            data: {
+                name: `Pending WireGuard [${vpnIp}]`,
+                ipAddress: vpnIp,
+                apiPort: 8728,
+                username: 'wassal_auto',
+                password: this.encryptPassword(process.env.MIKROTIK_AUTO_PASSWORD || 'WassalAuto2026'),
+                description: 'Pending WireGuard setup — waiting for router callback',
+                vpnIp,
+                wgPublicKey: keyPair.publicKey,
+                wgPrivateKey: encryptedPrivKey,
+                status: RouterStatus.OFFLINE,
+                userId,
+            },
+        });
+
+        const domain = process.env.DOMAIN || 'localhost';
+        const callbackBase = process.env.NODE_ENV === 'production'
+            ? `https://api.${domain}/api/v1`
+            : `http://localhost:${process.env.PORT || 3001}/api/v1`;
+
+        const { steps } = this.wireguardService.generateMikrotikScript(
+            keyPair.privateKey,
+            vpnIp,
+            userId,
+            callbackBase,
+        );
+
+        this.logger.log(`Admin generated WireGuard setup for user ${userId}: VPN IP ${vpnIp}`);
+
+        return { vpnIp, steps };
     }
 }
