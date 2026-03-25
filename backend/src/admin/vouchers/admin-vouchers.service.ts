@@ -12,49 +12,60 @@ export class AdminVouchersService {
         private radiusService: RadiusService,
     ) { }
 
-    /** Get ALL vouchers (admin sees everything) */
-    async findAll(status?: string, routerId?: string) {
+    async findAll(page: number = 1, limit: number = 20, status?: string, routerId?: string, search?: string) {
+        const skip = (page - 1) * limit;
         const where: any = {};
 
-        if (routerId) {
-            where.routerId = routerId;
+        if (routerId) where.routerId = routerId;
+        if (status) where.status = status;
+        if (search) {
+            where.OR = [
+                { username: { contains: search, mode: 'insensitive' } },
+                { planName: { contains: search, mode: 'insensitive' } },
+            ];
         }
 
-        if (status) {
-            where.status = status;
-        }
+        const voucherSelect = {
+            id: true,
+            username: true,
+            password: true,
+            planType: true,
+            countType: true,
+            planName: true,
+            duration: true,
+            dataLimit: true,
+            price: true,
+            status: true,
+            createdAt: true,
+            activatedAt: true,
+            expiresAt: true,
+            soldAt: true,
+            profile: { select: { name: true } },
+            router: { select: { id: true, name: true, user: { select: { name: true, email: true } } } },
+        };
 
-        const vouchers = await this.prisma.voucher.findMany({
-            where,
-            select: {
-                id: true,
-                username: true,
-                password: true,
-                planType: true,
-                countType: true,
-                planName: true,
-                duration: true,
-                dataLimit: true,
-                price: true,
-                status: true,
-                createdAt: true,
-                activatedAt: true,
-                expiresAt: true,
-                soldAt: true,
-                profile: {
-                    select: { name: true },
-                },
-                router: {
-                    select: { id: true, name: true, user: { select: { name: true, email: true } } },
-                },
+        const [vouchers, total] = await Promise.all([
+            this.prisma.voucher.findMany({
+                where,
+                select: voucherSelect,
+                orderBy: { createdAt: 'desc' },
+                skip,
+                take: limit,
+            }),
+            this.prisma.voucher.count({ where }),
+        ]);
+
+        return {
+            data: vouchers.map(v => ({
+                ...v,
+                dataLimit: v.dataLimit ? Number(v.dataLimit) : null,
+            })),
+            meta: {
+                total,
+                page,
+                lastPage: Math.ceil(total / limit),
             },
-            orderBy: { createdAt: 'desc' },
-        });
-
-        return vouchers.map(v => ({
-            ...v,
-            dataLimit: v.dataLimit ? Number(v.dataLimit) : null,
-        }));
+        };
     }
 
     /** Admin creates vouchers — delegates to the existing VouchersService logic via Prisma */

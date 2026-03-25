@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { X, Save, Loader2, Copy, CheckCircle, Terminal, Settings, Search, ClipboardCopy } from 'lucide-react';
 import api from '../../lib/axios';
 
@@ -66,23 +66,29 @@ export function RouterForm({ initialData, userId: fixedUserId, onClose, onSave }
         }
     }, [initialData]);
 
-    useEffect(() => {
-        if (isEditing) return;
+    const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const fetchUsers = useCallback((search: string) => {
         setUsersLoading(true);
-        api.get('/admin/users?limit=200')
+        const params: Record<string, string | number> = { limit: 20 };
+        if (search) params.search = search;
+        api.get('/admin/users', { params })
             .then(({ data }) => setUsers(data.data || []))
             .catch(() => {})
             .finally(() => setUsersLoading(false));
-    }, [isEditing]);
+    }, []);
 
-    const filteredUsers = useMemo(() => {
-        if (!userSearch.trim()) return users;
-        const q = userSearch.toLowerCase();
-        return users.filter(u =>
-            (u.name || '').toLowerCase().includes(q) ||
-            u.email.toLowerCase().includes(q)
-        );
-    }, [users, userSearch]);
+    useEffect(() => {
+        if (isEditing) return;
+        fetchUsers('');
+    }, [isEditing, fetchUsers]);
+
+    useEffect(() => {
+        if (isEditing) return;
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+        debounceRef.current = setTimeout(() => fetchUsers(userSearch), 300);
+        return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+    }, [userSearch, isEditing, fetchUsers]);
 
     const handleManualSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -217,10 +223,10 @@ export function RouterForm({ initialData, userId: fixedUserId, onClose, onSave }
                                             value={selectedUserId}
                                             onChange={(e) => setSelectedUserId(e.target.value)}
                                             className={inputClass}
-                                            size={Math.min(filteredUsers.length + 1, 5)}
+                                            size={Math.min(users.length + 1, 5)}
                                         >
                                             <option value="">-- Select a user --</option>
-                                            {filteredUsers.map(u => (
+                                            {users.map(u => (
                                                 <option key={u.id} value={u.id}>
                                                     {u.name || 'Unnamed'} — {u.email}
                                                 </option>

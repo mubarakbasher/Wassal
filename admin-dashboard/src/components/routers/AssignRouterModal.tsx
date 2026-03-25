@@ -31,8 +31,8 @@ export function AssignRouterModal({ userId, userRouterIds, isOpen, onClose, onSu
         setLoading(true);
         setError('');
         setSearch('');
-        api.get('/admin/routers')
-            .then(({ data }) => setRouters(data))
+        api.get('/admin/routers', { params: { limit: 200 } })
+            .then(({ data }) => setRouters(data.data || data))
             .catch(() => setError('Failed to load routers'))
             .finally(() => setLoading(false));
     }, [isOpen]);

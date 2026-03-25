@@ -136,10 +136,11 @@ export function VoucherGenerator({ onClose, onSuccess }: VoucherGeneratorProps) 
     useEffect(() => {
         const loadRouters = async () => {
             try {
-                const res = await api.get('/admin/routers');
-                setRouters(res.data);
-                if (res.data.length > 0) {
-                    setSelectedRouterId(res.data[0].id);
+                const res = await api.get('/admin/routers', { params: { limit: 200 } });
+                const list = res.data.data || res.data;
+                setRouters(list);
+                if (list.length > 0) {
+                    setSelectedRouterId(list[0].id);
                 }
             } catch (e) {
                 console.error("Failed to load routers", e);

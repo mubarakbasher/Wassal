@@ -1,35 +1,49 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { CheckCircle, XCircle, Eye, Download } from 'lucide-react';
 import api from '../lib/axios';
 import { Badge } from '../components/ui/Badge';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:3001';
 
+interface PaginationMeta {
+    total: number;
+    page: number;
+    lastPage: number;
+}
+
 export function PaymentsPage() {
     const [payments, setPayments] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [filter, setFilter] = useState('ALL');
+    const [page, setPage] = useState(1);
+    const [meta, setMeta] = useState<PaginationMeta>({ total: 0, page: 1, lastPage: 1 });
+    const limit = 10;
 
-    useEffect(() => {
-        fetchPayments();
-    }, [filter]);
-
-    const fetchPayments = async () => {
+    const fetchPayments = useCallback(async () => {
         setLoading(true);
         setError('');
         try {
             const { data } = await api.get('/admin/payments', {
-                params: { status: filter }
+                params: { status: filter, page, limit }
             });
             setPayments(data.data);
+            setMeta(data.meta);
         } catch (e) {
             setError('Failed to load payments. Please try again.');
             console.error(e);
         } finally {
             setLoading(false);
         }
-    };
+    }, [filter, page]);
+
+    useEffect(() => {
+        fetchPayments();
+    }, [fetchPayments]);
+
+    useEffect(() => {
+        setPage(1);
+    }, [filter]);
 
     const handleReview = async (id: string, status: 'APPROVED' | 'REJECTED') => {
         if (!window.confirm(`Are you sure you want to ${status} this payment?`)) return;
@@ -161,6 +175,30 @@ export function PaymentsPage() {
                         )}
                     </tbody>
                 </table>
+
+                {!loading && meta.lastPage > 1 && (
+                    <div className="px-6 py-3 border-t border-gray-100 bg-gray-50 flex justify-between items-center">
+                        <span className="text-sm text-gray-700">
+                            Page {meta.page} of {meta.lastPage} ({meta.total} total)
+                        </span>
+                        <div className="flex gap-2">
+                            <button
+                                disabled={page <= 1}
+                                onClick={() => setPage(p => p - 1)}
+                                className="px-3 py-1 text-sm border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+                            >
+                                Previous
+                            </button>
+                            <button
+                                disabled={page >= meta.lastPage}
+                                onClick={() => setPage(p => p + 1)}
+                                className="px-3 py-1 text-sm border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+                            >
+                                Next
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

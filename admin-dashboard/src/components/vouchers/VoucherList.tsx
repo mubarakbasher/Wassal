@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { RefreshCw, Printer, Trash2, Search } from 'lucide-react';
 import api from '../../lib/axios';
 
@@ -22,44 +22,44 @@ interface Voucher {
     };
 }
 
+interface PaginationMeta {
+    total: number;
+    page: number;
+    lastPage: number;
+}
+
 export function VoucherList() {
     const [vouchers, setVouchers] = useState<Voucher[]>([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState('ALL');
     const [search, setSearch] = useState('');
+    const [page, setPage] = useState(1);
+    const [meta, setMeta] = useState<PaginationMeta>({ total: 0, page: 1, lastPage: 1 });
+    const limit = 20;
 
-    const fetchVouchers = async () => {
+    const fetchVouchers = useCallback(async () => {
         try {
             setLoading(true);
-            const response = await api.get('/admin/vouchers');
-            setVouchers(response.data);
+            const params: Record<string, string | number> = { page, limit };
+            if (filter !== 'ALL') params.status = filter;
+            if (search) params.search = search;
+            const response = await api.get('/admin/vouchers', { params });
+            setVouchers(response.data.data);
+            setMeta(response.data.meta);
         } catch (error) {
             console.error('Failed to fetch vouchers:', error);
         } finally {
             setLoading(false);
         }
-    };
+    }, [page, filter, search]);
 
     useEffect(() => {
         fetchVouchers();
-    }, []);
+    }, [fetchVouchers]);
 
-    const displayedVouchers = vouchers.filter(v => {
-        // Status filter
-        if (filter !== 'ALL' && v.status !== filter) return false;
-        // Search filter
-        if (search) {
-            const q = search.toLowerCase();
-            return (
-                v.username.toLowerCase().includes(q) ||
-                (v.planName || '').toLowerCase().includes(q) ||
-                (v.router?.name || '').toLowerCase().includes(q) ||
-                (v.router?.user?.name || '').toLowerCase().includes(q) ||
-                (v.router?.user?.email || '').toLowerCase().includes(q)
-            );
-        }
-        return true;
-    });
+    useEffect(() => {
+        setPage(1);
+    }, [filter, search]);
 
     const getStatusColor = (status: string) => {
         switch (status) {
@@ -142,7 +142,7 @@ export function VoucherList() {
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                         <input
                             type="text"
-                            placeholder="Search code, owner, router..."
+                            placeholder="Search code, plan..."
                             className="pl-9 pr-3 py-1.5 border border-gray-300 rounded-md text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 w-64"
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
@@ -160,7 +160,7 @@ export function VoucherList() {
 
             {loading ? (
                 <div className="text-center py-8">Loading vouchers...</div>
-            ) : displayedVouchers.length === 0 ? (
+            ) : vouchers.length === 0 ? (
                 <div className="p-8 text-center text-gray-500">
                     No vouchers found.
                 </div>
@@ -179,7 +179,7 @@ export function VoucherList() {
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                            {displayedVouchers.map((voucher) => (
+                            {vouchers.map((voucher) => (
                                 <tr key={voucher.id}>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="text-sm font-mono font-bold text-gray-900 tracking-wider">{voucher.username}</div>
@@ -231,7 +231,30 @@ export function VoucherList() {
                     </table>
                 </div>
             )}
+
+            {!loading && meta.lastPage > 1 && (
+                <div className="px-6 py-3 border-t border-gray-200 bg-gray-50 flex justify-between items-center">
+                    <span className="text-sm text-gray-700">
+                        Page {meta.page} of {meta.lastPage} ({meta.total} total)
+                    </span>
+                    <div className="flex gap-2">
+                        <button
+                            disabled={page <= 1}
+                            onClick={() => setPage(p => p - 1)}
+                            className="px-3 py-1 text-sm border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+                        >
+                            Previous
+                        </button>
+                        <button
+                            disabled={page >= meta.lastPage}
+                            onClick={() => setPage(p => p + 1)}
+                            className="px-3 py-1 text-sm border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+                        >
+                            Next
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
-

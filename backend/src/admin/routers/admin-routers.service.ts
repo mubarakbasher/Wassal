@@ -51,37 +51,50 @@ export class AdminRoutersService {
         return router.vpnIp || router.ipAddress;
     }
 
-    /** Get ALL routers (admin sees everything) – returns cached DB status for fast loading */
-    async findAll() {
-        const routers = await this.prisma.router.findMany({
-            select: {
-                id: true,
-                name: true,
-                ipAddress: true,
-                vpnIp: true,
-                apiPort: true,
-                username: true,
-                description: true,
-                location: true,
-                status: true,
-                lastSeen: true,
-                createdAt: true,
-                updatedAt: true,
-                userId: true,
-                user: { select: { name: true, email: true } },
-                _count: {
-                    select: {
-                        vouchers: true,
-                        sessions: true,
-                    },
-                },
-            },
-            orderBy: { createdAt: 'desc' },
-        });
+    async findAll(page: number = 1, limit: number = 20, search?: string) {
+        const skip = (page - 1) * limit;
+        const where: any = {};
 
-        // Return cached status directly – the RouterMonitorService cron job
-        // updates status every 60 seconds, so no need to block here.
-        return routers;
+        if (search) {
+            where.OR = [
+                { name: { contains: search, mode: 'insensitive' } },
+                { ipAddress: { contains: search } },
+            ];
+        }
+
+        const routerSelect = {
+            id: true,
+            name: true,
+            ipAddress: true,
+            vpnIp: true,
+            apiPort: true,
+            username: true,
+            description: true,
+            location: true,
+            status: true,
+            lastSeen: true,
+            createdAt: true,
+            updatedAt: true,
+            userId: true,
+            user: { select: { name: true, email: true } },
+            _count: { select: { vouchers: true, sessions: true } },
+        };
+
+        const [routers, total] = await Promise.all([
+            this.prisma.router.findMany({
+                where,
+                select: routerSelect,
+                orderBy: { createdAt: 'desc' },
+                skip,
+                take: limit,
+            }),
+            this.prisma.router.count({ where }),
+        ]);
+
+        return {
+            data: routers,
+            meta: { total, page, lastPage: Math.ceil(total / limit) },
+        };
     }
 
     async findOne(id: string) {

@@ -23,9 +23,15 @@ export class AdminVouchersController {
     constructor(private readonly vouchersService: AdminVouchersService) { }
 
     @Get()
-    @ApiOperation({ summary: 'List all vouchers' })
-    findAll(@Query('status') status?: string, @Query('routerId') routerId?: string) {
-        return this.vouchersService.findAll(status, routerId);
+    @ApiOperation({ summary: 'List vouchers with pagination' })
+    findAll(
+        @Query('page') page: string = '1',
+        @Query('limit') limit: string = '20',
+        @Query('status') status?: string,
+        @Query('routerId') routerId?: string,
+        @Query('search') search?: string,
+    ) {
+        return this.vouchersService.findAll(+page, +limit, status, routerId, search);
     }
 
     @Post()

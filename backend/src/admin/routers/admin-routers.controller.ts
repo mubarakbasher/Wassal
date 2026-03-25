@@ -6,6 +6,7 @@ import {
     Delete,
     Body,
     Param,
+    Query,
     UseGuards,
     HttpCode,
     HttpStatus,
@@ -23,9 +24,13 @@ export class AdminRoutersController {
     constructor(private readonly routersService: AdminRoutersService) { }
 
     @Get()
-    @ApiOperation({ summary: 'List all routers' })
-    findAll() {
-        return this.routersService.findAll();
+    @ApiOperation({ summary: 'List routers with pagination' })
+    findAll(
+        @Query('page') page: string = '1',
+        @Query('limit') limit: string = '20',
+        @Query('search') search?: string,
+    ) {
+        return this.routersService.findAll(+page, +limit, search);
     }
 
     @Post('wireguard-setup')

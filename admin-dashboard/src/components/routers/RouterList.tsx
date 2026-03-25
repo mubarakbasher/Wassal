@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Router as RouterIcon, Trash2, Edit, RefreshCw } from 'lucide-react';
+import { Router as RouterIcon, Trash2, Edit, RefreshCw, Search } from 'lucide-react';
 import api from '../../lib/axios';
 
 interface Router {
@@ -18,33 +18,44 @@ interface Router {
     };
 }
 
+interface PaginationMeta {
+    total: number;
+    page: number;
+    lastPage: number;
+}
+
 export function RouterList({ onEdit }: { onEdit: (router: Router) => void }) {
     const [routers, setRouters] = useState<Router[]>([]);
     const [loading, setLoading] = useState(true);
     const [checkingStatus, setCheckingStatus] = useState<Record<string, boolean>>({});
+    const [page, setPage] = useState(1);
+    const [meta, setMeta] = useState<PaginationMeta>({ total: 0, page: 1, lastPage: 1 });
+    const [search, setSearch] = useState('');
+    const limit = 20;
 
     const fetchRouters = useCallback(async () => {
         try {
             setLoading(true);
-            const response = await api.get('/admin/routers');
-            setRouters(response.data);
-            return response.data as Router[];
+            const params: Record<string, string | number> = { page, limit };
+            if (search) params.search = search;
+            const response = await api.get('/admin/routers', { params });
+            const data = response.data.data as Router[];
+            setRouters(data);
+            setMeta(response.data.meta);
+            return data;
         } catch (error) {
             console.error('Failed to fetch routers:', error);
             return [];
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [page, search]);
 
-    // Fire background live-status checks for each router
     const refreshLiveStatuses = useCallback(async (routerList: Router[]) => {
-        // Mark all as checking
         const checking: Record<string, boolean> = {};
         routerList.forEach(r => { checking[r.id] = true; });
         setCheckingStatus(checking);
 
-        // Fire requests in parallel – each one updates the row as it completes
         routerList.forEach(async (router) => {
             try {
                 const res = await api.get(`/admin/routers/${router.id}/status`);
@@ -71,6 +82,10 @@ export function RouterList({ onEdit }: { onEdit: (router: Router) => void }) {
         })();
     }, [fetchRouters, refreshLiveStatuses]);
 
+    useEffect(() => {
+        setPage(1);
+    }, [search]);
+
     const handleRefresh = async () => {
         const list = await fetchRouters();
         if (list.length > 0) {
@@ -89,10 +104,6 @@ export function RouterList({ onEdit }: { onEdit: (router: Router) => void }) {
         }
     };
 
-    if (loading) {
-        return <div className="text-center py-8">Loading routers...</div>;
-    }
-
     return (
         <div className="bg-white rounded-lg shadow overflow-hidden">
             <div className="p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
@@ -100,16 +111,30 @@ export function RouterList({ onEdit }: { onEdit: (router: Router) => void }) {
                     <RouterIcon className="h-5 w-5 text-indigo-600" />
                     Connected Routers
                 </h3>
-                <button
-                    onClick={handleRefresh}
-                    className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100"
-                    title="Refresh List & Check Status"
-                >
-                    <RefreshCw className="h-4 w-4" />
-                </button>
+                <div className="flex items-center gap-2">
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <input
+                            type="text"
+                            placeholder="Search name, IP..."
+                            className="pl-9 pr-3 py-1.5 border border-gray-300 rounded-md text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 w-52"
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                        />
+                    </div>
+                    <button
+                        onClick={handleRefresh}
+                        className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100"
+                        title="Refresh List & Check Status"
+                    >
+                        <RefreshCw className="h-4 w-4" />
+                    </button>
+                </div>
             </div>
 
-            {routers.length === 0 ? (
+            {loading ? (
+                <div className="text-center py-8">Loading routers...</div>
+            ) : routers.length === 0 ? (
                 <div className="p-8 text-center text-gray-500">
                     No routers found. Add one to get started.
                 </div>
@@ -173,6 +198,30 @@ export function RouterList({ onEdit }: { onEdit: (router: Router) => void }) {
                         ))}
                     </tbody>
                 </table>
+            )}
+
+            {!loading && meta.lastPage > 1 && (
+                <div className="px-6 py-3 border-t border-gray-200 bg-gray-50 flex justify-between items-center">
+                    <span className="text-sm text-gray-700">
+                        Page {meta.page} of {meta.lastPage} ({meta.total} total)
+                    </span>
+                    <div className="flex gap-2">
+                        <button
+                            disabled={page <= 1}
+                            onClick={() => setPage(p => p - 1)}
+                            className="px-3 py-1 text-sm border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+                        >
+                            Previous
+                        </button>
+                        <button
+                            disabled={page >= meta.lastPage}
+                            onClick={() => setPage(p => p + 1)}
+                            className="px-3 py-1 text-sm border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+                        >
+                            Next
+                        </button>
+                    </div>
+                </div>
             )}
         </div>
     );
