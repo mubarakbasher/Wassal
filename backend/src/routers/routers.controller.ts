@@ -158,6 +158,23 @@ export class RoutersController {
         return this.routersService.debugConnectivity(id, user.id);
     }
 
+    @Post(':id/watchdog')
+    @ApiOperation({ summary: 'Enable watchdog auto-reboot on a router' })
+    enableWatchdog(
+        @Param('id') id: string,
+        @Body() body: { pingTarget?: string },
+        @CurrentUser() user: any,
+    ) {
+        return this.routersService.enableWatchdog(id, user.id, body?.pingTarget);
+    }
+
+    @Delete(':id/watchdog')
+    @HttpCode(HttpStatus.OK)
+    @ApiOperation({ summary: 'Disable watchdog auto-reboot on a router' })
+    disableWatchdog(@Param('id') id: string, @CurrentUser() user: any) {
+        return this.routersService.disableWatchdog(id, user.id);
+    }
+
     @Post('wireguard-setup')
     @ApiOperation({ summary: 'Generate WireGuard setup configuration' })
     generateWireguardSetup(@CurrentUser() user: any) {

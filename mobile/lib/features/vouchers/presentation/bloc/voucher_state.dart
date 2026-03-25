@@ -64,6 +64,7 @@ class VoucherGenerated extends VoucherState {
 
 class VouchersListLoaded extends VoucherState {
   final List<Voucher> vouchers;
+  final List<Voucher> allVouchers;
   final Map<String, int> stats;
   final bool hasReachedMax;
   final bool isLoadingMore;
@@ -72,6 +73,7 @@ class VouchersListLoaded extends VoucherState {
 
   const VouchersListLoaded({
     required this.vouchers,
+    this.allVouchers = const [],
     this.stats = const {},
     this.hasReachedMax = false,
     this.isLoadingMore = false,
@@ -80,10 +82,11 @@ class VouchersListLoaded extends VoucherState {
   });
 
   @override
-  List<Object?> get props => [vouchers, stats, hasReachedMax, isLoadingMore, currentPage, totalCount];
+  List<Object?> get props => [vouchers, allVouchers, stats, hasReachedMax, isLoadingMore, currentPage, totalCount];
 
   VouchersListLoaded copyWith({
     List<Voucher>? vouchers,
+    List<Voucher>? allVouchers,
     Map<String, int>? stats,
     bool? hasReachedMax,
     bool? isLoadingMore,
@@ -92,6 +95,7 @@ class VouchersListLoaded extends VoucherState {
   }) {
     return VouchersListLoaded(
       vouchers: vouchers ?? this.vouchers,
+      allVouchers: allVouchers ?? this.allVouchers,
       stats: stats ?? this.stats,
       hasReachedMax: hasReachedMax ?? this.hasReachedMax,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,

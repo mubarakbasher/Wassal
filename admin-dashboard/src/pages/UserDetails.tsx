@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Smartphone, CreditCard, Activity, Calendar, Plus, Ban, Trash2, Wifi, WifiOff } from 'lucide-react';
+import { ArrowLeft, Smartphone, CreditCard, Activity, Calendar, Plus, Ban, Trash2, Wifi, WifiOff, ChevronDown, LinkIcon } from 'lucide-react';
 import api from '../lib/axios';
 import { Badge } from '../components/ui/Badge';
 import { ManualSubscriptionModal } from '../components/subscriptions/ManualSubscriptionModal';
+import { RouterForm } from '../components/routers/RouterForm';
+import { AssignRouterModal } from '../components/routers/AssignRouterModal';
 
 export function UserDetailsPage() {
     const { id } = useParams<{ id: string }>();
@@ -11,6 +13,20 @@ export function UserDetailsPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isRouterFormOpen, setIsRouterFormOpen] = useState(false);
+    const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+    const [isRouterDropdownOpen, setIsRouterDropdownOpen] = useState(false);
+    const routerDropdownRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (routerDropdownRef.current && !routerDropdownRef.current.contains(e.target as Node)) {
+                setIsRouterDropdownOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     useEffect(() => {
         const fetchUser = async () => {
@@ -28,6 +44,11 @@ export function UserDetailsPage() {
         setLoading(true);
         fetchUser();
     }, [id]);
+
+    const refetchUser = async () => {
+        const { data } = await api.get(`/admin/users/${id}`);
+        setUser(data);
+    };
 
     const toggleStatus = async () => {
         if (!user) return;
@@ -154,10 +175,44 @@ export function UserDetailsPage() {
                             <h3 className="text-lg font-semibold text-gray-800 flex items-center">
                                 <Smartphone className="w-5 h-5 mr-2 text-indigo-600" />
                                 Connected Routers
+                                <span className="ml-2 text-xs bg-gray-100 px-2 py-0.5 rounded text-gray-600 font-normal">
+                                    {user.routers?.length || 0}
+                                </span>
                             </h3>
-                            <span className="text-sm bg-gray-100 px-2 py-1 rounded text-gray-600">
-                                {user.routers?.length || 0} Total
-                            </span>
+                            <div className="relative" ref={routerDropdownRef}>
+                                <button
+                                    onClick={() => setIsRouterDropdownOpen(!isRouterDropdownOpen)}
+                                    className="text-sm bg-indigo-50 text-indigo-600 hover:bg-indigo-100 px-3 py-1 rounded-lg font-medium transition-colors flex items-center"
+                                >
+                                    <Plus className="w-4 h-4 mr-1" />
+                                    Add Router
+                                    <ChevronDown className="w-3.5 h-3.5 ml-1" />
+                                </button>
+                                {isRouterDropdownOpen && (
+                                    <div className="absolute right-0 mt-1 w-52 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
+                                        <button
+                                            onClick={() => {
+                                                setIsRouterDropdownOpen(false);
+                                                setIsRouterFormOpen(true);
+                                            }}
+                                            className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center"
+                                        >
+                                            <Plus className="w-4 h-4 mr-2 text-gray-400" />
+                                            Create New Router
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                setIsRouterDropdownOpen(false);
+                                                setIsAssignModalOpen(true);
+                                            }}
+                                            className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center"
+                                        >
+                                            <LinkIcon className="w-4 h-4 mr-2 text-gray-400" />
+                                            Assign Existing Router
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
                         {user.routers?.length > 0 ? (
@@ -281,10 +336,23 @@ export function UserDetailsPage() {
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 userId={user.id}
-                onSuccess={async () => {
-                    const { data } = await api.get(`/admin/users/${id}`);
-                    setUser(data);
-                }}
+                onSuccess={refetchUser}
+            />
+
+            {isRouterFormOpen && (
+                <RouterForm
+                    userId={user.id}
+                    onClose={() => setIsRouterFormOpen(false)}
+                    onSave={refetchUser}
+                />
+            )}
+
+            <AssignRouterModal
+                isOpen={isAssignModalOpen}
+                userId={user.id}
+                userRouterIds={(user.routers || []).map((r: any) => r.id)}
+                onClose={() => setIsAssignModalOpen(false)}
+                onSuccess={refetchUser}
             />
         </div>
     );

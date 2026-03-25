@@ -23,22 +23,27 @@ class VoucherBloc extends Bloc<VoucherEvent, VoucherState> {
   ) async {
     final currentState = state;
     if (currentState is VouchersListLoaded) {
+      final deletedIds = event.voucherIds.toSet();
       final updatedVouchers = currentState.vouchers
-        .where((v) => !event.voucherIds.contains(v.id))
+        .where((v) => !deletedIds.contains(v.id))
+        .toList();
+      final updatedAllVouchers = currentState.allVouchers
+        .where((v) => !deletedIds.contains(v.id))
         .toList();
 
-      final totalRevenue = updatedVouchers.fold<double>(0, (sum, v) => sum + v.price);
-      final activeCount = updatedVouchers.where((v) => v.status == 'active').length;
+      final totalRevenue = updatedAllVouchers.fold<double>(0, (sum, v) => sum + v.price);
+      final activeCount = updatedAllVouchers.where((v) => v.status == 'active').length;
 
       emit(currentState.copyWith(
         vouchers: updatedVouchers,
+        allVouchers: updatedAllVouchers,
         stats: {
           ...currentState.stats,
-          'total': updatedVouchers.length,
+          'total': updatedAllVouchers.length,
           'active': activeCount,
           'totalRevenue': totalRevenue.toInt(),
         },
-        totalCount: updatedVouchers.length,
+        totalCount: updatedAllVouchers.length,
       ));
 
       final result = await repository.deleteVouchers(event.voucherIds);
@@ -206,6 +211,7 @@ class VoucherBloc extends Bloc<VoucherEvent, VoucherState> {
          
          emit(VouchersListLoaded(
            vouchers: paginatedVouchers,
+           allVouchers: filteredVouchers,
            stats: {
              'total': filteredVouchers.length,
              'active': activeCount,
@@ -269,6 +275,7 @@ class VoucherBloc extends Bloc<VoucherEvent, VoucherState> {
         
         emit(currentState.copyWith(
           vouchers: [...currentState.vouchers, ...newVouchers],
+          allVouchers: filteredVouchers,
           hasReachedMax: endIndex >= filteredVouchers.length,
           isLoadingMore: false,
           currentPage: nextPage,

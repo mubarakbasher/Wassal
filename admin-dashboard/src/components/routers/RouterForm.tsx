@@ -14,11 +14,12 @@ interface Router {
 
 interface RouterFormProps {
     initialData?: Router | null;
+    userId?: string;
     onClose: () => void;
     onSave: () => void;
 }
 
-export function RouterForm({ initialData, onClose, onSave }: RouterFormProps) {
+export function RouterForm({ initialData, userId, onClose, onSave }: RouterFormProps) {
     const [formData, setFormData] = useState<Router>({
         name: '',
         ipAddress: '',
@@ -53,7 +54,7 @@ export function RouterForm({ initialData, onClose, onSave }: RouterFormProps) {
                 await api.patch(`/admin/routers/${initialData.id}`, dataToSend);
             } else {
                 // Create
-                await api.post('/admin/routers', formData);
+                await api.post('/admin/routers', { ...formData, ...(userId ? { userId } : {}) });
             }
             onSave();
             onClose();

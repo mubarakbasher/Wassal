@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 
@@ -105,6 +105,24 @@ export class AdminUsersService {
             data: { isActive },
         });
     }
+    async assignRouter(userId: string, routerId: string) {
+        const user = await this.prisma.user.findUnique({ where: { id: userId } });
+        if (!user) throw new NotFoundException('User not found');
+
+        const router = await this.prisma.router.findUnique({ where: { id: routerId } });
+        if (!router) throw new NotFoundException('Router not found');
+
+        if (router.userId === userId) {
+            throw new BadRequestException('Router is already assigned to this user');
+        }
+
+        return this.prisma.router.update({
+            where: { id: routerId },
+            data: { userId },
+            include: { user: { select: { name: true, email: true } } },
+        });
+    }
+
     async deleteRouter(routerId: string) {
         return this.prisma.router.delete({
             where: { id: routerId }

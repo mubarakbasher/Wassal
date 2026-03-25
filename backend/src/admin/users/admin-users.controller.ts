@@ -52,6 +52,15 @@ export class AdminUsersController {
         return this.usersService.updateUserStatus(id, isActive);
     }
 
+    @Post(':userId/routers/:routerId')
+    @ApiOperation({ summary: 'Assign an existing router to a user' })
+    assignRouter(
+        @Param('userId') userId: string,
+        @Param('routerId') routerId: string,
+    ) {
+        return this.usersService.assignRouter(userId, routerId);
+    }
+
     @Delete(':userId/routers/:routerId')
     @ApiOperation({ summary: 'Delete a user router' })
     deleteRouter(@Param('routerId') routerId: string) {

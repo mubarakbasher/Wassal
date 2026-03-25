@@ -175,6 +175,10 @@ model Router {
   wgPublicKey  String?            // Router's WireGuard public key
   wgPrivateKey String?            // Router's WireGuard private key (encrypted, shown to user once)
 
+  // Watchdog auto-reboot
+  watchdogEnabled Boolean @default(false)
+  watchdogTarget  String?          // Ping target IP (defaults to 10.10.10.1 VPN server)
+
   // Owner
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)

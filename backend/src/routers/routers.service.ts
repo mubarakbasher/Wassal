@@ -324,6 +324,8 @@ export class RoutersService {
                 vpnIp: true,
                 status: true,
                 lastSeen: true,
+                watchdogEnabled: true,
+                watchdogTarget: true,
                 createdAt: true,
                 updatedAt: true,
                 _count: {
@@ -357,6 +359,8 @@ export class RoutersService {
                 vpnIp: true,
                 status: true,
                 lastSeen: true,
+                watchdogEnabled: true,
+                watchdogTarget: true,
                 createdAt: true,
                 updatedAt: true,
                 _count: {
@@ -1334,6 +1338,112 @@ export class RoutersService {
             },
             connectHost,
             diagnosis,
+        };
+    }
+
+    /**
+     * Deploy the Wassal watchdog auto-reboot script onto a router.
+     * The router will ping the target (default: VPN server 10.10.10.1) every minute
+     * and reboot itself after 5 consecutive failures.
+     */
+    async enableWatchdog(id: string, userId: string, pingTarget?: string) {
+        const router = await this.prisma.router.findFirst({
+            where: { id, userId },
+        });
+
+        if (!router) {
+            throw new NotFoundException('Router not found');
+        }
+
+        const decryptedPassword = this.decryptPassword(router.password);
+        const target = pingTarget || '10.10.10.1';
+
+        const result = await this.mikrotikApi.deployWatchdog(
+            {
+                host: this.getRouterHost(router),
+                port: router.apiPort,
+                username: router.username,
+                password: decryptedPassword,
+            },
+            target,
+            5,
+        );
+
+        if (!result.success) {
+            throw new BadRequestException(`Failed to deploy watchdog: ${result.error}`);
+        }
+
+        await this.prisma.router.update({
+            where: { id },
+            data: {
+                watchdogEnabled: true,
+                watchdogTarget: target,
+            },
+        });
+
+        await this.prisma.activityLog.create({
+            data: {
+                userId,
+                action: 'WATCHDOG_ENABLED',
+                details: JSON.stringify({ routerId: id, name: router.name, pingTarget: target }),
+            },
+        });
+
+        this.logger.log(`Watchdog enabled on ${router.name} (target=${target})`);
+
+        return {
+            message: 'Watchdog deployed successfully',
+            watchdogEnabled: true,
+            pingTarget: target,
+        };
+    }
+
+    /**
+     * Remove the Wassal watchdog script from a router.
+     */
+    async disableWatchdog(id: string, userId: string) {
+        const router = await this.prisma.router.findFirst({
+            where: { id, userId },
+        });
+
+        if (!router) {
+            throw new NotFoundException('Router not found');
+        }
+
+        const decryptedPassword = this.decryptPassword(router.password);
+
+        const result = await this.mikrotikApi.removeWatchdog({
+            host: this.getRouterHost(router),
+            port: router.apiPort,
+            username: router.username,
+            password: decryptedPassword,
+        });
+
+        if (!result.success) {
+            throw new BadRequestException(`Failed to remove watchdog: ${result.error}`);
+        }
+
+        await this.prisma.router.update({
+            where: { id },
+            data: {
+                watchdogEnabled: false,
+                watchdogTarget: null,
+            },
+        });
+
+        await this.prisma.activityLog.create({
+            data: {
+                userId,
+                action: 'WATCHDOG_DISABLED',
+                details: JSON.stringify({ routerId: id, name: router.name }),
+            },
+        });
+
+        this.logger.log(`Watchdog disabled on ${router.name}`);
+
+        return {
+            message: 'Watchdog removed successfully',
+            watchdogEnabled: false,
         };
     }
 }

@@ -927,4 +927,140 @@ export class MikroTikApiService {
             apiTest: apiResult,
         };
     }
+
+    /**
+     * Generate the watchdog RouterOS script source.
+     * Pings the given target; after maxFailures consecutive failures, reboots.
+     */
+    private buildWatchdogScript(pingTarget: string, maxFailures: number): string {
+        return [
+            ':global wassalWatchdogFails',
+            ':if ([:typeof $wassalWatchdogFails] = "nothing") do={ :global wassalWatchdogFails 0 }',
+            `:local pingResult [/ping ${pingTarget} count=3 interval=1]`,
+            ':if ($pingResult = 0) do={',
+            '    :set wassalWatchdogFails ($wassalWatchdogFails + 1)',
+            `    :if ($wassalWatchdogFails >= ${maxFailures}) do={`,
+            `        :log warning "Wassal Watchdog: ${pingTarget} unreachable for ${maxFailures} min - rebooting"`,
+            '        /system reboot',
+            '    } else={',
+            `        :log info ("Wassal Watchdog: ping fail " . $wassalWatchdogFails . "/${maxFailures}")`,
+            '    }',
+            '} else={',
+            '    :if ($wassalWatchdogFails > 0) do={',
+            '        :log info ("Wassal Watchdog: recovered after " . $wassalWatchdogFails . " failures")',
+            '    }',
+            '    :set wassalWatchdogFails 0',
+            '}',
+        ].join('\r\n');
+    }
+
+    /**
+     * Deploy the Wassal watchdog script + scheduler onto a MikroTik router.
+     * The script pings pingTarget every minute; after maxFailures consecutive
+     * failures the router reboots itself to recover the VPN tunnel.
+     */
+    async deployWatchdog(
+        connection: MikroTikConnection,
+        pingTarget: string = '10.10.10.1',
+        maxFailures: number = 5,
+    ): Promise<MikroTikCommandResult> {
+        const scriptName = 'wassal-watchdog';
+        const scriptSource = this.buildWatchdogScript(pingTarget, maxFailures);
+
+        const api = this.createApi(connection, 15);
+        try {
+            await api.connect();
+
+            // Remove existing script + scheduler if present (idempotent redeploy)
+            const existingScripts = await this.writeCommand(api, '/system/script/print', [`?name=${scriptName}`]);
+            if (existingScripts.success && existingScripts.data?.length > 0) {
+                for (const s of existingScripts.data) {
+                    await this.writeCommand(api, '/system/script/remove', [`=.id=${s['.id']}`]);
+                }
+            }
+
+            const existingSchedulers = await this.writeCommand(api, '/system/scheduler/print', [`?name=${scriptName}`]);
+            if (existingSchedulers.success && existingSchedulers.data?.length > 0) {
+                for (const s of existingSchedulers.data) {
+                    await this.writeCommand(api, '/system/scheduler/remove', [`=.id=${s['.id']}`]);
+                }
+            }
+
+            // Create the script
+            const addScript = await this.writeCommand(api, '/system/script/add', [
+                `=name=${scriptName}`,
+                `=source=${scriptSource}`,
+                `=policy=read,write,test,reboot`,
+            ]);
+            if (!addScript.success) {
+                await api.close();
+                return { success: false, error: `Failed to create script: ${addScript.error}` };
+            }
+
+            // Create the scheduler (runs every 1 minute)
+            const addScheduler = await this.writeCommand(api, '/system/scheduler/add', [
+                `=name=${scriptName}`,
+                `=interval=00:01:00`,
+                `=on-event=${scriptName}`,
+                `=policy=read,write,test,reboot`,
+            ]);
+            if (!addScheduler.success) {
+                await api.close();
+                return { success: false, error: `Failed to create scheduler: ${addScheduler.error}` };
+            }
+
+            await api.close();
+            this.logger.log(`Watchdog deployed on ${connection.host} (target=${pingTarget}, threshold=${maxFailures}min)`);
+            return { success: true };
+        } catch (error) {
+            this.logger.error(`Failed to deploy watchdog on ${connection.host}: ${error.message}`);
+            try { await api.close(); } catch (e) { }
+            return { success: false, error: error.message };
+        }
+    }
+
+    /**
+     * Remove the Wassal watchdog script + scheduler from a MikroTik router.
+     */
+    async removeWatchdog(connection: MikroTikConnection): Promise<MikroTikCommandResult> {
+        const scriptName = 'wassal-watchdog';
+        const api = this.createApi(connection, 15);
+
+        try {
+            await api.connect();
+
+            const schedulers = await this.writeCommand(api, '/system/scheduler/print', [`?name=${scriptName}`]);
+            if (schedulers.success && schedulers.data?.length > 0) {
+                for (const s of schedulers.data) {
+                    await this.writeCommand(api, '/system/scheduler/remove', [`=.id=${s['.id']}`]);
+                }
+            }
+
+            const scripts = await this.writeCommand(api, '/system/script/print', [`?name=${scriptName}`]);
+            if (scripts.success && scripts.data?.length > 0) {
+                for (const s of scripts.data) {
+                    await this.writeCommand(api, '/system/script/remove', [`=.id=${s['.id']}`]);
+                }
+            }
+
+            await api.close();
+            this.logger.log(`Watchdog removed from ${connection.host}`);
+            return { success: true };
+        } catch (error) {
+            this.logger.error(`Failed to remove watchdog from ${connection.host}: ${error.message}`);
+            try { await api.close(); } catch (e) { }
+            return { success: false, error: error.message };
+        }
+    }
+
+    /**
+     * Check whether the wassal-watchdog scheduler exists on the router.
+     */
+    async getWatchdogStatus(connection: MikroTikConnection): Promise<{ deployed: boolean; nextRun?: string }> {
+        const result = await this.executeCommand(connection, '/system/scheduler/print', ['?name=wassal-watchdog']);
+        if (result.success && result.data?.length > 0) {
+            return { deployed: true, nextRun: result.data[0]['next-run'] };
+        }
+        return { deployed: false };
+    }
 }

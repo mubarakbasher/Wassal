@@ -215,7 +215,7 @@ class VoucherManagementPageState extends State<VoucherManagementPage> {
             TextButton(
               onPressed: _selectAll,
               child: Text(
-                _selectedVouchers.length == (context.read<VoucherBloc>().state is VouchersListLoaded ? (context.read<VoucherBloc>().state as VouchersListLoaded).vouchers.length : 0)
+                _selectedVouchers.length == (context.read<VoucherBloc>().state is VouchersListLoaded ? (context.read<VoucherBloc>().state as VouchersListLoaded).allVouchers.length : 0)
                     ? AppLocalizations.of(context)!.deselectAll
                     : AppLocalizations.of(context)!.selectAll,
                 style: AppTextStyles.buttonSmall.copyWith(color: Colors.white),
@@ -640,10 +640,10 @@ class VoucherManagementPageState extends State<VoucherManagementPage> {
     final state = context.read<VoucherBloc>().state;
     if (state is VouchersListLoaded) {
       setState(() {
-        if (_selectedVouchers.length == state.vouchers.length) {
+        if (_selectedVouchers.length == state.allVouchers.length) {
           _selectedVouchers.clear();
         } else {
-          _selectedVouchers.addAll(state.vouchers.map((v) => v.id));
+          _selectedVouchers.addAll(state.allVouchers.map((v) => v.id));
         }
       });
       HapticFeedback.selectionClick();
@@ -651,10 +651,9 @@ class VoucherManagementPageState extends State<VoucherManagementPage> {
   }
 
   void _handleBulkPrint() {
-     // Retrieve full voucher objects from the Bloc state
      final state = context.read<VoucherBloc>().state;
      if (state is VouchersListLoaded) {
-       final selectedVouchers = state.vouchers.where((v) => _selectedVouchers.contains(v.id)).toList();
+       final selectedVouchers = state.allVouchers.where((v) => _selectedVouchers.contains(v.id)).toList();
        if (selectedVouchers.isNotEmpty) {
          Navigator.push(
             context,
@@ -667,10 +666,9 @@ class VoucherManagementPageState extends State<VoucherManagementPage> {
   }
 
   void _handleBulkShare() {
-    // Collect voucher details and share as text
     final state = context.read<VoucherBloc>().state;
     if (state is VouchersListLoaded) {
-       final selected = state.vouchers.where((v) => _selectedVouchers.contains(v.id)).toList();
+       final selected = state.allVouchers.where((v) => _selectedVouchers.contains(v.id)).toList();
        if (selected.isEmpty) return;
 
        final buffer = StringBuffer();
