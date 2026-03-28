@@ -194,23 +194,26 @@ export class VouchersService {
             sharedUsers: profile.sharedUsers,
         });
 
-        // Generate all vouchers inside a transaction for data consistency
+        // Pre-generate credentials so the transaction only does DB writes
+        const voucherInputs: { username: string; password: string }[] = [];
+        for (let i = 0; i < voucherCount; i++) {
+            const username = this.generateRandomString(8, charset);
+            let password = '';
+            if (authType === VoucherAuthType.USERNAME_ONLY) {
+                password = '';
+            } else if (authType === VoucherAuthType.USER_SAME_PASS) {
+                password = username;
+            } else {
+                password = this.generateRandomString(8, charset);
+            }
+            voucherInputs.push({ username, password });
+        }
+
+        // Transaction: DB writes only (fast, no network calls)
         const vouchers = await this.prisma.$transaction(async (tx) => {
             const created: any[] = [];
 
-            for (let i = 0; i < voucherCount; i++) {
-                const username = this.generateRandomString(8, charset);
-                let password = '';
-
-                if (authType === VoucherAuthType.USERNAME_ONLY) {
-                    password = '';
-                } else if (authType === VoucherAuthType.USER_SAME_PASS) {
-                    password = username;
-                } else {
-                    password = this.generateRandomString(8, charset);
-                }
-
-                // Create voucher in DB first (inside transaction)
+            for (const { username, password } of voucherInputs) {
                 const voucher = await tx.voucher.create({
                     data: {
                         username,
@@ -244,38 +247,12 @@ export class VouchersService {
                     },
                 });
 
-                // Create RADIUS user (outside transaction scope — best-effort)
-                const nasIp = router.vpnIp || router.ipAddress;
-                try {
-                    if (authType === VoucherAuthType.USERNAME_ONLY) {
-                        await this.radiusService.createRadiusUserPasswordless(username, groupName, nasIp);
-                    } else {
-                        await this.radiusService.createRadiusUser(username, password, groupName, nasIp);
-                    }
-
-                    if (planType === PlanType.TIME_BASED && duration && countType === CountType.ONLINE_ONLY) {
-                        const seconds = duration * 60;
-                        await this.radiusService.setMaxAllSession(username, seconds);
-                        await this.radiusService.setSessionTimeout(username, seconds);
-                    }
-
-                    if (dataLimit) {
-                        await this.radiusService.setUserReplyAttribute(
-                            username, 'Mikrotik-Total-Limit', dataLimit.toString(),
-                        );
-                    }
-                } catch (e) {
-                    this.logger.error(`Error creating RADIUS user ${username}: ${e.message}`);
-                    throw new BadRequestException('Failed to create RADIUS user for voucher. Transaction rolled back.');
-                }
-
                 created.push({
                     ...voucher,
                     dataLimit: voucher.dataLimit ? Number(voucher.dataLimit) : null,
                 });
             }
 
-            // Log activity inside the transaction
             await tx.activityLog.create({
                 data: {
                     userId,
@@ -290,7 +267,54 @@ export class VouchersService {
             });
 
             return created;
+        }, {
+            timeout: 30000,
+            maxWait: 10000,
         });
+
+        // RADIUS provisioning after transaction commit (no timeout pressure)
+        const nasIp = router.vpnIp || router.ipAddress;
+        const provisionedUsernames: string[] = [];
+
+        try {
+            for (const v of vouchers) {
+                if (authType === VoucherAuthType.USERNAME_ONLY) {
+                    await this.radiusService.createRadiusUserPasswordless(v.username, groupName, nasIp);
+                } else {
+                    await this.radiusService.createRadiusUser(v.username, v.password, groupName, nasIp);
+                }
+                provisionedUsernames.push(v.username);
+
+                if (planType === PlanType.TIME_BASED && duration && countType === CountType.ONLINE_ONLY) {
+                    const seconds = duration * 60;
+                    await this.radiusService.setMaxAllSession(v.username, seconds);
+                    await this.radiusService.setSessionTimeout(v.username, seconds);
+                }
+
+                if (dataLimit) {
+                    await this.radiusService.setUserReplyAttribute(
+                        v.username, 'Mikrotik-Total-Limit', dataLimit.toString(),
+                    );
+                }
+            }
+        } catch (e) {
+            this.logger.error(`RADIUS provisioning failed: ${e.message}. Rolling back ${vouchers.length} vouchers.`);
+
+            // Clean up already-provisioned RADIUS users
+            for (const username of provisionedUsernames) {
+                try {
+                    await this.radiusService.removeRadiusUser(username);
+                } catch (cleanupErr) {
+                    this.logger.error(`Failed to clean up RADIUS user ${username}: ${cleanupErr.message}`);
+                }
+            }
+
+            // Remove the DB voucher records created in the transaction
+            const voucherIds = vouchers.map(v => v.id);
+            await this.prisma.voucher.deleteMany({ where: { id: { in: voucherIds } } });
+
+            throw new BadRequestException('Failed to create RADIUS users for vouchers. All changes have been rolled back.');
+        }
 
         this.logger.log(`Generated ${voucherCount} voucher(s) for router ${routerId} by user ${userId}`);
 
